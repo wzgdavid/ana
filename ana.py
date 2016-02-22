@@ -2,10 +2,10 @@
 import random
 from operator import itemgetter, attrgetter
 
-
+__RUNTIMES = 9000
+__BAR_NUM = 1000
 class Bar():
-    bar_count = 0
-
+    __init_price = 5000
     def __init__(self, previous_bar=None):
         if not previous_bar:
             self.__init_bar()
@@ -13,19 +13,17 @@ class Bar():
             self.previous_bar = previous_bar
             self.get_price()
 
-    def __new__():
-        bar_count += 1
 
     def __init_bar(self):
-        self.price = 5000
+        self.price = self.__init_price
 
     def get_price(self):
         '''
         the price is randomly created
         '''
         pprice = self.previous_bar.price
-        low = pprice * 0.999
-        high = pprice * 1.001
+        low = pprice * 0.99
+        high = pprice * 1.01
         self.price = random.uniform(low, high)
 
 
@@ -94,9 +92,9 @@ class Analysis():
             prices = [ get_price(bar) for bar in self.bars[n: n + bar_num] ]
             yield prices
 
-    def movestoploss_buy(self, atr, n):
+    def earnings_movestoploss(self, loss_scope):
         '''
-        return a earnings or loss
+        when new high price renew the stoploss
         '''
         rtn = 0
         start = self.bars[0].price
@@ -105,7 +103,25 @@ class Analysis():
             
             if bar.price > temp_high:
                 temp_high = bar.price
-            stoploss = temp_high - n * atr
+            stoploss = temp_high - loss_scope
+            
+            #self.__movestoploss_print(i, temp_high, stoploss, bar.price)
+            if bar.price <= stoploss:
+                rtn = stoploss - start
+                return rtn
+        return self.bars[-1].price - start
+
+    def earnings_movestoploss_2(self, loss_scope):
+        '''
+        when the price moved one loss_scope, the stoploss add on loss_scope
+        '''
+        rtn = 0
+        start = self.bars[0].price
+        stoploss = self.bars[0].price - loss_scope
+        for i, bar in enumerate(self.bars):
+            
+            if bar.price > stoploss + loss_scope:
+                stoploss += loss_scope
             
             #self.__movestoploss_print(i, temp_high, stoploss, bar.price)
             if bar.price <= stoploss:
@@ -113,6 +129,21 @@ class Analysis():
                 return rtn
         return self.bars[-1].price - start
    
+    def earnings_fixedterm(self):
+        
+        return self.bars[-1].price - self.bars[0].price
+       
+
+    def earnings_stoploss(self, loss_scope):
+        if self.low <= self.bars[0].price - loss_scope:
+            return -loss_scope
+        return self.bars[-1].price - self.bars[0].price
+
+    def earnings_target_profit(self, target_profit):
+        if self.high >= self.bars[0].price + target_profit:
+            return target_profit
+        return self.bars[-1].price - self.bars[0].price
+
     def __movestoploss_print(self, i, temp_high, stoploss, barprice):
         '''for test use'''
         print str(i)+',', format(temp_high, '.1f'), format(stoploss, '.1f'), format(barprice, '.1f')
@@ -121,23 +152,83 @@ class Analysis():
     def movestoploss_sell(self, atr):
         pass
 
+'''
+strategy
+'''
+def movesotploss_avg_earnings(loss_scope, runtimes=__RUNTIMES):
+    '''
 
-def movesotploss_avg_earnings():
+    '''
     earnings = 0
-    runtimes = 9999
     for n in range(runtimes):
-        bs = BarSequence(50)
-        a = Analysis(bs)
-        earnings += a.movestoploss_buy(5, 1)
+        a = Analysis(BarSequence(__BAR_NUM))
+        one_earning = a.earnings_movestoploss(loss_scope)
+        #print one_earning
+        earnings += one_earning
     avg_earning = earnings / runtimes
-    print avg_earning
+    return avg_earning
+
+def movesotploss_avg_earnings_2(loss_scope, runtimes=__RUNTIMES):
+    earnings = 0
+    for n in range(runtimes):
+        a = Analysis(BarSequence(__BAR_NUM))
+        one_earning = a.earnings_movestoploss_2(loss_scope)
+        #print one_earning
+        earnings += one_earning
+    avg_earning = earnings / runtimes
+    return avg_earning
+
+
+def fixedterm_avg_earnings(runtimes=__RUNTIMES):
+    earnings = 0
+    for n in range(runtimes):
+        bs = BarSequence(__BAR_NUM)
+        a = Analysis(bs)
+        one_earning = a.earnings_fixedterm()
+        #print one_earning
+        earnings += one_earning
+    avg_earning = earnings / runtimes
+    return avg_earning
+
+
+def stoploss_avg_earnings(loss_scope, runtimes=__RUNTIMES):
+    earnings = 0
+    for n in range(runtimes):
+        bs = BarSequence(__BAR_NUM)
+        a = Analysis(bs)
+        one_earning = a.earnings_stoploss(loss_scope)
+        #print one_earning
+        earnings += one_earning
+    avg_earning = earnings / runtimes
+    return avg_earning
+
+
+def target_profit_avg_earnings(target_profit, runtimes=__RUNTIMES):
+    earnings = 0
+    for n in range(runtimes):
+        bs = BarSequence(__BAR_NUM)
+        a = Analysis(bs)
+        one_earning = a.earnings_target_profit(target_profit)
+        #print one_earning
+        earnings += one_earning
+    avg_earning = earnings / runtimes
+    return avg_earning
+
 
 if __name__ == '__main__':
     
-    bs = BarSequence(500)
+    bs = BarSequence(200)
     #bs.print_bar_prices()
 
     a = Analysis(bs)
     #print a.get_sliced_barprice(3)
-    #print a.movestoploss_buy(10,1)
-    movesotploss_avg_earnings()
+    #print a.earnings_movestoploss_2(100)
+    #print a.earnings_stoploss(50)
+    #print a.earnings_target_profit(50)
+
+
+    #print movesotploss_avg_earnings(100) # 15.9 14
+    print movesotploss_avg_earnings_2(100) # 16
+    #print fixedterm_avg_earnings() # -6.7 -6
+    #print stoploss_avg_earnings(100) # 20 6
+    #print target_profit_avg_earnings(100) # -13 -13 NO
