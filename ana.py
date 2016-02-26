@@ -227,8 +227,8 @@ if __name__ == '__main__':
     #print a.earnings_target_profit(50)
 
 
-    #print movesotploss_avg_earnings(100) # 15.9 14
-    print movesotploss_avg_earnings_2(100) # 16
+    print movesotploss_avg_earnings(100) # 15.9 14 18.3 15.6 14.4 16.9 15.8
+    print movesotploss_avg_earnings_2(100) # 16 17 18   17   17   17   17
     #print fixedterm_avg_earnings() # -6.7 -6
     #print stoploss_avg_earnings(100) # 20 6
     #print target_profit_avg_earnings(100) # -13 -13 NO
