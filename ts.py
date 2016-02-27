@@ -191,15 +191,53 @@ def foo5(daima, scope=0.05, hold_days=5, ma1='ma5', ma2='ma10'):
     # df['earnings'] = if rolling_low > stop_loss   ?  open.shift(hold_days) - df.open : df.stop_loss - df.open
     # df['logic'] = np.where(df['AAA'] > 5,'high','low')
     df['earnings'] = np.where(df.rolling_low > df.stop_loss , df.open.shift(hold_days) - df.open ,df.stop_loss - df.open)
-    #print df
+   
     ma5_crossup_10 = (df[ma1].shift(-2) < df[ma2].shift(-2)) & (df[ma1].shift(-1) > df[ma2].shift(-1))
     #ma5_crossdown_10 = (df.ma5.shift(-2) > df.ma10.shift(-2)) & (df.ma5.shift(-1) < df.ma10.shift(-1))
     
     df['ma5_up_10'] = np.where(ma5_crossup_10, True, None)
     df['ma_cross_earnings'] = df.earnings * df.ma5_up_10
-    # df.to_csv('files_tmp/foo4.csv')
-    average_earnings = df.ma_cross_earnings.sum() / df.ma_cross_earnings.count()
+    df.to_csv('files_tmp/foo4.csv')
+    summ = df.ma_cross_earnings.shift(hold_days * -1 + 1).sum() # 不计算没有rolling_low的行
+    count = df.ma_cross_earnings.shift(hold_days * -1 + 1).count()
+    average_earnings =  summ / count 
+    print average_earnings
+    print summ
+    #return df[''].sum()
+
+
+foo5('zxb', scope=0.08, hold_days=250, ma1='ma5', ma2='ma10')  # avg 1468   sum 38186   
+# foo5('hs300', scope=0.05, hold_days=250, ma1='ma5', ma2='ma10')  #  795  23069
+
+#foo5('cyb', scope=0.05, hold_days=250, ma1='ma5', ma2='ma10')  
+
+
+def foo6(daima, scope=0.05, hold_days=5, ma='ma5'):
+    '''
+    open and close  > ma
+    and
+    stop loss
+
+    '''
+    df = ts.get_hist_data(daima,)
+    df = df.loc[ :, ['open', 'close', 'high', 'low', 'ma5', 'ma10', 'ma20'] ]
+    df['rolling_low'] = pd.rolling_min(df.low, hold_days)
+    #df['has_rolling_low'] =np.where(df.rolling_low == None, False, True)
+    df['stop_loss'] = df.open * (1- scope)
+
+    df['earnings'] = np.where(df.rolling_low > df.stop_loss , df.open.shift(hold_days) - df.open ,df.stop_loss - df.open)
+    
+    openclose_gt_ma = (df.open > df[ma]) & (df.close > df[ma]) 
+    
+    df['openclose_gt_ma'] = np.where(openclose_gt_ma, True, None)
+    df['gt_ma_earnings'] = df.earnings * df.openclose_gt_ma
+    #df.to_csv('files_tmp/foo4.csv')
+    summ = df.gt_ma_earnings.shift(hold_days * -1 + 1).sum()
+    count = df.gt_ma_earnings.shift(hold_days * -1 + 1).count()
+    average_earnings =  summ / count 
+    #print summ
+    #print count
     print average_earnings
     #return df[''].sum()
 
-foo5('cyb', scope=0.06, hold_days=200, ma1='ma10', ma2='ma20')
+#foo6('cyb', scope=0.08, hold_days=200, ma='ma10')
