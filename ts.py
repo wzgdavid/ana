@@ -19,7 +19,7 @@ def foo():
     print df
 
 def foo2(daima, ma1='ma5', ma2='ma10', days=5):
-
+    '''ma cross up'''
     df = ts.get_hist_data(daima)
     df = df.loc[:, ['open','close','ma5', 'ma10', 'ma20']]
 
@@ -55,7 +55,7 @@ def run_foo2():
             zhengshouyi_count += 1
         allcount += 1
     print zhengshouyi_count, allcount, 'run_foo2 end'
-run_foo2()
+#run_foo2()
     
 
 
@@ -135,3 +135,71 @@ def run_foo3():
         allcount += 1
     print zhengshouyi_count, allcount, 'run_foo3 end'
 #run_foo3()
+
+
+
+
+def foo4(daima, scope=0.05, hold_days=5):
+    '''stop loss
+
+    '''
+
+    df = ts.get_hist_data(daima,)
+    df = df.loc[ :, ['open', 'close', 'high', 'low'] ]
+    df['rolling_low'] = pd.rolling_min(df.low, hold_days)
+    df['stop_loss'] = df.open * (1- scope)
+    # df['earnings'] = if rolling_low > stop_loss   ?  open.shift(hold_days) - df.open : df.stop_loss - df.open
+    # df['logic'] = np.where(df['AAA'] > 5,'high','low')
+    df['earnings'] = np.where(df.rolling_low > df.stop_loss , df.open.shift(hold_days) - df.open ,df.stop_loss - df.open)
+    #print df
+    df.to_csv('files_tmp/foo4.csv')
+    #return df[''].sum()
+
+#foo4('hs300', hold_days=30)
+
+def run_foo4():
+    zhengshouyi_count = 0
+    allcount = 0
+    allrange = range(600000, 600999) + range(300000, 300555)
+
+    for daima in allrange:
+        #print  daima
+        try:
+            rtn = foo2(str(daima), ma1='ma10', ma2='ma20' , days=10)
+        except AttributeError:
+            continue
+        if rtn > 0:
+            zhengshouyi_count += 1
+        allcount += 1
+    print zhengshouyi_count, allcount, 'run_foo2 end'
+#run_foo4()
+
+
+
+def foo5(daima, scope=0.05, hold_days=5, ma1='ma5', ma2='ma10'):
+    '''
+    ma cross up
+    and
+    stop loss
+
+    '''
+
+    df = ts.get_hist_data(daima,)
+    df = df.loc[ :, ['open', 'close', 'high', 'low', 'ma5', 'ma10', 'ma20'] ]
+    df['rolling_low'] = pd.rolling_min(df.low, hold_days)
+    df['stop_loss'] = df.open * (1- scope)
+    # df['earnings'] = if rolling_low > stop_loss   ?  open.shift(hold_days) - df.open : df.stop_loss - df.open
+    # df['logic'] = np.where(df['AAA'] > 5,'high','low')
+    df['earnings'] = np.where(df.rolling_low > df.stop_loss , df.open.shift(hold_days) - df.open ,df.stop_loss - df.open)
+    #print df
+    ma5_crossup_10 = (df[ma1].shift(-2) < df[ma2].shift(-2)) & (df[ma1].shift(-1) > df[ma2].shift(-1))
+    #ma5_crossdown_10 = (df.ma5.shift(-2) > df.ma10.shift(-2)) & (df.ma5.shift(-1) < df.ma10.shift(-1))
+    
+    df['ma5_up_10'] = np.where(ma5_crossup_10, True, None)
+    df['ma_cross_earnings'] = df.earnings * df.ma5_up_10
+    # df.to_csv('files_tmp/foo4.csv')
+    average_earnings = df.ma_cross_earnings.sum() / df.ma_cross_earnings.count()
+    print average_earnings
+    #return df[''].sum()
+
+foo5('cyb', scope=0.06, hold_days=200, ma1='ma10', ma2='ma20')
