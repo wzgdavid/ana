@@ -4,10 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import tushare as ts
 import zhibiao as zb
-
-# ts.set_token('390c325056c8c4524d0d7c048c5907e079e45f6e2f1f2b1b6dc5e9bc0f297136')
-# fd = ts.Future()
-# df = fd.Futu(exchangeCD='CCFX', field='secShortName,contractObject,minChgPriceNum,lastTradeDate,deliMethod')
+# tushare 的数据不准 节假日会多一天多余的数据
 
 def foo():
 
@@ -184,7 +181,8 @@ def foo5(daima, scope=0.05, hold_days=5, ma1='ma5', ma2='ma10'):
 
     '''
 
-    df = ts.get_hist_data(daima,)
+    #df = ts.get_hist_data(daima)
+    df = pd.read_csv('data/%s.xls' % daima)
     df = df.loc[ :, ['open', 'close', 'high', 'low', 'ma5', 'ma10', 'ma20'] ]
     df['rolling_low'] = pd.rolling_min(df.low, hold_days)
     df['stop_loss'] = df.open * (1- scope)
@@ -197,19 +195,63 @@ def foo5(daima, scope=0.05, hold_days=5, ma1='ma5', ma2='ma10'):
     
     df['ma5_up_10'] = np.where(ma5_crossup_10, True, None)
     df['ma_cross_earnings'] = df.earnings * df.ma5_up_10
-    df.to_csv('files_tmp/foo4.csv')
+    #df.to_csv('files_tmp/foo4.csv')
     summ = df.ma_cross_earnings.shift(hold_days * -1 + 1).sum() # 不计算没有rolling_low的行
     count = df.ma_cross_earnings.shift(hold_days * -1 + 1).count()
     average_earnings =  summ / count 
-    print average_earnings
-    print summ
-    #return df[''].sum()
+    #print average_earnings
+    #print summ 
+    #print count
+    #print 'en-----------------d--------------------'
+    return summ, count, average_earnings
 
 
-foo5('zxb', scope=0.08, hold_days=250, ma1='ma5', ma2='ma10')  # avg 1468   sum 38186   
-# foo5('hs300', scope=0.05, hold_days=250, ma1='ma5', ma2='ma10')  #  795  23069
-
+#foo5('zxb', scope=0.06, hold_days=250, ma1='ma5', ma2='ma10')  # avg 1468   sum 38186   
+#foo5('hs300', scope=0.05, hold_days=250, ma1='ma5', ma2='ma10')  #  795  23069
+#foo5('hs300', scope=0.06, hold_days=250, ma1='ma5', ma2='ma10')
 #foo5('cyb', scope=0.05, hold_days=250, ma1='ma5', ma2='ma10')  
+
+
+def run_foo5(daima):
+    scopes = np.arange(0.05, 0.3, 0.01)
+    hold_days = [100,150,200,250,280,290,300,310,330, 350, 370]
+    mas = [
+        ('ma5', 'ma10'), 
+        ('ma5', 'ma20'),
+        ('ma10', 'ma20'),
+    ]
+
+    df_scope = []
+    df_day = []
+    df_ma = []
+    df_sum = []
+    df_count = []
+    df_avge = []
+    for scope in scopes:
+        for day in hold_days:
+            for ma in mas:
+                #print scope
+                rtn = foo5(daima, scope=scope, hold_days=day, ma1=ma[0], ma2=ma[1])
+    
+                df_scope.append(scope)
+                df_day.append(day)
+                df_ma.append(ma)
+                df_sum.append(rtn[0])
+                df_count.append(rtn[1])
+                df_avge.append(rtn[2])
+    df = pd.DataFrame({
+        'scope': df_scope,
+        'days':df_day,
+        'ma':df_ma,
+        'sum':df_sum,
+        'count':df_count,
+        'avge':df_avge
+
+        })
+    df.to_csv('files_tmp/run_foo5_%s.csv' % daima)
+    
+
+#run_foo5('hs300')
 
 
 def foo6(daima, scope=0.05, hold_days=5, ma='ma5'):
@@ -241,3 +283,26 @@ def foo6(daima, scope=0.05, hold_days=5, ma='ma5'):
     #return df[''].sum()
 
 #foo6('cyb', scope=0.08, hold_days=200, ma='ma10')
+
+def move_stop_loss(daima, scope=0.05, hold_days=100):
+
+
+    df = pd.read_csv('data/%s.xls' % daima)
+    df = df.loc[ :, ['date','open', 'close', 'high', 'low', 'ma5', 'ma10', 'ma20'] ]
+    df['rolling_high'] = pd.rolling_max(df.high, hold_days)
+    df['new_highest'] = np.where(df.high > df.high.shift(-1), True ,False)
+    df['move_stop_loss'] = df.open * (1- scope)
+    #df['move_stop_loss'] = 
+    print df
+    #df['earnings'] = np.where(df.rolling_low > df.stop_loss , df.open.shift(hold_days) - df.open ,df.stop_loss - df.open)
+    df.to_csv('files_tmp/move_stop_loss.csv')
+    #summ = df.ma_cross_earnings.shift(hold_days * -1 + 1).sum() # 不计算没有rolling_low的行
+    #count = df.ma_cross_earnings.shift(hold_days * -1 + 1).count()
+    #average_earnings =  summ / count 
+    #print average_earnings
+    #print summ 
+    #print count
+    #print 'en-----------------d--------------------'
+    #return summ, count, average_earnings
+
+move_stop_loss('hs300', 0.05)
