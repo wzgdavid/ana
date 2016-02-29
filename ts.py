@@ -180,7 +180,8 @@ def foo5(daima, scope=0.05, hold_days=5, ma1='ma5', ma2='ma10'):
     stop loss
 
     '''
-
+    if hold_days >300:
+        print 'i suggest hold_days not > 350'
     #df = ts.get_hist_data(daima)
     df = pd.read_csv('data/%s.xls' % daima)
     df = df.loc[ :, ['open', 'close', 'high', 'low', 'ma5', 'ma10', 'ma20'] ]
@@ -195,9 +196,11 @@ def foo5(daima, scope=0.05, hold_days=5, ma1='ma5', ma2='ma10'):
     
     df['ma5_up_10'] = np.where(ma5_crossup_10, True, None)
     df['ma_cross_earnings'] = df.earnings * df.ma5_up_10
-    #df.to_csv('files_tmp/foo4.csv')
-    summ = df.ma_cross_earnings.shift(hold_days * -1 + 1).sum() # 不计算没有rolling_low的行
-    count = df.ma_cross_earnings.shift(hold_days * -1 + 1).count()
+    df.to_csv('files_tmp/foo5.csv')
+    #summ = df.ma_cross_earnings.shift(hold_days * -1 + 1).sum() # 不计算没有rolling_low的行
+    #count = df.ma_cross_earnings.shift(hold_days * -1 + 1).count()
+    summ = df.ma_cross_earnings.shift(300).sum() # 不计算没有rolling_low的行
+    count = df.ma_cross_earnings.shift(300).count()
     average_earnings =  summ / count 
     #print average_earnings
     #print summ 
@@ -206,15 +209,15 @@ def foo5(daima, scope=0.05, hold_days=5, ma1='ma5', ma2='ma10'):
     return summ, count, average_earnings
 
 
-#foo5('zxb', scope=0.06, hold_days=250, ma1='ma5', ma2='ma10')  # avg 1468   sum 38186   
-#foo5('hs300', scope=0.05, hold_days=250, ma1='ma5', ma2='ma10')  #  795  23069
-#foo5('hs300', scope=0.06, hold_days=250, ma1='ma5', ma2='ma10')
+#foo5('zxb', scope=0.06, hold_days=250, ma1='ma5', ma2='ma10')  # 
+#print foo5('hs300', scope=0.15, hold_days=300, ma1='ma5', ma2='ma10')  # 
+
 #foo5('cyb', scope=0.05, hold_days=250, ma1='ma5', ma2='ma10')  
 
 
 def run_foo5(daima):
-    scopes = np.arange(0.05, 0.3, 0.01)
-    hold_days = [100,150,200,250,280,290,300,310,330, 350, 370]
+    scopes = np.arange(0.05, 0.2, 0.01)
+    hold_days = [100,150,200,250,280,290,300]
     mas = [
         ('ma5', 'ma10'), 
         ('ma5', 'ma20'),
@@ -251,7 +254,7 @@ def run_foo5(daima):
     df.to_csv('files_tmp/run_foo5_%s.csv' % daima)
     
 
-#run_foo5('hs300')
+#run_foo5('cyb')
 
 
 def foo6(daima, scope=0.05, hold_days=5, ma='ma5'):
@@ -305,4 +308,47 @@ def move_stop_loss(daima, scope=0.05, hold_days=100):
     #print 'en-----------------d--------------------'
     #return summ, count, average_earnings
 
-move_stop_loss('hs300', 0.05)
+#move_stop_loss('hs300', 0.05)
+
+
+def cross_bs(daima, ma1, ma2):
+    '''ma1 crossup ma2 buy  ma1 crossdown ma2 sell 
+       open buy   close sell
+    '''
+    df = pd.read_csv('data/%s.xls' % daima)
+    df = df.loc[ :, ['date','open', 'close', 'high', 'low', 'ma5', 'ma10', 'ma20', 'ma60'] ]
+    ma1_crossup_2 = (df[ma1].shift(-2) < df[ma2].shift(-2)) & (df[ma1].shift(-1) > df[ma2].shift(-1))
+    ma1_crossdown_2 = (df[ma1].shift(-2) > df[ma2].shift(-2)) & (df[ma1].shift(-1) < df[ma2].shift(-1))
+    
+    df['ma1_crossup_2'] = np.where(ma1_crossup_2, df.open, 0)
+    df['ma1_crossdown_2'] = np.where(ma1_crossdown_2, df.close, 0)
+    #has_signal = df.ma1_crossup_2 + df.ma1_crossdown_2 ==1
+    #df['has_signal'] = np.where(has_signal==1, True, None)
+    df = df[(df.ma1_crossup_2 != 0) | (df.ma1_crossdown_2 != 0) ]
+    df.to_csv('files_tmp/cross_bs.csv')
+    print df.ma1_crossdown_2.sum() - df.ma1_crossup_2.sum(), df.ma1_crossup_2.count()
+
+#cross_bs('hs300', 'ma5', 'ma10')
+
+
+def kdjcross_bs(daima):
+    '''k crossup d buy  k crossdown d sell 
+       open buy   close sell
+    '''
+    df = pd.read_csv('data/%s.xls' % daima)
+    #df = df.loc[ :, ['datetime','open', 'close', 'high', 'low', 'KDJ.K', 'KDJ.D'] ]
+    #print df.columns
+    df.columns = [col.strip() for col in df.columns]
+    df = df.loc[ :, ['date','open', 'close', 'high', 'low', 'KDJ.K', 'KDJ.D'] ]
+    k_crossup_d = (df['KDJ.K'].shift(-2) < df['KDJ.D'].shift(-2)) & (df['KDJ.K'].shift(-1) > df['KDJ.D'].shift(-1))
+    d_crossdown_d = (df['KDJ.K'].shift(-2) > df['KDJ.D'].shift(-2)) & (df['KDJ.K'].shift(-1) < df['KDJ.D'].shift(-1))
+    
+    df['k_crossup_d'] = np.where(k_crossup_d, df.open, 0)
+    df['k_crossdown_d'] = np.where(d_crossdown_d, df.close, 0)
+    
+    df['earnings_cumsum'] = df.k_crossdown_d.cumsum() - df.k_crossup_d.cumsum()
+    
+    df.to_csv('files_tmp/kdjcross_bs.csv')
+    
+
+kdjcross_bs('999999')
