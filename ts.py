@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import tushare as ts
-import zhibiao as zb
+import util
 # tushare 的数据不准 节假日会多一天多余的数据
 
 def foo():
@@ -57,64 +57,22 @@ def run_foo2():
 
 
 
-
-
-
-def qfq():
-    ''''''
-    df = ts.get_h_data('000584')  #
-    #print hasattr(df, 'ma5')
-    df = df.loc[:, ['open','close','ma5', 'ma10']]
-
-    ma5_crossup_10 = (df.ma5.shift(-2) < df.ma10.shift(-2)) & (df.ma5.shift(-1) > df.ma10.shift(-1))
-    ma5_crossdown_10 = (df.ma5.shift(-2) > df.ma10.shift(-2)) & (df.ma5.shift(-1) < df.ma10.shift(-1))
-    df['ma5_up_10'] = np.where(ma5_crossup_10, 1, '')
-    df['ma5_down_10'] = np.where(ma5_crossdown_10, 0, '')
-    #df['open_shift_1'] = df['open'].shift(1)
-    #df['test'] = np.where(df.open>df.close,'1','0')
-    #df['test2'] = df.open>df.close
-    df['ma5_up_10_earning'] = np.where(df['ma5_up_10']=='1', df.close.shift(20) - df.close, '')
-    df['ma5_down_10_earning'] = np.where(df['ma5_down_10']=='0', df.close - df.close.shift(20) , '')
-    #df['ma5_up_10_earning'] = df.close-df.close.shift(-10)
-
-    df.to_csv('files_tmp/qfq.csv')
-    #print df
-
-#qfq()
-
-
-def rand():
-
-    df = ts.get_hist_data('200007')
-    df = df.loc[:, ['open','close','high', 'low']]
-    #print df.open.shift(-1) > df.close.shift(-1)
-    #print df.open > df.close
-    same_down = (df.open.shift(-1) > df.close.shift(-1)) & (df.open > df.close)
-    same_up = (df.open.shift(-1) < df.close.shift(-1)) & (df.open < df.close)
-    df['same_with_zuotian'] = np.where(same_down | same_up, True, None)
-    #print df
-    df.to_csv('files_tmp/rand.csv')
-    diff_count = len(df) - df['same_with_zuotian'].count()
-    diff_pct = diff_count / float(len(df))
-    print diff_pct
-
-
-# rand()
-
 def foo3(daima, ma='ma5', days=5):
     '''只要大于ma 买进 看n天后收益'''
-    df = ts.get_hist_data(daima)
-    df = df.loc[:, ['close','ma5', 'ma10', 'ma20']]
+    df = pd.read_csv('data/%s.xls' % daima)
+    util.strip_columns(df)
+    df = df.loc[:, ['open', 'close', 'low', 'ma5', 'ma10', 'ma20']]
     #df['gt_ma'] = df.close > df[ma]
-    
-    df['earning'] = np.where(df.close > df[ma], df.close.shift(days) - df.close, 0)
+    # yesterday greater than ma
+    df['gt_ma'] = df.low.shift(-1) > df[ma].shift(-1)
+    df['earning'] = np.where(df['gt_ma'], df.close.shift(days) - df.open, 0)
     #df['earning2'] = np.where(df.close < df[ma], df.close.shift(days) - df.close, 0)
     #print df['earning'].sum()
-    return df['earning'].sum()
-    #df.to_csv('files_tmp/foo3.csv')
+    
+    df.to_csv('files_tmp/foo3.csv')
 #foo3('hs300')
 #print foo3('hs300')
-#foo3('002004')
+foo3('hs300')
 
 def run_foo3():
     zhengshouyi_count = 0
@@ -338,7 +296,8 @@ def kdjcross_bs(daima):
     df = pd.read_csv('data/%s.xls' % daima)
     #df = df.loc[ :, ['datetime','open', 'close', 'high', 'low', 'KDJ.K', 'KDJ.D'] ]
     #print df.columns
-    df.columns = [col.strip() for col in df.columns]
+    #df.columns = [col.strip() for col in df.columns]
+    util.strip_columns(df)
     df = df.loc[ :, ['date','open', 'close', 'high', 'low', 'KDJ.K', 'KDJ.D'] ]
     k_crossup_d = (df['KDJ.K'].shift(-2) < df['KDJ.D'].shift(-2)) & (df['KDJ.K'].shift(-1) > df['KDJ.D'].shift(-1))
     d_crossdown_d = (df['KDJ.K'].shift(-2) > df['KDJ.D'].shift(-2)) & (df['KDJ.K'].shift(-1) < df['KDJ.D'].shift(-1))
@@ -351,4 +310,4 @@ def kdjcross_bs(daima):
     df.to_csv('files_tmp/kdjcross_bs.csv')
     
 
-kdjcross_bs('999999')
+#kdjcross_bs('999999')
