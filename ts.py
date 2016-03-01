@@ -17,50 +17,11 @@ def foo():
     df.open
     print df
 
-def foo2(daima, ma1='ma5', ma2='ma10', days=5):
-    '''ma cross up'''
-    df = ts.get_hist_data(daima)
-    df = df.loc[:, ['open','close','ma5', 'ma10', 'ma20']]
-
-    ma5_crossup_10 = (df[ma1].shift(-2) < df[ma2].shift(-2)) & (df[ma1].shift(-1) > df[ma2].shift(-1))
-    #ma5_crossdown_10 = (df.ma5.shift(-2) > df.ma10.shift(-2)) & (df.ma5.shift(-1) < df.ma10.shift(-1))
-    
-    df['ma5_up_10'] = np.where(ma5_crossup_10, True, None)
-    #df['ma5_down_10'] = np.where(ma5_crossdown_10, True, None)
-
-    df['ma5_up_10_earning'] = np.where(df['ma5_up_10'], df.close.shift(days) - df.close, 0)
-    #df['ma5_down_10_earning'] = np.where(df['ma5_down_10'], df.close - df.close.shift(2) , 0)
-
-    #df.to_csv('files_tmp/foo2.csv')
-
-    #print df['ma5_up_10_earning'].sum(), df['ma5_up_10'].count()
-    #print df['ma5_down_10_earning'].sum(),  df['ma5_down_10'].count()
-    return df['ma5_up_10_earning'].sum()
-
-#print foo2('hs300', days=7)
-
-def run_foo2():
-    zhengshouyi_count = 0
-    allcount = 0
-    allrange = range(600000, 600999) + range(300000, 300555)
-
-    for daima in allrange:
-        #print  daima
-        try:
-            rtn = foo2(str(daima), ma1='ma10', ma2='ma20' , days=10)
-        except AttributeError:
-            continue
-        if rtn > 0:
-            zhengshouyi_count += 1
-        allcount += 1
-    print zhengshouyi_count, allcount, 'run_foo2 end'
-#run_foo2()
-    
-
 
 
 def foo3(daima, ma='ma5', days=5, scope=0.05):
-    '''只要大于ma 买进 看n天后收益'''
+    '''只要前一天整K大于ma 买进 看n天后收益
+    '''
     df = pd.read_csv('data/%s.xls' % daima)
     util.strip_columns(df)
     df = df.loc[:, ['date', 'open', 'close', 'low', 'ma5', 'ma10', 'ma20']]
@@ -70,29 +31,75 @@ def foo3(daima, ma='ma5', days=5, scope=0.05):
     df['earning'] = np.where(df['gt_ma'], df.close.shift(days) - df.open, 0)
     #df['earning2'] = np.where(df.close < df[ma], df.close.shift(days) - df.close, 0)
     #print df['earning'].sum()
-    df = df.where(df.earning != 0)
-    df['stoploss'] = np.where(df['gt_ma'], -df.open*scope , 0)
-    df['earning_with_stoploss'] = np.where(df.earning > df.stoploss, df.earning, df.stoploss)
+    df['stoploss_point'] = df.open * (1-scope)
+    rolling_low = pd.rolling_min(df.low, days)
+    df['stoploss'] = np.where(df['gt_ma'], df.stoploss_point - df.open , 0)
+
+    df['earning_with_stoploss'] = np.where(rolling_low > df.stoploss_point, df.earning, df.stoploss)
     func_name = sys._getframe().f_code.co_name
+
+    df = df.loc[days: , :]  # 因为近期的看不到n天后的数据，所以没收益，因此不计算
     df.to_csv('files_tmp/%s.csv' % func_name)  # 以函数名作为文件名保存
 
-    # no stop loss
-    summ = df.earning.shift(days).sum()
-    count = df.earning.shift(days).count()
-    average_earnings =  summ / count 
-    # with stoploss
-    summ2 = df.earning_with_stoploss.shift(days).sum()
-    count2 = df.earning_with_stoploss.shift(days).count()
-    average_earnings2 =  summ2 / count2
+    df = df.where(df.earning != 0)
+    summ = df.earning.sum()
+    summ2 = df.earning_with_stoploss.sum()
+
+    count = df.earning.count() # count is same
+    count2 = df.earning_with_stoploss.count()
+
+    average_earnings =  summ / count
+    average_earnings2 =  summ2 / count #
 
     print average_earnings, average_earnings2
     print summ, summ2
-    #print count, count2
+    print count, count2
+    
+    return summ2, count, average_earnings2
+print foo3('hs300', ma='ma20', days=200, scope=0.05)
 
-#foo3('hs300')
-#print foo3('hs300')
-foo3('999999', ma='ma20', days=100, scope=0.05)
 
+def run_foo3(daima):
+    '''
+    nicest result
+    foo3 params : the best ma is ma20
+                  best days is about 300 
+                  best scope is  0.04 to 0.08  cyb more larger
+
+    '''
+    scopes = np.arange(0.04, 0.15, 0.01)
+    hold_days = range(150,350,10)
+    mas = ['ma5', 'ma10', 'ma20']
+
+    df_scope = []
+    df_day = []
+    df_ma = []
+    df_sum = []
+    df_count = []
+    df_avge = []
+    for scope in scopes:
+        for day in hold_days:
+            for ma in mas:
+                #print scope
+                rtn = foo3(daima, ma=ma, days=day, scope=scope)
+    
+                df_scope.append(scope)
+                df_day.append(day)
+                df_ma.append(ma)
+                df_sum.append(rtn[0])
+                df_count.append(rtn[1])
+                df_avge.append(rtn[2])
+    df = pd.DataFrame({
+        'scope': df_scope,
+        'days':df_day,
+        'ma':df_ma,
+        'sum':df_sum,
+        'count':df_count,
+        'avge':df_avge
+
+        })
+    df.to_csv('files_tmp/run_foo3_%s.csv' % daima)
+#run_foo3('cyb')
 
 
 def foo4(daima, scope=0.05, hold_days=5):
@@ -113,41 +120,19 @@ def foo4(daima, scope=0.05, hold_days=5):
 
 #foo4('hs300', hold_days=30)
 
-def run_foo4():
-    zhengshouyi_count = 0
-    allcount = 0
-    allrange = range(600000, 600999) + range(300000, 300555)
-
-    for daima in allrange:
-        #print  daima
-        try:
-            rtn = foo2(str(daima), ma1='ma10', ma2='ma20' , days=10)
-        except AttributeError:
-            continue
-        if rtn > 0:
-            zhengshouyi_count += 1
-        allcount += 1
-    print zhengshouyi_count, allcount, 'run_foo2 end'
-#run_foo4()
-
 
 def foo5(daima, scope=0.05, hold_days=5, ma1='ma5', ma2='ma10'):
     '''
-    ma cross up
-    and
-    stop loss
-
+    ma cross up 
     '''
-    if hold_days >300:
-        print 'i suggest hold_days not > 350'
-    #df = ts.get_hist_data(daima)
     df = pd.read_csv('data/%s.xls' % daima)
-    df = df.loc[ :, ['open', 'close', 'high', 'low', 'ma5', 'ma10', 'ma20'] ]
+    util.strip_columns(df)
+    df = df.loc[ :, ['date', 'open', 'close', 'high', 'low', 'ma5', 'ma10', 'ma20'] ]
     df['rolling_low'] = pd.rolling_min(df.low, hold_days)
     df['stop_loss'] = df.open * (1- scope)
     # df['earnings'] = if rolling_low > stop_loss   ?  open.shift(hold_days) - df.open : df.stop_loss - df.open
     # df['logic'] = np.where(df['AAA'] > 5,'high','low')
-    df['earnings'] = np.where(df.rolling_low > df.stop_loss , df.open.shift(hold_days) - df.open ,df.stop_loss - df.open)
+    df['earnings'] = np.where(df.rolling_low > df.stop_loss , df.close.shift(hold_days) - df.open ,df.stop_loss - df.open)
    
     ma5_crossup_10 = (df[ma1].shift(-2) < df[ma2].shift(-2)) & (df[ma1].shift(-1) > df[ma2].shift(-1))
     #ma5_crossdown_10 = (df.ma5.shift(-2) > df.ma10.shift(-2)) & (df.ma5.shift(-1) < df.ma10.shift(-1))
@@ -157,13 +142,13 @@ def foo5(daima, scope=0.05, hold_days=5, ma1='ma5', ma2='ma10'):
     df.to_csv('files_tmp/foo5.csv')
     #summ = df.ma_cross_earnings.shift(hold_days * -1 + 1).sum() # 不计算没有rolling_low的行
     #count = df.ma_cross_earnings.shift(hold_days * -1 + 1).count()
-    summ = df.ma_cross_earnings.shift(300).sum() # 不计算没有rolling_low的行
-    count = df.ma_cross_earnings.shift(300).count()
+    summ = df.ma_cross_earnings.shift(hold_days).sum() # 不计算没有rolling_low的行
+    count = df.ma_cross_earnings.shift(hold_days).count()
     average_earnings =  summ / count 
     #print average_earnings
-    #print summ 
-    #print count
-    #print 'en-----------------d--------------------'
+    print summ 
+    print count
+    print 'en-----------------d--------------------'
     return summ, count, average_earnings
 
 
@@ -171,7 +156,7 @@ def foo5(daima, scope=0.05, hold_days=5, ma1='ma5', ma2='ma10'):
 #print foo5('hs300', scope=0.15, hold_days=300, ma1='ma5', ma2='ma10')  # 
 
 #foo5('cyb', scope=0.05, hold_days=250, ma1='ma5', ma2='ma10')  
-
+#foo2('cyb', scope=0.05, days=250, ma1='ma5', ma2='ma10')  
 
 def run_foo5(daima):
     scopes = np.arange(0.05, 0.2, 0.01)
@@ -215,38 +200,9 @@ def run_foo5(daima):
 #run_foo5('cyb')
 
 
-def foo6(daima, scope=0.05, hold_days=5, ma='ma5'):
-    '''
-    open and close  > ma
-    and
-    stop loss
-
-    '''
-    df = ts.get_hist_data(daima,)
-    df = df.loc[ :, ['open', 'close', 'high', 'low', 'ma5', 'ma10', 'ma20'] ]
-    df['rolling_low'] = pd.rolling_min(df.low, hold_days)
-    #df['has_rolling_low'] =np.where(df.rolling_low == None, False, True)
-    df['stop_loss'] = df.open * (1- scope)
-
-    df['earnings'] = np.where(df.rolling_low > df.stop_loss , df.open.shift(hold_days) - df.open ,df.stop_loss - df.open)
-    
-    openclose_gt_ma = (df.open > df[ma]) & (df.close > df[ma]) 
-    
-    df['openclose_gt_ma'] = np.where(openclose_gt_ma, True, None)
-    df['gt_ma_earnings'] = df.earnings * df.openclose_gt_ma
-    #df.to_csv('files_tmp/foo4.csv')
-    summ = df.gt_ma_earnings.shift(hold_days * -1 + 1).sum()
-    count = df.gt_ma_earnings.shift(hold_days * -1 + 1).count()
-    average_earnings =  summ / count 
-    #print summ
-    #print count
-    print average_earnings
-    #return df[''].sum()
-
-#foo6('cyb', scope=0.08, hold_days=200, ma='ma10')
 
 def move_stop_loss(daima, scope=0.05, hold_days=100):
-
+    '''not completed'''
 
     df = pd.read_csv('data/%s.xls' % daima)
     df = df.loc[ :, ['date','open', 'close', 'high', 'low', 'ma5', 'ma10', 'ma20'] ]
@@ -272,6 +228,8 @@ def move_stop_loss(daima, scope=0.05, hold_days=100):
 def cross_bs(daima, ma1, ma2):
     '''ma1 crossup ma2 buy  ma1 crossdown ma2 sell 
        open buy   close sell
+
+       result is   not OK
     '''
     df = pd.read_csv('data/%s.xls' % daima)
     df = df.loc[ :, ['date','open', 'close', 'high', 'low', 'ma5', 'ma10', 'ma20', 'ma60'] ]
@@ -292,6 +250,8 @@ def cross_bs(daima, ma1, ma2):
 def kdjcross_bs(daima):
     '''k crossup d buy  k crossdown d sell 
        open buy   close sell
+
+       result is   not OK
     '''
     df = pd.read_csv('data/%s.xls' % daima)
     #df = df.loc[ :, ['datetime','open', 'close', 'high', 'low', 'KDJ.K', 'KDJ.D'] ]
