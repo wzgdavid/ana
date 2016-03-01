@@ -1,9 +1,11 @@
 # encoding: utf-8
+import sys
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import tushare as ts
 import util
+
 # tushare 的数据不准 节假日会多一天多余的数据
 
 def foo():
@@ -57,40 +59,39 @@ def run_foo2():
 
 
 
-def foo3(daima, ma='ma5', days=5):
+def foo3(daima, ma='ma5', days=5, scope=0.05):
     '''只要大于ma 买进 看n天后收益'''
     df = pd.read_csv('data/%s.xls' % daima)
     util.strip_columns(df)
-    df = df.loc[:, ['open', 'close', 'low', 'ma5', 'ma10', 'ma20']]
-    #df['gt_ma'] = df.close > df[ma]
+    df = df.loc[:, ['date', 'open', 'close', 'low', 'ma5', 'ma10', 'ma20']]
+
     # yesterday greater than ma
     df['gt_ma'] = df.low.shift(-1) > df[ma].shift(-1)
     df['earning'] = np.where(df['gt_ma'], df.close.shift(days) - df.open, 0)
     #df['earning2'] = np.where(df.close < df[ma], df.close.shift(days) - df.close, 0)
     #print df['earning'].sum()
-    
-    df.to_csv('files_tmp/foo3.csv')
+    df = df.where(df.earning != 0)
+    df['stoploss'] = np.where(df['gt_ma'], -df.open*scope , 0)
+    df['earning_with_stoploss'] = np.where(df.earning > df.stoploss, df.earning, df.stoploss)
+    func_name = sys._getframe().f_code.co_name
+    df.to_csv('files_tmp/%s.csv' % func_name)  # 以函数名作为文件名保存
+
+    # no stop loss
+    summ = df.earning.shift(days).sum()
+    count = df.earning.shift(days).count()
+    average_earnings =  summ / count 
+    # with stoploss
+    summ2 = df.earning_with_stoploss.shift(days).sum()
+    count2 = df.earning_with_stoploss.shift(days).count()
+    average_earnings2 =  summ2 / count2
+
+    print average_earnings, average_earnings2
+    print summ, summ2
+    #print count, count2
+
 #foo3('hs300')
 #print foo3('hs300')
-foo3('hs300')
-
-def run_foo3():
-    zhengshouyi_count = 0
-    allcount = 0
-    allrange = range(600000, 600999) + range(300000, 300555)
-
-    for daima in allrange:
-        print daima
-        try:
-            rtn = foo3(str(daima), ma='ma10', days=10)
-        except AttributeError:
-            continue
-        if rtn > 0:
-            zhengshouyi_count += 1
-        allcount += 1
-    print zhengshouyi_count, allcount, 'run_foo3 end'
-#run_foo3()
-
+foo3('999999', ma='ma20', days=100, scope=0.05)
 
 
 
@@ -128,7 +129,6 @@ def run_foo4():
         allcount += 1
     print zhengshouyi_count, allcount, 'run_foo2 end'
 #run_foo4()
-
 
 
 def foo5(daima, scope=0.05, hold_days=5, ma1='ma5', ma2='ma10'):
