@@ -7,6 +7,10 @@ import tushare as ts
 import util
 
 # tushare 的数据不准 节假日会多一天多余的数据
+'''
+now the best is   foo3_maup  20160302
+has stoploss is better than no stoploss
+'''
 
 def foo(daima, days=5, scope=0.05):
     '''没条件  买进 看n天后收益'''
@@ -142,6 +146,7 @@ def run_foo3(daima):
 def foo3b(daima, ma='ma5', days=5):
     '''只要前一天整K小于ma 买进 看n天后收益
     想验证的结果是  收益应该是负的
+    发现只要持有期限长，收益也是正的
     '''
     df = pd.read_csv('data/%s.xls' % daima)
     util.strip_columns(df)
@@ -211,8 +216,7 @@ def maup(daima, ma='ma5', days=5, scope=0.05):
     print count, count2
     
     return summ, average_earnings, summ2, average_earnings2, count
-#maup('zxb', ma='ma5', days=111, scope=0.15)
-#foo3('zxb', ma='ma10', days=111, scope=0.15)
+
 
 
 def foo3_maup(daima, ma='ma5', days=5, scope=0.05):
@@ -224,11 +228,13 @@ def foo3_maup(daima, ma='ma5', days=5, scope=0.05):
 
     # yesterday greater than ma
     df['gt_ma'] = df.low.shift(-1) > df[ma].shift(-1)
-    df['earning'] = np.where(df['gt_ma'], df.close.shift(days) - df.open, 0)
-    
+    df['maup'] = df[ma] > df[ma].shift(-1)
+    df['gtma_and_maup'] = df.gt_ma & df.maup
+    df['earning'] = np.where(df['gtma_and_maup'], df.close.shift(days) - df.open, 0)
+
     df['stoploss_point'] = df.open * (1-scope)
     rolling_low = pd.rolling_min(df.low, days)
-    df['stoploss'] = np.where(df['gt_ma'], df.stoploss_point - df.open , 0)
+    df['stoploss'] = np.where(df['gtma_and_maup'], df.stoploss_point - df.open , 0)
 
     df['earning_with_stoploss'] = np.where(rolling_low > df.stoploss_point, df.earning, df.stoploss)
     
@@ -252,7 +258,59 @@ def foo3_maup(daima, ma='ma5', days=5, scope=0.05):
     print count, count2
     
     return summ, average_earnings, summ2, average_earnings2, count
+#ma='ma20'
+#days=300
+#scope=0.1
+#foo3('hs300', ma=ma, days=days, scope=scope)
+#foo3_maup('hs300', ma=ma, days=days, scope=scope)
+#maup('hs300', ma=ma, days=days, scope=scope)
 
+def foo3b_maup(daima, ma='ma5', days=5, scope=0.05):
+    '''前一天整K小于ma,and 今天ma大于昨天ma  买进 看n天后收益
+    '''
+    df = pd.read_csv('data/%s.xls' % daima)
+    util.strip_columns(df)
+    df = df.loc[:, ['date', 'open', 'close','low', 'high', 'ma5', 'ma10', 'ma20']]
+
+    # yesterday less than ma
+    df['lt_ma'] = df.high.shift(-1) < df[ma].shift(-1)
+    df['maup'] = df[ma] > df[ma].shift(-1)
+    df['ltma_and_maup'] = df.lt_ma & df.maup
+    df['earning'] = np.where(df['ltma_and_maup'], df.close.shift(days) - df.open, 0)
+
+    df['stoploss_point'] = df.open * (1-scope)
+    rolling_low = pd.rolling_min(df.low, days)
+    df['stoploss'] = np.where(df['ltma_and_maup'], df.stoploss_point - df.open , 0)
+
+    df['earning_with_stoploss'] = np.where(rolling_low > df.stoploss_point, df.earning, df.stoploss)
+    
+    func_name = sys._getframe().f_code.co_name
+    df = df.loc[days: , :]  # 因为近期的看不到n天后的数据，所以没收益，因此不计算
+    
+    df.to_csv('files_tmp/%s_%s.csv' % (func_name, daima))  # 以函数名作为文件名保存
+
+    df = df.where(df.earning != 0) # for count
+    summ = df.earning.sum()
+    summ2 = df.earning_with_stoploss.sum()
+
+    count = df.earning.count() # count is same
+    count2 = df.earning_with_stoploss.count()
+
+    average_earnings =  summ / count
+    average_earnings2 =  summ2 / count #
+
+    print average_earnings, average_earnings2
+    print summ, summ2
+    print count, count2
+    
+    #return summ, average_earnings, summ2, average_earnings2, count
+#ma='ma20'
+#days=300
+#scope=0.1
+#foo3('hs300', ma=ma, days=days, scope=scope)
+#foo3b_maup('hs300', ma=ma, days=days, scope=scope)
+#foo3_maup('hs300', ma=ma, days=days, scope=scope)
+#maup('hs300', ma=ma, days=days, scope=scope)
 
 def foo4(daima, scope=0.05, hold_days=5):
     '''stop loss
@@ -272,6 +330,48 @@ def foo4(daima, scope=0.05, hold_days=5):
 
 #foo4('hs300', hold_days=30)
 
+
+def ma_crossup(daima, scope=0.05, days=5, ma1='ma5', ma2='ma10'):
+    df = pd.read_csv('data/%s.xls' % daima)
+    util.strip_columns(df)
+    df = df.loc[:, ['date', 'open', 'close','low', 'ma5', 'ma10', 'ma20']]
+
+    df['ma_crossup'] = (df[ma1].shift(-2) < df[ma2].shift(-2)) & (df[ma1].shift(-1) > df[ma2].shift(-1))
+    
+    df['earning'] = np.where(df.ma_crossup, df.close.shift(days) - df.open, 0)
+
+    df['stoploss_point'] = df.open * (1-scope)
+    rolling_low = pd.rolling_min(df.low, days)
+    df['stoploss'] = np.where(df['ma_crossup'], df.stoploss_point - df.open , 0)
+
+    df['earning_with_stoploss'] = np.where(rolling_low > df.stoploss_point, df.earning, df.stoploss)
+    
+    func_name = sys._getframe().f_code.co_name
+    df = df.loc[days: , :]  # 因为近期的看不到n天后的数据，所以没收益，因此不计算
+    
+    df.to_csv('files_tmp/%s_%s.csv' % (func_name, daima))  # 以函数名作为文件名保存
+
+    df = df.where(df.earning != 0) # for count
+    summ = df.earning.sum()
+    summ2 = df.earning_with_stoploss.sum()
+
+    count = df.earning.count() # count is same
+    count2 = df.earning_with_stoploss.count()
+
+    average_earnings =  summ / count
+    average_earnings2 =  summ2 / count #
+
+    print average_earnings, average_earnings2
+    print summ, summ2
+    print count, count2
+    
+    #return summ, average_earnings, summ2, average_earnings2, count
+
+
+#days=200
+#scope=0.1
+#ma_crossup('999999', scope=scope, days=days, ma1='ma5', ma2='ma10')
+#foo3_maup('999999', ma='ma20', days=days, scope=scope)
 
 def foo5(daima, scope=0.05, hold_days=5, ma1='ma5', ma2='ma10'):
     '''
@@ -423,3 +523,7 @@ def kdjcross_bs(daima):
     
 
 #kdjcross_bs('999999')
+
+
+maup('zxb', ma='ma10', days=111, scope=0.15)
+foo3_maup('zxb', ma='ma20', days=111, scope=0.15)
