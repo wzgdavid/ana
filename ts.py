@@ -9,13 +9,14 @@ import util
 # tushare 的数据不准 节假日会多一天多余的数据
 '''
 now the best is   foo3_kdjdown  when 20160302
+                foo3_maup_kdjdown  (kdj.d)
 has stoploss is better than no stoploss
 '''
 
 @util.display_func_name
 def foo(daima, days=5, scope=0.05):
     '''没条件  买进 看n天后收益
-    结果比这个差的就不用看了
+    作为参考基准,结果比这个差的就不用看了
     '''
     df = pd.read_csv('data/%s.xls' % daima)
     util.strip_columns(df)
@@ -151,7 +152,6 @@ def run_foo3(daima):
 def foo3b(daima, ma='ma5', days=5):
     '''只要前一天整K小于ma 买进 看n天后收益
     想验证的结果是  收益应该是负的
-    发现只要持有期限长，收益也是正的
     '''
     df = pd.read_csv('data/%s.xls' % daima)
     util.strip_columns(df)
@@ -270,6 +270,47 @@ def foo3_maup(daima, ma='ma5', days=5, scope=0.05):
 #foo3('hs300', ma=ma, days=days, scope=scope)
 #foo3_maup('hs300', ma=ma, days=days, scope=scope)
 #maup('hs300', ma=ma, days=days, scope=scope)
+
+
+@util.display_func_name
+def foo3_madown(daima, ma='ma5', days=5, scope=0.05):
+    df = pd.read_csv('data/%s.xls' % daima)
+    util.strip_columns(df)
+    df = df.loc[:, ['date', 'open', 'close', 'low', 'ma5', 'ma10', 'ma20']]
+
+    # yesterday greater than ma
+    df['gt_ma'] = df.low.shift(-1) > df[ma].shift(-1)
+    df['madown'] = df[ma].shift(-1) < df[ma].shift(-2)
+    df['both'] = df.gt_ma & df.madown
+    df['earning'] = np.where(df['both'], df.close.shift(days) - df.open, 0)
+
+    df['stoploss_point'] = df.open * (1-scope)
+    rolling_low = pd.rolling_min(df.low, days)
+    df['stoploss'] = np.where(df['both'], df.stoploss_point - df.open , 0)
+
+    df['earning_with_stoploss'] = np.where(rolling_low > df.stoploss_point, df.earning, df.stoploss)
+    
+    func_name = sys._getframe().f_code.co_name
+    df = df.loc[days: , :]  # 因为近期的看不到n天后的数据，所以没收益，因此不计算
+    
+    df.to_csv('files_tmp/%s_%s.csv' % (func_name, daima))  # 以函数名作为文件名保存
+
+    df = df.where(df.earning != 0) # for count
+    summ = df.earning.sum()
+    summ2 = df.earning_with_stoploss.sum()
+
+    count = df.earning.count() # count is same
+    count2 = df.earning_with_stoploss.count()
+
+    average_earnings =  summ / count
+    average_earnings2 =  summ2 / count #
+
+    print average_earnings, average_earnings2
+    print summ, summ2
+    print count, count2
+    
+    return summ, average_earnings, summ2, average_earnings2, count
+
 
 
 @util.display_func_name
@@ -683,6 +724,132 @@ def foo3_kdjdown(daima, ma='ma20', kdj='KDJ.J', days=200, scope=0.15):
     
     #return summ, average_earnings, summ2, average_earnings2, count
 
+
+@util.display_func_name
+def foo3_maup_kdjdown(daima, ma='ma20', kdj='KDJ.J', days=200, scope=0.15):
+    df = pd.read_csv('data/%s.xls' % daima)
+    util.strip_columns(df)
+    df = df.loc[:, ['date', 'open', 'close', 'low', 'ma5', 'ma10', 'ma20','KDJ.K', 'KDJ.D', 'KDJ.J']]
+    
+    df['gt_ma'] = df.low.shift(-1) > df[ma].shift(-1)
+    df['maup'] = df[ma].shift(-1) > df[ma].shift(-2)
+    df['kdjdown'] = df[kdj].shift(-1) < df[kdj].shift(-2)
+    # yesterday greater than ma
+    
+    df['all'] = df.kdjdown & df.gt_ma & df.maup
+    df['earning'] = np.where(df['all'], df.close.shift(days) - df.open, 0)
+
+    df['stoploss_point'] = df.open * (1-scope)
+    rolling_low = pd.rolling_min(df.low, days)
+    df['stoploss'] = np.where(df['all'], df.stoploss_point - df.open , 0)
+
+    df['earning_with_stoploss'] = np.where(rolling_low > df.stoploss_point, df.earning, df.stoploss)
+    
+    func_name = sys._getframe().f_code.co_name
+    df = df.loc[days: , :]  # 因为近期的看不到n天后的数据，所以没收益，因此不计算
+    
+    df.to_csv('files_tmp/%s_%s.csv' % (func_name, daima))  # 以函数名作为文件名保存
+
+    df = df.where(df.earning != 0) # for count
+    summ = df.earning.sum()
+    summ2 = df.earning_with_stoploss.sum()
+
+    count = df.earning.count() # count is same
+    count2 = df.earning_with_stoploss.count()
+
+    average_earnings =  summ / count
+    average_earnings2 =  summ2 / count #
+
+    print average_earnings, average_earnings2
+    print summ, summ2
+    print count, count2
+    
+    #return summ, average_earnings, summ2, average_earnings2, count
+
+
+@util.display_func_name
+def foo3_maup_kdjup(daima, ma='ma20', kdj='KDJ.J', days=200, scope=0.15):
+    df = pd.read_csv('data/%s.xls' % daima)
+    util.strip_columns(df)
+    df = df.loc[:, ['date', 'open', 'close', 'low', 'ma5', 'ma10', 'ma20','KDJ.K', 'KDJ.D', 'KDJ.J']]
+    
+    df['gt_ma'] = df.low.shift(-1) > df[ma].shift(-1)
+    df['maup'] = df[ma].shift(-1) > df[ma].shift(-2)
+    df['kdjup'] = df[kdj].shift(-1) > df[kdj].shift(-2)
+    # yesterday greater than ma
+    
+    df['all'] = df.kdjup & df.gt_ma & df.maup
+    df['earning'] = np.where(df['all'], df.close.shift(days) - df.open, 0)
+
+    df['stoploss_point'] = df.open * (1-scope)
+    rolling_low = pd.rolling_min(df.low, days)
+    df['stoploss'] = np.where(df['all'], df.stoploss_point - df.open , 0)
+
+    df['earning_with_stoploss'] = np.where(rolling_low > df.stoploss_point, df.earning, df.stoploss)
+    
+    func_name = sys._getframe().f_code.co_name
+    df = df.loc[days: , :]  # 因为近期的看不到n天后的数据，所以没收益，因此不计算
+    
+    df.to_csv('files_tmp/%s_%s.csv' % (func_name, daima))  # 以函数名作为文件名保存
+
+    df = df.where(df.earning != 0) # for count
+    summ = df.earning.sum()
+    summ2 = df.earning_with_stoploss.sum()
+
+    count = df.earning.count() # count is same
+    count2 = df.earning_with_stoploss.count()
+
+    average_earnings =  summ / count
+    average_earnings2 =  summ2 / count #
+
+    print average_earnings, average_earnings2
+    print summ, summ2
+    print count, count2
+    
+    #return summ, average_earnings, summ2, average_earnings2, count
+
+@util.display_func_name
+def foo3_kdjdown_kdjgt(daima, ma='ma20', kdj='KDJ.J', days=200, scope=0.15, kdjvalue=0):
+    df = pd.read_csv('data/%s.xls' % daima)
+    util.strip_columns(df)
+    df = df.loc[:, ['date', 'open', 'close', 'low', 'ma5', 'ma10', 'ma20','KDJ.K', 'KDJ.D', 'KDJ.J']]
+
+    df['kdjdown'] = df[kdj].shift(-1) < df[kdj].shift(-2)
+    df['gt_ma'] = df.low.shift(-1) > df[ma].shift(-1)
+    df['kdjgt'] = df[kdj].shift(-1) > kdjvalue
+
+    df['all'] = df.kdjdown & df.gt_ma & df.kdjgt
+    df['earning'] = np.where(df['all'], df.close.shift(days) - df.open, 0)
+
+    df['stoploss_point'] = df.open * (1-scope)
+    rolling_low = pd.rolling_min(df.low, days)
+    df['stoploss'] = np.where(df['all'], df.stoploss_point - df.open , 0)
+
+    df['earning_with_stoploss'] = np.where(rolling_low > df.stoploss_point, df.earning, df.stoploss)
+    
+    func_name = sys._getframe().f_code.co_name
+    df = df.loc[days: , :]  # 因为近期的看不到n天后的数据，所以没收益，因此不计算
+    
+    df.to_csv('files_tmp/%s_%s.csv' % (func_name, daima))  # 以函数名作为文件名保存
+
+    df = df.where(df.earning != 0) # for count
+    summ = df.earning.sum()
+    summ2 = df.earning_with_stoploss.sum()
+
+    count = df.earning.count() # count is same
+    count2 = df.earning_with_stoploss.count()
+
+    average_earnings =  summ / count
+    average_earnings2 =  summ2 / count #
+
+    print average_earnings, average_earnings2
+    print summ, summ2
+    print count, count2
+    
+    #return summ, average_earnings, summ2, average_earnings2, count
+
+
+
 @util.display_func_name
 def kdjup(daima, kdj='KDJ.D', days=5, scope=0.05):
     '''
@@ -761,22 +928,268 @@ def kdjdown(daima, kdj='KDJ.D', days=5, scope=0.05):
     return summ, average_earnings, summ2, average_earnings2, count
 
 
+@util.display_func_name
+def kdjlt(daima, kdj='KDJ.D', value=0, days=5, scope=0.05):
+    '''
+    '''
+    df = pd.read_csv('data/%s.xls' % daima)
+    util.strip_columns(df)
+    df = df.loc[:, ['date', 'open', 'close', 'low', 'KDJ.K', 'KDJ.D', 'KDJ.J']]
+
+    df['kdjlt'] = df[kdj].shift(-1) < value
+    df['earning'] = np.where(df['kdjlt'], df.close.shift(days) - df.open, 0)
+
+    df['stoploss_point'] = df.open * (1-scope)
+    rolling_low = pd.rolling_min(df.low, days)
+    df['stoploss'] = np.where(df['kdjlt'], df.stoploss_point - df.open , 0)
+
+    df['earning_with_stoploss'] = np.where(rolling_low > df.stoploss_point, df.earning, df.stoploss)
+    
+    func_name = sys._getframe().f_code.co_name
+    df = df.loc[days: , :]  # 因为近期的看不到n天后的数据，所以没收益，因此不计算
+    
+    df.to_csv('files_tmp/%s_%s.csv' % (func_name, daima))  # 以函数名作为文件名保存
+
+    df = df.where(df.earning != 0) # for count
+    summ = df.earning.sum()
+    summ2 = df.earning_with_stoploss.sum()
+
+    count = df.earning.count() # count is same
+    count2 = df.earning_with_stoploss.count()
+
+    average_earnings =  summ / count
+    average_earnings2 =  summ2 / count #
+
+    print average_earnings, average_earnings2
+    print summ, summ2
+    print count, count2
+    
+    return summ, average_earnings, summ2, average_earnings2, count
+
+@util.display_func_name
+def kdjgt(daima, kdj='KDJ.D', value=0, days=5, scope=0.05):
+    '''
+    '''
+    df = pd.read_csv('data/%s.xls' % daima)
+    util.strip_columns(df)
+    df = df.loc[:, ['date', 'open', 'close', 'low', 'KDJ.K', 'KDJ.D', 'KDJ.J']]
+
+    df['kdjgt'] = df[kdj].shift(-1) > value
+    df['earning'] = np.where(df['kdjgt'], df.close.shift(days) - df.open, 0)
+
+    df['stoploss_point'] = df.open * (1-scope)
+    rolling_low = pd.rolling_min(df.low, days)
+    df['stoploss'] = np.where(df['kdjgt'], df.stoploss_point - df.open , 0)
+
+    df['earning_with_stoploss'] = np.where(rolling_low > df.stoploss_point, df.earning, df.stoploss)
+    
+    func_name = sys._getframe().f_code.co_name
+    df = df.loc[days: , :]  # 因为近期的看不到n天后的数据，所以没收益，因此不计算
+    
+    df.to_csv('files_tmp/%s_%s.csv' % (func_name, daima))  # 以函数名作为文件名保存
+
+    df = df.where(df.earning != 0) # for count
+    summ = df.earning.sum()
+    summ2 = df.earning_with_stoploss.sum()
+
+    count = df.earning.count() # count is same
+    count2 = df.earning_with_stoploss.count()
+
+    average_earnings =  summ / count
+    average_earnings2 =  summ2 / count #
+
+    print average_earnings, average_earnings2
+    print summ, summ2
+    print count, count2
+    
+    return summ, average_earnings, summ2, average_earnings2, count
+
+
+@util.display_func_name
+def kdjlt_up(daima, kdj='KDJ.D', value=0, days=5, scope=0.05):
+    df = pd.read_csv('data/%s.xls' % daima)
+    util.strip_columns(df)
+    df = df.loc[:, ['date', 'open', 'close', 'low', 'ma5', 'ma10', 'ma20','KDJ.K', 'KDJ.D', 'KDJ.J']]
+
+    df['kdjlt'] = df[kdj].shift(-1) < value
+    df['kdjup'] = df[kdj].shift(-1) > df[kdj].shift(-2)
+    df['both'] = df.kdjlt & df.kdjup
+    df['earning'] = np.where(df['both'], df.close.shift(days) - df.open, 0)
+
+    df['stoploss_point'] = df.open * (1-scope)
+    rolling_low = pd.rolling_min(df.low, days)
+    df['stoploss'] = np.where(df['both'], df.stoploss_point - df.open , 0)
+
+    df['earning_with_stoploss'] = np.where(rolling_low > df.stoploss_point, df.earning, df.stoploss)
+    
+    func_name = sys._getframe().f_code.co_name
+    df = df.loc[days: , :]  # 因为近期的看不到n天后的数据，所以没收益，因此不计算
+    
+    df.to_csv('files_tmp/%s_%s.csv' % (func_name, daima))  # 以函数名作为文件名保存
+
+    df = df.where(df.earning != 0) # for count
+    summ = df.earning.sum()
+    summ2 = df.earning_with_stoploss.sum()
+
+    count = df.earning.count() # count is same
+    count2 = df.earning_with_stoploss.count()
+
+    average_earnings =  summ / count
+    average_earnings2 =  summ2 / count #
+
+    print average_earnings, average_earnings2
+    print summ, summ2
+    print count, count2
+    
+    #return summ, average_earnings, summ2, average_earnings2, count
+
+
+@util.display_func_name
+def kdjgt_up(daima, kdj='KDJ.D', value=0, days=5, scope=0.05):
+    df = pd.read_csv('data/%s.xls' % daima)
+    util.strip_columns(df)
+    df = df.loc[:, ['date', 'open', 'close', 'low', 'ma5', 'ma10', 'ma20','KDJ.K', 'KDJ.D', 'KDJ.J']]
+
+    df['kdjgt'] = df[kdj].shift(-1) > value
+    df['kdjup'] = df[kdj].shift(-1) > df[kdj].shift(-2)
+    df['both'] = df.kdjgt & df.kdjup
+    df['earning'] = np.where(df['both'], df.close.shift(days) - df.open, 0)
+
+    df['stoploss_point'] = df.open * (1-scope)
+    rolling_low = pd.rolling_min(df.low, days)
+    df['stoploss'] = np.where(df['both'], df.stoploss_point - df.open , 0)
+
+    df['earning_with_stoploss'] = np.where(rolling_low > df.stoploss_point, df.earning, df.stoploss)
+    
+    func_name = sys._getframe().f_code.co_name
+    df = df.loc[days: , :]  # 因为近期的看不到n天后的数据，所以没收益，因此不计算
+    
+    df.to_csv('files_tmp/%s_%s.csv' % (func_name, daima))  # 以函数名作为文件名保存
+
+    df = df.where(df.earning != 0) # for count
+    summ = df.earning.sum()
+    summ2 = df.earning_with_stoploss.sum()
+
+    count = df.earning.count() # count is same
+    count2 = df.earning_with_stoploss.count()
+
+    average_earnings =  summ / count
+    average_earnings2 =  summ2 / count #
+
+    print average_earnings, average_earnings2
+    print summ, summ2
+    print count, count2
+    
+    #return summ, average_earnings, summ2, average_earnings2, count
+
+
+@util.display_func_name
+def D_down_J_up(daima, days=5, scope=0.05):
+    df = pd.read_csv('data/%s.xls' % daima)
+    util.strip_columns(df)
+    df = df.loc[:, ['date', 'open', 'close', 'low', 'ma5', 'ma10', 'ma20','KDJ.K', 'KDJ.D', 'KDJ.J']]
+
+    df['ddown'] = df['KDJ.D'].shift(-1) < df['KDJ.D'].shift(-2)
+    df['jup'] = df['KDJ.J'].shift(-1) > df['KDJ.J'].shift(-2)
+    df['both'] = df.ddown & df.jup
+    df['earning'] = np.where(df['both'], df.close.shift(days) - df.open, 0)
+
+    df['stoploss_point'] = df.open * (1-scope)
+    rolling_low = pd.rolling_min(df.low, days)
+    df['stoploss'] = np.where(df['both'], df.stoploss_point - df.open , 0)
+
+    df['earning_with_stoploss'] = np.where(rolling_low > df.stoploss_point, df.earning, df.stoploss)
+    
+    func_name = sys._getframe().f_code.co_name
+    df = df.loc[days: , :]  # 因为近期的看不到n天后的数据，所以没收益，因此不计算
+    
+    df.to_csv('files_tmp/%s_%s.csv' % (func_name, daima))  # 以函数名作为文件名保存
+
+    df = df.where(df.earning != 0) # for count
+    summ = df.earning.sum()
+    summ2 = df.earning_with_stoploss.sum()
+
+    count = df.earning.count() # count is same
+    count2 = df.earning_with_stoploss.count()
+
+    average_earnings =  summ / count
+    average_earnings2 =  summ2 / count #
+
+    print average_earnings, average_earnings2
+    print summ, summ2
+    print count, count2
+    
+    #return summ, average_earnings, summ2, average_earnings2, count
+
+@util.display_func_name
+def foo4(daima, ma='ma5', offset=10,scale=0.1, days=5, scope=0.05):
+    '''
+    '''
+    df = pd.read_csv('data/%s.xls' % daima)
+    util.strip_columns(df)
+    df = df.loc[:, ['date', 'open', 'close', 'low', 'ma5', 'ma10', 'ma20']]
+
+
+    df['magtma'] = (df[ma].shift(-1) - df[ma].shift(-1*offset)) > df[ma].shift(-1) * scale
+    
+
+    df['earning'] = np.where(df['magtma'], df.close.shift(days) - df.open, 0)
+
+    df['stoploss_point'] = df.open * (1-scope)
+    rolling_low = pd.rolling_min(df.low, days)
+    df['stoploss'] = np.where(df['magtma'], df.stoploss_point - df.open , 0)
+
+    df['earning_with_stoploss'] = np.where(rolling_low > df.stoploss_point, df.earning, df.stoploss)
+    
+    func_name = sys._getframe().f_code.co_name
+    df = df.loc[days: , :]  # 因为近期的看不到n天后的数据，所以没收益，因此不计算
+    
+    df.to_csv('files_tmp/%s_%s.csv' % (func_name, daima))  # 以函数名作为文件名保存
+
+    df = df.where(df.earning != 0) # for count
+    summ = df.earning.sum()
+    summ2 = df.earning_with_stoploss.sum()
+
+    count = df.earning.count() # count is same
+    count2 = df.earning_with_stoploss.count()
+
+    average_earnings =  summ / count
+    average_earnings2 =  summ2 / count #
+
+    print average_earnings, average_earnings2
+    print summ, summ2
+    print count, count2
+    
+    return summ, average_earnings, summ2, average_earnings2, count
+
 def runn():
     daima = '999999'
-    days = 100
+    days = 200
     kdj='KDJ.D'
-    ma='ma10'
+    ma='ma20'
     scope = 0.15
+    kdjvalue=0
     foo(daima, days=days, scope=scope)
     foo3(daima, ma=ma, days=days, scope=scope)
-    maup(daima, ma=ma, days=days, scope=scope)
+    #foo3b(daima, ma=ma, days=days)
     foo3_kdjup(daima, ma=ma, kdj=kdj, days=days, scope=scope)
     foo3_kdjdown(daima, ma=ma, kdj=kdj, days=days, scope=scope) # ma5 and 'KDJ.D' is best?
+    foo3_maup(daima, ma=ma, days=days, scope=scope)
+    foo3_maup_kdjdown(daima, ma=ma, kdj=kdj, days=days, scope=scope)
+    foo3_maup_kdjup(daima, ma=ma, kdj=kdj, days=days, scope=scope)
+    #foo3b_maup(daima, ma=ma, days=days, scope=scope)
+    maup(daima, ma=ma, days=days, scope=scope)
     maup_kdjup(daima, ma=ma, kdj=kdj, days=days, scope=scope)
     maup_kdjdown(daima, ma=ma, kdj=kdj, days=days, scope=scope)
-    foo3_maup(daima, ma=ma, days=days, scope=scope)
-    kdjup(daima, kdj=kdj, days=days, scope=scope)
-    kdjdown(daima, kdj=kdj, days=days, scope=scope)
+    #kdjup(daima, kdj=kdj, days=days, scope=scope)
+    #kdjdown(daima, kdj=kdj, days=days, scope=scope)
+    #kdjlt(daima, kdj=kdj, value=kdjvalue, days=days, scope=scope)
+    kdjgt(daima, kdj=kdj, value=kdjvalue, days=days, scope=scope) # KDJ.D bigger the better ?! and no stoploss?
+    #kdjlt_up(daima, kdj=kdj, value=kdjvalue, days=days, scope=scope)
+    kdjgt_up(daima, kdj=kdj, value=kdjvalue, days=days, scope=scope)
+    #foo3_kdjdown_kdjgt(daima, ma=ma, kdj=kdj, days=days, scope=scope, kdjvalue=kdjvalue)
+    #D_down_J_up(daima, days=days, scope=scope)
+    foo4(daima, ma=ma, offset=50,scale=0.1, days=days, scope=scope)
 
 if __name__ == '__main__':
     runn()
