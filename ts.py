@@ -61,6 +61,10 @@ def foo3(daima, ma='ma5', days=5, scope=0.05):
     util.strip_columns(df)
     df = df.loc[:, ['date', 'open', 'close', 'low', 'ma5', 'ma10', 'ma20']]
 
+
+    
+
+
     # yesterday greater than ma
     df['gt_ma'] = df.low.shift(-1) > df[ma].shift(-1)
     df['earning'] = np.where(df['gt_ma'], df.close.shift(days) - df.open, 0)
@@ -1130,7 +1134,7 @@ def foo4(daima, ma='ma5', offset=10,scale=0.1, days=5, scope=0.05):
     df = df.loc[:, ['date', 'open', 'close', 'low', 'ma5', 'ma10', 'ma20']]
 
 
-    df['magtma'] = (df[ma].shift(-1) - df[ma].shift(-1*offset)) > df[ma].shift(-1) * scale
+    df['magtma'] = (df[ma].shift(-1) - df[ma].shift(-1*offset)) >= df[ma].shift(-1) * scale
     
 
     df['earning'] = np.where(df['magtma'], df.close.shift(days) - df.open, 0)
@@ -1162,12 +1166,127 @@ def foo4(daima, ma='ma5', offset=10,scale=0.1, days=5, scope=0.05):
     
     return summ, average_earnings, summ2, average_earnings2, count
 
+
+@util.display_func_name
+def foo3_foo4(daima, ma='ma5', offset=10,scale=0.1, days=5, scope=0.05):
+    '''
+    '''
+    df = pd.read_csv('data/%s.xls' % daima)
+    util.strip_columns(df)
+    df = df.loc[:, ['date', 'open', 'close', 'low', 'ma5', 'ma10', 'ma20']]
+
+
+    df['magtma'] = (df[ma].shift(-1) - df[ma].shift(-1*offset)) > df[ma].shift(-1) * scale
+    df['gt_ma'] = df.low.shift(-1) > df[ma].shift(-1)
+    df['all'] = df.magtma & df.gt_ma
+    df['earning'] = np.where(df['all'], df.close.shift(days) - df.open, 0)
+
+    df['stoploss_point'] = df.open * (1-scope)
+    rolling_low = pd.rolling_min(df.low, days)
+    df['stoploss'] = np.where(df['all'], df.stoploss_point - df.open , 0)
+
+    df['earning_with_stoploss'] = np.where(rolling_low > df.stoploss_point, df.earning, df.stoploss)
+    
+    func_name = sys._getframe().f_code.co_name
+    df = df.loc[days: , :]  # 因为近期的看不到n天后的数据，所以没收益，因此不计算
+    
+    df.to_csv('files_tmp/%s_%s.csv' % (func_name, daima))  # 以函数名作为文件名保存
+
+    df = df.where(df.earning != 0) # for count
+    summ = df.earning.sum()
+    summ2 = df.earning_with_stoploss.sum()
+
+    count = df.earning.count() # count is same
+    count2 = df.earning_with_stoploss.count()
+
+    average_earnings =  summ / count
+    average_earnings2 =  summ2 / count #
+
+    print average_earnings, average_earnings2
+    print summ, summ2
+    print count, count2
+    
+    return summ, average_earnings, summ2, average_earnings2, count
+
+
+
+@util.display_func_name
+def runall(daima, rlist, ma, ma2, kdj, kdj2, offset=50,scale=0.11, days=220, scope=0.1):
+    '''
+    '''
+    df = pd.read_csv('data/%s.xls' % daima)
+    util.strip_columns(df)
+    df = df.loc[:, ['date', 'open', 'close', 'high', 'low', 'ma5', 'ma10', 'ma20', 'KDJ.K', 'KDJ.D', 'KDJ.J']]
+    tmpdf = pd.DataFrame(np.ones( (len(df),26)) , columns=list('ABCDEFGHIJKLMNOPQRSTUVWXZY'))
+    df['magtma'] = tmpdf.loc[:,['A']]
+    df['gt_ma'] = tmpdf.loc[:,['B']]
+    df['ma_up'] = tmpdf.loc[:,['C']]
+    df['ma_down'] = tmpdf.loc[:,['D']]
+    df['ma_crossup'] = tmpdf.loc[:,['E']]
+    df['kdj_up'] = tmpdf.loc[:,['F']]
+    df['kdj_down'] = tmpdf.loc[:,['G']]
+    #df['magtma'] = tmpdf.loc[:,['H']]
+    #df['magtma'] = tmpdf.loc[:,['I']]
+    #df['magtma'] = tmpdf.loc[:,['J']]
+    #df['magtma'] = tmpdf.loc[:,['K']]
+    #df['magtma'] = tmpdf.loc[:,['L']]
+    #df['magtma'] = tmpdf.loc[:,['M']]
+    #df['magtma'] = tmpdf.loc[:,['N']]
+    #df['magtma'] = tmpdf.loc[:,['O']]
+
+    # foo4
+    if 'magtma' in rlist:
+        df['magtma'] = (df[ma].shift(-1) - df[ma].shift(-1*offset)) > df[ma].shift(-1) * scale
+    # foo3
+    if 'gt_ma' in rlist: # anti ma_crossup
+        df['gt_ma'] = df.low.shift(-1) > df[ma].shift(-1)
+    if 'ma_up' in rlist:
+        df['ma_up'] = df[ma].shift(-1) > df[ma].shift(-2)
+    if 'ma_down' in rlist:
+        df['ma_down'] = df[ma].shift(-1) > df[ma].shift(-2)
+    if 'ma_crossup'in rlist: # ma 金叉
+       df['ma_crossup'] = (df[ma].shift(-2) < df[ma2].shift(-2)) & (df[ma].shift(-1) > df[ma2].shift(-1))
+    if 'kdj_up'in rlist:
+        df['kdj_up'] = df[kdj].shift(-1) > df[kdj].shift(-2)
+    if 'kdj_down'in rlist:
+        df['kdj_down'] = df[kdj].shift(-1) < df[kdj].shift(-2)
+    #df['all'] = df.magtma & df.gt_ma & df.ma_up & df.ma_down & df.ma_crossup & df.kdj_up & kdj_down
+    df['all'] = df.magtma * df.gt_ma * df.ma_up * df.ma_down * df.ma_crossup * df.kdj_up * df.kdj_down
+    df['earning'] = np.where(df['all'], df.close.shift(days) - df.open, 0)
+
+    df['stoploss_point'] = df.open * (1-scope)
+    rolling_low = pd.rolling_min(df.low, days)
+    df['stoploss'] = np.where(df['all'], df.stoploss_point - df.open , 0)
+
+    df['earning_with_stoploss'] = np.where(rolling_low > df.stoploss_point, df.earning, df.stoploss)
+    
+    func_name = sys._getframe().f_code.co_name
+    df = df.loc[days: , :]  # 因为近期的看不到n天后的数据，所以没收益，因此不计算
+    
+    df.to_csv('files_tmp/%s_%s.csv' % (func_name, daima))  # 以函数名作为文件名保存
+
+    df = df.where(df.earning != 0) # for count
+    summ = df.earning.sum()
+    summ2 = df.earning_with_stoploss.sum()
+
+    count = df.earning.count() # count is same
+    count2 = df.earning_with_stoploss.count()
+
+    average_earnings =  summ / count
+    average_earnings2 =  summ2 / count #
+
+    print average_earnings, average_earnings2
+    print summ, summ2
+    print count, count2
+    
+    return summ, average_earnings, summ2, average_earnings2, count
+
 def runn():
     daima = '999999'
     days = 200
     kdj='KDJ.D'
     ma='ma20'
-    scope = 0.15
+    scope = 0.1
     kdjvalue=0
     foo(daima, days=days, scope=scope)
     foo3(daima, ma=ma, days=days, scope=scope)
@@ -1189,7 +1308,29 @@ def runn():
     kdjgt_up(daima, kdj=kdj, value=kdjvalue, days=days, scope=scope)
     #foo3_kdjdown_kdjgt(daima, ma=ma, kdj=kdj, days=days, scope=scope, kdjvalue=kdjvalue)
     #D_down_J_up(daima, days=days, scope=scope)
-    foo4(daima, ma=ma, offset=50,scale=0.1, days=days, scope=scope)
+    foo4(daima, ma='ma5', offset=50,scale=0.11, days=220, scope=scope)
+    #foo4(daima, ma='ma10', offset=50,scale=0.11, days=220, scope=scope)
+    #foo4(daima, ma='ma20', offset=50,scale=0.11, days=220, scope=scope)
+    foo3_foo4(daima, ma='ma10', offset=50,scale=0.11, days=220, scope=scope)
+    foo3_foo4(daima, ma='ma10', offset=50,scale=0.11, days=230, scope=scope)
+    foo3_foo4(daima, ma='ma10', offset=50,scale=0.11, days=240, scope=scope)
 
+def test_runall():
+    daima = '999999'
+    days = 200
+    kdj='KDJ.D'
+    ma='ma5'
+    scope = 0.1
+    kdjvalue=0
+    scale = 0.1
+    offset=50
+    runall(daima, rlist=['ma_up', 'gt_ma', 'kdj_up'], ma=ma, ma2='ma10',kdj=kdj, kdj2=kdj, offset=offset,scale=scale, days=days, scope=scope)
+    #maup(daima, ma=ma, days=days, scope=scope)
+    #kdjdown(daima, kdj=kdj, days=days, scope=scope) 
+    #maup_kdjdown(daima, ma=ma, kdj=kdj, days=days, scope=scope)  
+    #foo3_maup(daima, ma=ma, days=days, scope=scope)
+    foo3_maup_kdjdown(daima, ma=ma, kdj=kdj, days=days, scope=scope)
+    foo3_maup_kdjup(daima, ma=ma, kdj=kdj, days=days, scope=scope)
 if __name__ == '__main__':
-    runn()
+    #runn()
+    test_runall()
