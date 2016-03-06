@@ -1,5 +1,6 @@
 # encoding: utf-8
 import sys
+from itertools import combinations
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -39,14 +40,14 @@ def foo(daima, days=5, scope=0.05):
     summ2 = df.earning_with_stoploss.sum()
 
     count = df.earning.count() # count is same
-    count2 = df.earning_with_stoploss.count()
+    #count2 = df.earning_with_stoploss.count()
 
     average_earnings =  summ / count
     average_earnings2 =  summ2 / count #
 
     print average_earnings, average_earnings2
     print summ, summ2
-    print count, count2
+    print count
     
     #return summ, average_earnings, summ2, average_earnings2, count
 
@@ -1133,7 +1134,7 @@ def foo4(daima, ma='ma5', offset=10,scale=0.1, days=5, scope=0.05):
     util.strip_columns(df)
     df = df.loc[:, ['date', 'open', 'close', 'low', 'ma5', 'ma10', 'ma20']]
 
-
+    # ma gteater ma of n days earlier 
     df['magtma'] = (df[ma].shift(-1) - df[ma].shift(-1*offset)) >= df[ma].shift(-1) * scale
     
 
@@ -1210,21 +1211,24 @@ def foo3_foo4(daima, ma='ma5', offset=10,scale=0.1, days=5, scope=0.05):
 
 
 
-@util.display_func_name
-def runall(daima, rlist, ma, ma2, kdj, kdj2, offset=50,scale=0.11, days=220, scope=0.1):
+#@util.display_func_name
+def runall(daima, rlist, ma, ma2, kdj, offset=50,scale=0.11, days=220, scope=0.1):
     '''
     '''
     df = pd.read_csv('data/%s.xls' % daima)
     util.strip_columns(df)
     df = df.loc[:, ['date', 'open', 'close', 'high', 'low', 'ma5', 'ma10', 'ma20', 'KDJ.K', 'KDJ.D', 'KDJ.J']]
-    tmpdf = pd.DataFrame(np.ones( (len(df),26)) , columns=list('ABCDEFGHIJKLMNOPQRSTUVWXZY'))
+    alltrues = np.array(np.ones( (len(df),26)), dtype=np.bool)
+
+    tmpdf = pd.DataFrame(alltrues , columns=list('ABCDEFGHIJKLMNOPQRSTUVWXZY'))
     df['magtma'] = tmpdf.loc[:,['A']]
     df['gt_ma'] = tmpdf.loc[:,['B']]
-    df['ma_up'] = tmpdf.loc[:,['C']]
-    df['ma_down'] = tmpdf.loc[:,['D']]
-    df['ma_crossup'] = tmpdf.loc[:,['E']]
-    df['kdj_up'] = tmpdf.loc[:,['F']]
-    df['kdj_down'] = tmpdf.loc[:,['G']]
+    df['lt_ma'] = tmpdf.loc[:,['C']]
+    df['ma_up'] = tmpdf.loc[:,['D']]
+    df['ma_down'] = tmpdf.loc[:,['E']]
+    df['ma_crossup'] = tmpdf.loc[:,['F']]
+    df['kdj_up'] = tmpdf.loc[:,['G']]
+    df['kdj_down'] = tmpdf.loc[:,['H']]
     #df['magtma'] = tmpdf.loc[:,['H']]
     #df['magtma'] = tmpdf.loc[:,['I']]
     #df['magtma'] = tmpdf.loc[:,['J']]
@@ -1238,20 +1242,23 @@ def runall(daima, rlist, ma, ma2, kdj, kdj2, offset=50,scale=0.11, days=220, sco
     if 'magtma' in rlist:
         df['magtma'] = (df[ma].shift(-1) - df[ma].shift(-1*offset)) > df[ma].shift(-1) * scale
     # foo3
-    if 'gt_ma' in rlist: # anti ma_crossup
+    if 'gt_ma' in rlist:
         df['gt_ma'] = df.low.shift(-1) > df[ma].shift(-1)
+    if 'lt_ma' in rlist:
+        df['lt_ma'] = df.high.shift(-1) < df[ma].shift(-1)
     if 'ma_up' in rlist:
         df['ma_up'] = df[ma].shift(-1) > df[ma].shift(-2)
     if 'ma_down' in rlist:
-        df['ma_down'] = df[ma].shift(-1) > df[ma].shift(-2)
+        df['ma_down'] = df[ma].shift(-1) < df[ma].shift(-2)
     if 'ma_crossup'in rlist: # ma 金叉
        df['ma_crossup'] = (df[ma].shift(-2) < df[ma2].shift(-2)) & (df[ma].shift(-1) > df[ma2].shift(-1))
     if 'kdj_up'in rlist:
         df['kdj_up'] = df[kdj].shift(-1) > df[kdj].shift(-2)
     if 'kdj_down'in rlist:
         df['kdj_down'] = df[kdj].shift(-1) < df[kdj].shift(-2)
-    #df['all'] = df.magtma & df.gt_ma & df.ma_up & df.ma_down & df.ma_crossup & df.kdj_up & kdj_down
-    df['all'] = df.magtma * df.gt_ma * df.ma_up * df.ma_down * df.ma_crossup * df.kdj_up * df.kdj_down
+    df['all'] = df.magtma & df.gt_ma & df.lt_ma & df.ma_up & df.ma_down & df.ma_crossup & df.kdj_up & df.kdj_down
+    #df['all'] = df.magtma * df.gt_ma * df.ma_up * df.ma_down * df.ma_crossup * df.kdj_up * df.kdj_down
+
     df['earning'] = np.where(df['all'], df.close.shift(days) - df.open, 0)
 
     df['stoploss_point'] = df.open * (1-scope)
@@ -1269,15 +1276,17 @@ def runall(daima, rlist, ma, ma2, kdj, kdj2, offset=50,scale=0.11, days=220, sco
     summ = df.earning.sum()
     summ2 = df.earning_with_stoploss.sum()
 
-    count = df.earning.count() # count is same
-    count2 = df.earning_with_stoploss.count()
+    count = df.earning.count()
+    #count2 = df.earning_with_stoploss.count()  # count is same
+    if count==0:
+        return
+    average_earnings =  summ / count #if count else 0
+    average_earnings2 =  summ2 / count #if count else 0 #
 
-    average_earnings =  summ / count
-    average_earnings2 =  summ2 / count #
-
+    print rlist
     print average_earnings, average_earnings2
     print summ, summ2
-    print count, count2
+    print count
     
     return summ, average_earnings, summ2, average_earnings2, count
 
@@ -1317,20 +1326,50 @@ def runn():
 
 def test_runall():
     daima = '999999'
-    days = 200
+    rlist = ['magtma','gt_ma']
+    days = 2
     kdj='KDJ.D'
+    kdj2='KDJ.J'
     ma='ma5'
+    ma2='ma20'
     scope = 0.1
-    kdjvalue=0
     scale = 0.1
     offset=50
-    runall(daima, rlist=['ma_up', 'gt_ma', 'kdj_up'], ma=ma, ma2='ma10',kdj=kdj, kdj2=kdj, offset=offset,scale=scale, days=days, scope=scope)
+    foo(daima, days=days, scope=scope)
+    runall(daima, rlist=rlist, ma=ma, ma2=ma2,kdj=kdj, kdj2=kdj, offset=offset,scale=scale, days=days, scope=scope)
     #maup(daima, ma=ma, days=days, scope=scope)
     #kdjdown(daima, kdj=kdj, days=days, scope=scope) 
     #maup_kdjdown(daima, ma=ma, kdj=kdj, days=days, scope=scope)  
     #foo3_maup(daima, ma=ma, days=days, scope=scope)
-    foo3_maup_kdjdown(daima, ma=ma, kdj=kdj, days=days, scope=scope)
-    foo3_maup_kdjup(daima, ma=ma, kdj=kdj, days=days, scope=scope)
+    #foo3_maup_kdjdown(daima, ma=ma, kdj=kdj, days=days, scope=scope)
+    #foo3_maup_kdjup(daima, ma=ma, kdj=kdj, days=days, scope=scope)
+
+def combinations_runall():
+    daima = '999999'
+    days = 200
+    kdj='KDJ.D'
+ 
+    ma='ma5'
+    ma2='ma10'
+    scope = 0.1
+    scale = 0.1
+    offset=50
+    rlist = [
+        'magtma',
+        'gt_ma',
+        #'lt_ma',
+        'ma_up',
+        'ma_down',
+        #'ma_crossup',
+        'kdj_up',
+        'kdj_down']
+    foo(daima, days=days, scope=scope) # 参照
+    for n in range(1, len(rlist)+1):
+        for r in combinations(rlist, n):
+            runall(daima, rlist=r, ma=ma, ma2=ma2,kdj=kdj, offset=offset,scale=scale, days=days, scope=scope)
+
+
 if __name__ == '__main__':
     #runn()
-    test_runall()
+    #test_runall()
+    combinations_runall()
