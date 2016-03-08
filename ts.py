@@ -9,9 +9,7 @@ import util
 
 # tushare 的数据不准 节假日会多一天多余的数据
 '''
-now the best is   foo3_kdjdown  when 20160302
-                foo3_maup_kdjdown  (kdj.d)
-has stoploss is better than no stoploss
+
 '''
 
 @util.display_func_name
@@ -23,7 +21,7 @@ def foo(daima, days=5, scope=0.05):
     util.strip_columns(df)
     df = df.loc[:, ['date', 'open', 'close', 'low']]
 
-    df['earning'] = df.close.shift(days) - df.open
+    df['earning'] = df.open.shift(days) - df.open
     df['stoploss_point'] = df.open * (1-scope)
     rolling_low = pd.rolling_min(df.low, days)
     df['stoploss'] = df.stoploss_point - df.open
@@ -33,7 +31,7 @@ def foo(daima, days=5, scope=0.05):
     func_name = sys._getframe().f_code.co_name
     df = df.loc[days: , :]  # 因为近期的看不到n天后的数据，所以没收益，因此不计算
     
-    df.to_csv('files_tmp/%s_%s.csv' % (func_name, daima))  # 以函数名作为文件名保存
+    #df.to_csv('files_tmp/%s_%s.csv' % (func_name, daima))  # 以函数名作为文件名保存
 
     df = df.where(df.earning != 0) # for count
     summ = df.earning.sum()
@@ -44,12 +42,13 @@ def foo(daima, days=5, scope=0.05):
 
     average_earnings =  summ / count
     average_earnings2 =  summ2 / count #
-
+   
     print average_earnings, average_earnings2
     print summ, summ2
     print count
     
     #return summ, average_earnings, summ2, average_earnings2, count
+    return summ2 / count
 
 
 
@@ -62,8 +61,6 @@ def foo3(daima, ma='ma5', days=5, scope=0.05):
     util.strip_columns(df)
     df = df.loc[:, ['date', 'open', 'close', 'low', 'ma5', 'ma10', 'ma20']]
 
-
-    
 
 
     # yesterday greater than ma
@@ -1210,9 +1207,55 @@ def foo3_foo4(daima, ma='ma5', offset=10,scale=0.1, days=5, scope=0.05):
     return summ, average_earnings, summ2, average_earnings2, count
 
 
+def ma_slope_gt(daima, ma, slope, days, scope, offset):
+    '''
+    slope 斜率
+    昨天与offset天前斜率
+    '''
+    df = pd.read_csv('data/%s.xls' % daima)
+    util.strip_columns(df)
+    df = df.loc[:, ['date', 'open', 'close', 'low', 'ma5', 'ma10', 'ma20']]
+
+    yesterday = df[ma].shift(-1)
+    offsetday = df[ma].shift(-1*offset)
+    real_slope = (yesterday - offsetday) / offsetday
+    slope_key = 'ma_slope_gt_%s' % str(slope)
+    df[slope_key] = real_slope > slope
+    #df['gt_ma'] = df.low.shift(-1) > df[ma].shift(-1)
+    #df['all'] = df.magtma & df.gt_ma
+    df['earning'] = np.where(df[slope_key], df.close.shift(days) - df.open, 0)
+
+    df['stoploss_point'] = df.open * (1-scope)
+    rolling_low = pd.rolling_min(df.low, days)
+    df['stoploss'] = np.where(df[slope_key], df.stoploss_point - df.open , 0)
+
+    df['earning_with_stoploss'] = np.where(rolling_low > df.stoploss_point, df.earning, df.stoploss)
+    
+    func_name = sys._getframe().f_code.co_name
+    df = df.loc[days: , :]  # 因为近期的看不到n天后的数据，所以没收益，因此不计算
+    
+    df.to_csv('files_tmp/%s_%s.csv' % (func_name, daima))  # 以函数名作为文件名保存
+
+    df = df.where(df.earning != 0) # for count
+    summ = df.earning.sum()
+    summ2 = df.earning_with_stoploss.sum()
+
+    count = df.earning.count() # count is same
+
+    average_earnings =  summ / count
+    average_earnings2 =  summ2 / count #
+
+    print average_earnings, average_earnings2
+    print summ, summ2
+    print count
+    
+    return summ, average_earnings, summ2, average_earnings2, count
+
+ma_slope_gt('999999', 'ma5', 0.002, days=2, scope=0.1, offset=2)
+
 
 #@util.display_func_name
-def runall(daima, rlist, ma, ma2, kdj, offset=50,scale=0.11, days=220, scope=0.1):
+def runall(daima, rlist, ma, ma2, kdj, offset=50,scale=0.11, days=220, scope=0.1, slope=0.001):
     '''
     '''
     df = pd.read_csv('data/%s.xls' % daima)
@@ -1259,7 +1302,7 @@ def runall(daima, rlist, ma, ma2, kdj, offset=50,scale=0.11, days=220, scope=0.1
     df['all'] = df.magtma & df.gt_ma & df.lt_ma & df.ma_up & df.ma_down & df.ma_crossup & df.kdj_up & df.kdj_down
     #df['all'] = df.magtma * df.gt_ma * df.ma_up * df.ma_down * df.ma_crossup * df.kdj_up * df.kdj_down
 
-    df['earning'] = np.where(df['all'], df.close.shift(days) - df.open, 0)
+    df['earning'] = np.where(df['all'], df.open.shift(days) - df.open, 0)
 
     df['stoploss_point'] = df.open * (1-scope)
     rolling_low = pd.rolling_min(df.low, days)
@@ -1283,10 +1326,10 @@ def runall(daima, rlist, ma, ma2, kdj, offset=50,scale=0.11, days=220, scope=0.1
     average_earnings =  summ / count #if count else 0
     average_earnings2 =  summ2 / count #if count else 0 #
 
-    print rlist
-    print average_earnings, average_earnings2
-    print summ, summ2
-    print count
+    #print rlist
+    #print average_earnings, average_earnings2
+    #print summ, summ2
+    #print count
     
     return summ, average_earnings, summ2, average_earnings2, count
 
@@ -1325,7 +1368,7 @@ def runn():
     foo3_foo4(daima, ma='ma10', offset=50,scale=0.11, days=240, scope=scope)
 
 def test_runall():
-    daima = '999999'
+    daima = 'hs300'
     rlist = ['magtma','gt_ma']
     days = 2
     kdj='KDJ.D'
@@ -1345,31 +1388,63 @@ def test_runall():
     #foo3_maup_kdjup(daima, ma=ma, kdj=kdj, days=days, scope=scope)
 
 def combinations_runall():
-    daima = '999999'
-    days = 200
+    daima = 'zxb'
+    days = 2
     kdj='KDJ.D'
- 
     ma='ma5'
     ma2='ma10'
     scope = 0.1
     scale = 0.1
     offset=50
     rlist = [
-        'magtma',
+        #'magtma',
         'gt_ma',
-        #'lt_ma',
+        'lt_ma',
         'ma_up',
         'ma_down',
-        #'ma_crossup',
+        'ma_crossup',
         'kdj_up',
         'kdj_down']
-    foo(daima, days=days, scope=scope) # 参照
+    df_rlist = []
+    df_sum = []
+    df_count = []
+    df_avge = []
+    df_sum2 = []
+    df_avge2 = []
+
+    frtn = foo(daima, days=days, scope=scope) # 参照
     for n in range(1, len(rlist)+1):
         for r in combinations(rlist, n):
-            runall(daima, rlist=r, ma=ma, ma2=ma2,kdj=kdj, offset=offset,scale=scale, days=days, scope=scope)
+            rtn = runall(daima, rlist=r, ma=ma, ma2=ma2,kdj=kdj, offset=offset,scale=scale, days=days, scope=scope)
+            if rtn:
+                df_rlist.append(r)
+                df_sum.append(rtn[0])
+                df_avge.append(rtn[1])
+                df_sum2.append(rtn[2])
+                df_avge2.append(rtn[3])
+                df_count.append(rtn[4])
+
+    df = pd.DataFrame({
+        'rlist':df_rlist,
+        'sum':df_sum,
+        'sum2':df_sum2,
+        'count':df_count,
+        'avge':df_avge,
+        'avge2':df_avge2,
+
+        })
+    df.to_csv('files_tmp/combinations_runall_%s_2.csv' % daima)
 
 
 if __name__ == '__main__':
+
     #runn()
     #test_runall()
-    combinations_runall()
+    #combinations_runall()
+
+
+
+
+
+
+    pass
