@@ -1211,6 +1211,7 @@ def ma_slope_gt(daima, ma, slope, days, scope, offset):
     '''
     slope 斜率
     昨天与offset天前斜率
+    slop==0 offset==2时，和ma_up一样
     '''
     df = pd.read_csv('data/%s.xls' % daima)
     util.strip_columns(df)
@@ -1251,7 +1252,51 @@ def ma_slope_gt(daima, ma, slope, days, scope, offset):
     
     return summ, average_earnings, summ2, average_earnings2, count
 
-ma_slope_gt('999999', 'ma5', 0.002, days=2, scope=0.1, offset=2)
+#ma_slope_gt('999999', 'ma5', 0.002, days=2, scope=0.1, offset=2)
+
+
+@util.display_func_name
+def ma_slope_range(daima, ma, slope, days, scope): #, offset):
+    '''
+    
+    '''
+    df = pd.read_csv('data/%s.xls' % daima)
+    util.strip_columns(df)
+    df = df.loc[:, ['date', 'open', 'close', 'low', 'ma5', 'ma10', 'ma20']]
+
+    yesterday = df[ma].shift(-1)
+    offsetday = df[ma].shift(-2)
+    real_slope = (yesterday - offsetday) / offsetday
+    df['ma_slope_range'] = (slope[0] <= real_slope) & (real_slope <= slope[1])
+    df['earning'] = np.where(df['ma_slope_range'], df.close.shift(days) - df.open, 0)
+
+    df['stoploss_point'] = df.open * (1-scope)
+    rolling_low = pd.rolling_min(df.low, days)
+    df['stoploss'] = np.where(df['ma_slope_range'], df.stoploss_point - df.open , 0)
+
+    df['earning_with_stoploss'] = np.where(rolling_low > df.stoploss_point, df.earning, df.stoploss)
+    
+    func_name = sys._getframe().f_code.co_name
+    df = df.loc[days: , :]  # 因为近期的看不到n天后的数据，所以没收益，因此不计算
+    
+    df.to_csv('files_tmp/%s_%s.csv' % (func_name, daima))  # 以函数名作为文件名保存
+
+    df = df.where(df.earning != 0) # for count
+    summ = df.earning.sum()
+    summ2 = df.earning_with_stoploss.sum()
+
+    count = df.earning.count() # count is same
+
+    average_earnings =  summ / count
+    average_earnings2 =  summ2 / count #
+
+    print average_earnings, average_earnings2
+    print summ, summ2
+    print count
+    
+    return summ, average_earnings, summ2, average_earnings2, count
+
+#ma_slope_range('zxb', 'ma20', slope = [0.0003, 0.0005], days=10, scope=0.1, offset=2)
 
 
 #@util.display_func_name
@@ -1272,8 +1317,7 @@ def runall(daima, rlist, ma, ma2, kdj, offset=50,scale=0.11, days=220, scope=0.1
     df['ma_crossup'] = tmpdf.loc[:,['F']]
     df['kdj_up'] = tmpdf.loc[:,['G']]
     df['kdj_down'] = tmpdf.loc[:,['H']]
-    #df['magtma'] = tmpdf.loc[:,['H']]
-    #df['magtma'] = tmpdf.loc[:,['I']]
+    df['ma_slope_gt'] = tmpdf.loc[:,['I']]
     #df['magtma'] = tmpdf.loc[:,['J']]
     #df['magtma'] = tmpdf.loc[:,['K']]
     #df['magtma'] = tmpdf.loc[:,['L']]
@@ -1299,7 +1343,13 @@ def runall(daima, rlist, ma, ma2, kdj, offset=50,scale=0.11, days=220, scope=0.1
         df['kdj_up'] = df[kdj].shift(-1) > df[kdj].shift(-2)
     if 'kdj_down'in rlist:
         df['kdj_down'] = df[kdj].shift(-1) < df[kdj].shift(-2)
-    df['all'] = df.magtma & df.gt_ma & df.lt_ma & df.ma_up & df.ma_down & df.ma_crossup & df.kdj_up & df.kdj_down
+    if 'ma_slope_gt'in rlist:
+        yesterday = df[ma].shift(-1)
+        offsetday = df[ma].shift(-1*offset)
+        real_slope = (yesterday - offsetday) / offsetday
+        df['ma_slope_gt'] = real_slope > slope
+
+    df['all'] = df.magtma & df.gt_ma & df.lt_ma & df.ma_up & df.ma_down & df.ma_crossup & df.kdj_up & df.kdj_down & df.ma_slope_gt
     #df['all'] = df.magtma * df.gt_ma * df.ma_up * df.ma_down * df.ma_crossup * df.kdj_up * df.kdj_down
 
     df['earning'] = np.where(df['all'], df.open.shift(days) - df.open, 0)
@@ -1335,42 +1385,42 @@ def runall(daima, rlist, ma, ma2, kdj, offset=50,scale=0.11, days=220, scope=0.1
 
 def runn():
     daima = '999999'
-    days = 200
+    days = 2
     kdj='KDJ.D'
-    ma='ma20'
+    ma='ma5'
     scope = 0.1
     kdjvalue=0
     foo(daima, days=days, scope=scope)
     foo3(daima, ma=ma, days=days, scope=scope)
     #foo3b(daima, ma=ma, days=days)
     foo3_kdjup(daima, ma=ma, kdj=kdj, days=days, scope=scope)
-    foo3_kdjdown(daima, ma=ma, kdj=kdj, days=days, scope=scope) # ma5 and 'KDJ.D' is best?
+    #foo3_kdjdown(daima, ma=ma, kdj=kdj, days=days, scope=scope) # ma5 and 'KDJ.D' is best?
     foo3_maup(daima, ma=ma, days=days, scope=scope)
-    foo3_maup_kdjdown(daima, ma=ma, kdj=kdj, days=days, scope=scope)
+    #foo3_maup_kdjdown(daima, ma=ma, kdj=kdj, days=days, scope=scope)
     foo3_maup_kdjup(daima, ma=ma, kdj=kdj, days=days, scope=scope)
     #foo3b_maup(daima, ma=ma, days=days, scope=scope)
     maup(daima, ma=ma, days=days, scope=scope)
     maup_kdjup(daima, ma=ma, kdj=kdj, days=days, scope=scope)
-    maup_kdjdown(daima, ma=ma, kdj=kdj, days=days, scope=scope)
-    #kdjup(daima, kdj=kdj, days=days, scope=scope)
+    #maup_kdjdown(daima, ma=ma, kdj=kdj, days=days, scope=scope)
+    kdjup(daima, kdj=kdj, days=days, scope=scope)
     #kdjdown(daima, kdj=kdj, days=days, scope=scope)
     #kdjlt(daima, kdj=kdj, value=kdjvalue, days=days, scope=scope)
-    kdjgt(daima, kdj=kdj, value=kdjvalue, days=days, scope=scope) # KDJ.D bigger the better ?! and no stoploss?
+    #kdjgt(daima, kdj=kdj, value=kdjvalue, days=days, scope=scope) # KDJ.D bigger the better ?! and no stoploss?
     #kdjlt_up(daima, kdj=kdj, value=kdjvalue, days=days, scope=scope)
-    kdjgt_up(daima, kdj=kdj, value=kdjvalue, days=days, scope=scope)
+    #kdjgt_up(daima, kdj=kdj, value=kdjvalue, days=days, scope=scope)
     #foo3_kdjdown_kdjgt(daima, ma=ma, kdj=kdj, days=days, scope=scope, kdjvalue=kdjvalue)
     #D_down_J_up(daima, days=days, scope=scope)
-    foo4(daima, ma='ma5', offset=50,scale=0.11, days=220, scope=scope)
+    foo4(daima, ma='ma5', offset=50,scale=0.11, days=days, scope=scope)
     #foo4(daima, ma='ma10', offset=50,scale=0.11, days=220, scope=scope)
     #foo4(daima, ma='ma20', offset=50,scale=0.11, days=220, scope=scope)
-    foo3_foo4(daima, ma='ma10', offset=50,scale=0.11, days=220, scope=scope)
-    foo3_foo4(daima, ma='ma10', offset=50,scale=0.11, days=230, scope=scope)
-    foo3_foo4(daima, ma='ma10', offset=50,scale=0.11, days=240, scope=scope)
+    foo3_foo4(daima, ma='ma10', offset=50,scale=0.11, days=days, scope=scope)
+    ma_slope_range(daima, ma, slope = [0.0003, 0.001], days=days, scope=scope)
+ 
 
 def test_runall():
     daima = 'hs300'
     rlist = ['magtma','gt_ma']
-    days = 2
+    days = 1
     kdj='KDJ.D'
     kdj2='KDJ.J'
     ma='ma5'
@@ -1388,23 +1438,27 @@ def test_runall():
     #foo3_maup_kdjup(daima, ma=ma, kdj=kdj, days=days, scope=scope)
 
 def combinations_runall():
-    daima = 'zxb'
-    days = 2
+    daima = '999999'
+    days = 50
     kdj='KDJ.D'
-    ma='ma5'
+    ma='ma20'
     ma2='ma10'
     scope = 0.1
     scale = 0.1
-    offset=50
+    slope = 0.001
+    offset = 2
     rlist = [
         #'magtma',
         'gt_ma',
-        'lt_ma',
+        #'lt_ma',
         'ma_up',
-        'ma_down',
-        'ma_crossup',
+        #'ma_down',
+        #'ma_crossup',
         'kdj_up',
-        'kdj_down']
+        #'kdj_down',
+        #'ma_slope_gt'
+
+        ]
     df_rlist = []
     df_sum = []
     df_count = []
@@ -1415,7 +1469,7 @@ def combinations_runall():
     frtn = foo(daima, days=days, scope=scope) # 参照
     for n in range(1, len(rlist)+1):
         for r in combinations(rlist, n):
-            rtn = runall(daima, rlist=r, ma=ma, ma2=ma2,kdj=kdj, offset=offset,scale=scale, days=days, scope=scope)
+            rtn = runall(daima, rlist=r, ma=ma, ma2=ma2,kdj=kdj, offset=offset,scale=scale, days=days, scope=scope, slope=slope)
             if rtn:
                 df_rlist.append(r)
                 df_sum.append(rtn[0])
@@ -1433,14 +1487,14 @@ def combinations_runall():
         'avge2':df_avge2,
 
         })
-    df.to_csv('files_tmp/combinations_runall_%s_2.csv' % daima)
+    df.to_csv('files_tmp/combinations_runall_%s.csv' % daima)
 
 
 if __name__ == '__main__':
 
     #runn()
     #test_runall()
-    #combinations_runall()
+    combinations_runall()
 
 
 
