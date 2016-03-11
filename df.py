@@ -9,7 +9,7 @@ import util
 看n天里最低，最高点,变动范围
 '''
 
-M = 7 
+M = 4 
 
 @util.display_func_name
 def bar(daima, days=5):
