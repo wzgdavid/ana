@@ -9,7 +9,7 @@ import util
 
 # tushare 的数据不准 节假日会多一天多余的数据
 '''
-
+看n天后收益
 '''
 
 @util.display_func_name
@@ -51,51 +51,6 @@ def foo(daima, days=5, scope=0.05):
     return summ2 / count
 
 
-@util.display_func_name
-def bar(daima, days=5):
-    '''
-    '''
-    df = pd.read_csv('data/%s.xls' % daima)
-    util.strip_columns(df)
-    df = df.loc[:, ['date', 'open', 'close', 'low']]
-
-    df['openopen'] = df.open.shift(days) - df.open
-    df['closeopen'] = df.close.shift(days) - df.open
-    df['openclose'] = df.open.shift(days) - df.close
-    df['closeclose'] = df.close.shift(days) - df.close
-    df['lowscope'] = (df.open - pd.rolling_min(df.low, days)) / df.open
-    rolling_low = pd.rolling_min(df.low, days)
-
-    func_name = sys._getframe().f_code.co_name
-    df = df.loc[days: , :]  # 因为近期的看不到n天后的数据，所以没收益，因此不计算
-    
-    #df.to_csv('files_tmp/%s_%s.csv' % (func_name, daima))  # 以函数名作为文件名保存
-
-   
-    sum1 = df.openopen.sum()
-    sum2 = df.closeopen.sum()
-    sum3= df.openclose.sum()
-    sum4= df.closeclose.sum()
-    sum5 = df.lowscope.sum()
-    count = df.date.count() # count is same
-    #count2 = df.earning_with_stoploss.count()
-
-    avg1 =  df.openopen.mean()
-    avg2 =  df.closeopen.mean()
-    avg3 =  df.openclose.mean()
-    avg4 =  df.closeclose.mean()
-    avg5 =  df.lowscope.mean()
-    avg6 =  df.lowscope.median()
-
-    s = sorted(df.lowscope)
-    print s[len(s)*2/3]
-    print avg6
-
-
-    
-    #return summ, average_earnings, summ2, average_earnings2, count
-    
-bar('cyb', days=10)
 
 @util.display_func_name
 def foo3(daima, ma='ma5', days=5, scope=0.05):
