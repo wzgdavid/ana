@@ -1377,9 +1377,9 @@ def runall(daima, rlist, ma, ma2, kdj, offset=50,scale=0.11, days=220, scope=0.1
     average_earnings2 =  summ2 / count #if count else 0 #
 
     #print rlist
-    #print average_earnings, average_earnings2
+    print average_earnings, average_earnings2
     #print summ, summ2
-    #print count
+    print count
     
     return summ, average_earnings, summ2, average_earnings2, count
 
@@ -1437,11 +1437,10 @@ def test_runall():
     #foo3_maup_kdjdown(daima, ma=ma, kdj=kdj, days=days, scope=scope)
     #foo3_maup_kdjup(daima, ma=ma, kdj=kdj, days=days, scope=scope)
 
-def combinations_runall():
-    daima = '999999'
-    days = 50
+def combinations_runall(daima, days, ma, scope):
+
     kdj='KDJ.D'
-    ma='ma20'
+    
     ma2='ma10'
     scope = 0.1
     scale = 0.1
@@ -1469,6 +1468,7 @@ def combinations_runall():
     frtn = foo(daima, days=days, scope=scope) # 参照
     for n in range(1, len(rlist)+1):
         for r in combinations(rlist, n):
+            print r
             rtn = runall(daima, rlist=r, ma=ma, ma2=ma2,kdj=kdj, offset=offset,scale=scale, days=days, scope=scope, slope=slope)
             if rtn:
                 df_rlist.append(r)
@@ -1490,12 +1490,59 @@ def combinations_runall():
     df.to_csv('files_tmp/combinations_runall_%s.csv' % daima)
 
 
+
+
+@util.display_func_name
+def allmaup(daima, days=200, scope=0.15):
+    df = pd.read_csv('data/%s.xls' % daima)
+    util.strip_columns(df)
+    df = df.loc[:, ['date', 'open', 'close', 'low', 'ma5', 'ma10', 'ma20', 'ma40','KDJ.K', 'KDJ.D', 'KDJ.J']]
+
+    df['up1'] = df['ma5'].shift(-1) > df['ma5'].shift(-2)
+    df['up2'] = df['ma10'].shift(-1) > df['ma10'].shift(-2)
+    df['up3'] = df['ma20'].shift(-1) > df['ma20'].shift(-2)
+    df['up4'] = df['ma40'].shift(-1) > df['ma40'].shift(-2)
+    df['allup'] =  df.up1 & df.up2 & df.up3 & df.up4
+    df['earning'] = np.where(df['allup'], df.close.shift(days) - df.open, 0)
+
+    df['stoploss_point'] = df.open * (1-scope)
+    rolling_low = pd.rolling_min(df.low, days)
+    df['stoploss'] = np.where(df['allup'], df.stoploss_point - df.open , 0)
+
+    df['earning_with_stoploss'] = np.where(rolling_low > df.stoploss_point, df.earning, df.stoploss)
+    
+    func_name = sys._getframe().f_code.co_name
+    df = df.loc[days: , :]  # 因为近期的看不到n天后的数据，所以没收益，因此不计算
+    
+    df.to_csv('files_tmp/%s_%s.csv' % (func_name, daima))  # 以函数名作为文件名保存
+
+    df = df.where(df.earning != 0) # for count
+    summ = df.earning.sum()
+    summ2 = df.earning_with_stoploss.sum()
+
+    count = df.earning.count() # count is same
+    count2 = df.earning_with_stoploss.count()
+
+    average_earnings =  summ / count
+    average_earnings2 =  summ2 / count #
+
+    print average_earnings, average_earnings2
+    print summ, summ2
+    print count, count2
+    
+    #return summ, average_earnings, summ2, average_earnings2, count
+
+
 if __name__ == '__main__':
 
     #runn()
     #test_runall()
-    #combinations_runall()
-
+    daima = '000002'
+    days = 200
+    ma = 'ma20'
+    scope = 0.3
+    combinations_runall(daima, days=days, ma=ma, scope=scope)
+    allmaup(daima, days=days, scope=scope)
 
     #foo('999999', days=3, scope=0.05)
 
