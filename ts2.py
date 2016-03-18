@@ -93,6 +93,21 @@ class LookEarnings():
         self._to_result(df, days, func_name)
 
     @util.display_func_name
+    def maup_gtma_lt_200qian(self, days=5, ma='ma5'):
+        '''
+        '''
+        df = deepcopy(self.df)
+        daima = self.daima
+        df['ma_up'] = df[ma].shift(-1) > df[ma].shift(-2)
+        df['gt_ma'] = df.low.shift(-1) > df[ma].shift(-1)
+        df['lt_200qian'] = df.open.shift(-1) < df[ma].shift(-1*days)
+        df['all'] = df.ma_up & df.gt_ma & df.lt_200qian
+        df['earning'] = np.where(df['all'], df.open.shift(days) - df.open, _NO_EARNINGS)
+        
+        func_name = sys._getframe().f_code.co_name
+        self._to_result(df, days, func_name)
+
+    @util.display_func_name
     def allmaup(self, days=5):
         '''
         '''
@@ -147,23 +162,28 @@ class LookEarnings():
         df.to_csv('files_tmp/looke_%s_%s.csv' % (func_name, daima))  # 以函数名作为文件名保存
 
         df = df.where(df.earning != _NO_EARNINGS) 
+        df2 = df.where(df.earning > 0) 
         summ = df.earning.sum()
 
-        count = df.earning.count() # 
+        count = df.earning.count() #
+        count2 = df2.earning.count()
         mean = df.earning.mean()
         median = df.earning.median()
         print "earnings of  ---- mean:%s, median:%s, count:%s" %(mean, median, count)
+        print float(count2)/count
     
         sorted_earnings = sorted(df.earning)
   
 
 if __name__ == '__main__':
 
-    daima = 'hs300'
+    daima = '999999'
     days=250
     ma='ma20'
     le = LookEarnings(daima)
     le.foo(days=days)
+    le.maup_gtma_lt_200qian(days=days, ma=ma)
+    
     le.gt_ma(days=days, ma=ma)
     #le.lt_ma(days=days, ma=ma)
     le.ma_up(days=days, ma=ma)
@@ -171,5 +191,5 @@ if __name__ == '__main__':
     le.maup_gtma(days=days, ma=ma)
     #le.madown_ltma(days=days, ma=ma)
     le.allmaup(days=days)
-    le.allmadown(days=days)
+    #le.allmadown(days=days)
     pass
