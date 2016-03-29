@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 import tushare as ts
 from copy import deepcopy
 import util
+'''
+看n天里最低，最高点,变动范围
+'''
 
 _NO_PCT = 99999
 
@@ -95,6 +98,8 @@ class Normal():
         df['gt_ma'] = df.low.shift(-1) > df[ma].shift(-1)
         df['all'] = df.ma_up & df.gt_ma
         df['pct'] = np.where(df['all'], (df.open.shift(days) - df.open) / df.open, _NO_PCT)
+        df['low_pct'] = np.where(df['all'], (pd.rolling_min(df.low, days) - df.open) / df.open, _NO_PCT)
+        df['high_pct'] = np.where(df['all'],(pd.rolling_max(df.high, days) - df.open) / df.open, _NO_PCT)
         func_name = sys._getframe().f_code.co_name
         self._to_normal_distribution(df, days, func_name)
 
@@ -178,8 +183,8 @@ class Normal():
         df.to_csv('files_tmp/normal_%s_%s.csv' % (func_name, daima))  # 以函数名作为文件名保存
         fig,(ax1, ax2, ax3) = plt.subplots(ncols=3, figsize=(20, 8))
         
-        ax1.hist(df.pct, bins, normed=1, histtype='bar', facecolor='b', alpha=0.75)
-        ax1.set_title('%s_%s_%s' % (func_name, daima, 'pct'))
+        #ax1.hist(df.pct, bins, normed=1, histtype='bar', facecolor='b', alpha=0.75)
+        #ax1.set_title('%s_%s_%s' % (func_name, daima, 'pct'))
         '''
         ax2.hist(df.low_pct, 50, normed=1, histtype='stepfilled', facecolor='g', alpha=0.75)
         ax2.set_title('%s_%s_%s' % (func_name, daima, 'low_pct'))
@@ -187,11 +192,11 @@ class Normal():
         ax3.hist(df.high_pct, 50, normed=1, histtype='stepfilled', facecolor='r', alpha=0.75)
         ax3.set_title('%s_%s_%s' % (func_name, daima, 'high_pct'))
         '''
-        bins = np.arange(-0.7,0,0.1)
+        bins = np.arange(-0.4,0.1,0.01)
         ax2.hist(df.low_pct, bins, normed=1, histtype='bar', rwidth=1,facecolor='g', alpha=0.75)
         ax2.set_title('%s_%s_%s' % (func_name, daima, 'low_pct'))
         
-        bins = np.arange(0,3,0.5)
+        bins = np.arange(-0.1,0.3,0.01)
         ax3.hist(df.high_pct, bins, normed=1, histtype='bar', rwidth=1,facecolor='r', alpha=0.75)
         ax3.set_title('%s_%s_%s' % (func_name, daima, 'high_pct'))
 
@@ -205,8 +210,8 @@ class Normal():
 
 if __name__ == '__main__':
 
-    daima = 'zxb'
-    days=250
+    daima = 't001'
+    days=5
     ma='ma20'
     le = Normal(daima)
     #le.foo(days=days)
@@ -214,9 +219,9 @@ if __name__ == '__main__':
     #le.lt_ma(days=days, ma=ma)
     #le.ma_up(days=days, ma=ma)
     #le.ma_down(days=days, ma=ma)
-    #le.maup_gtma(days=days, ma=ma)
+    le.maup_gtma(days=days, ma=ma)
     #le.madown_ltma(days=days, ma=ma)
-    le.allmaup(days=days)
+    #le.allmaup(days=days)
     #le.allmadown(days=days)
     pass
 

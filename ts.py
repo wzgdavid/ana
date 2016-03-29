@@ -9,7 +9,7 @@ import util
 
 # tushare 的数据不准 节假日会多一天多余的数据
 '''
-看n天后收益
+看n天后收益(average)
 '''
 
 @util.display_func_name
@@ -53,13 +53,13 @@ def foo(daima, days=5, scope=0.05):
 
 
 @util.display_func_name
-def foo3(daima, ma='ma5', days=5, scope=0.05):
+def gt_ma(daima, ma='ma5', days=5, scope=0.05):
     '''只要前一天整K大于ma 买进 看n天后收益
     '''
 
     df = pd.read_csv('data/%s.xls' % daima)
     util.strip_columns(df)
-    df = df.loc[:, ['date', 'open', 'close', 'low', 'ma5', 'ma10', 'ma20']]
+    df = df.loc[:, ['date', 'open', 'close', 'low', 'ma5', 'ma10', 'ma20', 'ma40']]
 
 
 
@@ -227,12 +227,12 @@ def maup(daima, ma='ma5', days=5, scope=0.05):
 
 
 @util.display_func_name
-def foo3_maup(daima, ma='ma5', days=5, scope=0.05):
+def gtma_maup(daima, ma='ma5', days=5, scope=0.05):
     '''前一天整K大于ma,and 今天ma大于昨天ma  买进 看n天后收益
     '''
     df = pd.read_csv('data/%s.xls' % daima)
     util.strip_columns(df)
-    df = df.loc[:, ['date', 'open', 'close', 'low', 'ma5', 'ma10', 'ma20']]
+    df = df.loc[:, ['date', 'open', 'close', 'low', 'ma5', 'ma10', 'ma20', 'ma40']]
 
     # yesterday greater than ma
     df['gt_ma'] = df.low.shift(-1) > df[ma].shift(-1)
@@ -1496,7 +1496,7 @@ def combinations_runall(daima, days, ma, scope):
 def allmaup(daima, days=200, scope=0.15):
     df = pd.read_csv('data/%s.xls' % daima)
     util.strip_columns(df)
-    df = df.loc[:, ['date', 'open', 'close', 'low', 'ma5', 'ma10', 'ma20', 'ma40','KDJ.K', 'KDJ.D', 'KDJ.J']]
+    df = df.loc[:, ['date', 'open', 'close', 'low', 'ma5', 'ma10', 'ma20', 'ma40']]
 
     df['up1'] = df['ma5'].shift(-1) > df['ma5'].shift(-2)
     df['up2'] = df['ma10'].shift(-1) > df['ma10'].shift(-2)
@@ -1532,20 +1532,59 @@ def allmaup(daima, days=200, scope=0.15):
     
     #return summ, average_earnings, summ2, average_earnings2, count
 
+@util.display_func_name
+def allmadown(daima, days=200, scope=0.15):
+    df = pd.read_csv('data/%s.xls' % daima)
+    util.strip_columns(df)
+    df = df.loc[:, ['date', 'open', 'close', 'low', 'ma5', 'ma10', 'ma20', 'ma40']]
+
+    df['up1'] = df['ma5'].shift(-1) < df['ma5'].shift(-2)
+    df['up2'] = df['ma10'].shift(-1) < df['ma10'].shift(-2)
+    df['up3'] = df['ma20'].shift(-1) < df['ma20'].shift(-2)
+    df['up4'] = df['ma40'].shift(-1) < df['ma40'].shift(-2)
+    df['allup'] =  df.up1 & df.up2 & df.up3 & df.up4
+    df['earning'] = np.where(df['allup'], df.close.shift(days) - df.open, 0)
+
+    df['stoploss_point'] = df.open * (1-scope)
+    rolling_low = pd.rolling_min(df.low, days)
+    df['stoploss'] = np.where(df['allup'], df.stoploss_point - df.open , 0)
+
+    df['earning_with_stoploss'] = np.where(rolling_low > df.stoploss_point, df.earning, df.stoploss)
+    
+    func_name = sys._getframe().f_code.co_name
+    df = df.loc[days: , :]  # 因为近期的看不到n天后的数据，所以没收益，因此不计算
+    
+    df.to_csv('files_tmp/%s_%s.csv' % (func_name, daima))  # 以函数名作为文件名保存
+
+    df = df.where(df.earning != 0) # for count
+    summ = df.earning.sum()
+    summ2 = df.earning_with_stoploss.sum()
+
+    count = df.earning.count() # count is same
+    count2 = df.earning_with_stoploss.count()
+
+    average_earnings =  summ / count
+    average_earnings2 =  summ2 / count #
+
+    print average_earnings, average_earnings2
+    print summ, summ2
+    print count, count2
 
 if __name__ == '__main__':
 
     #runn()
     #test_runall()
-    daima = '000002'
+    daima = 'aul9'
     days = 200
-    ma = 'ma20'
-    scope = 0.3
-    combinations_runall(daima, days=days, ma=ma, scope=scope)
+    ma = 'ma40'
+    scope = 0.2
+    #combinations_runall(daima, days=days, ma=ma, scope=scope)
     allmaup(daima, days=days, scope=scope)
-
-    #foo('999999', days=3, scope=0.05)
-
+    #allmadown(daima, days=days, scope=scope)
+    foo(daima, days=days, scope=scope)
+    gt_ma(daima, days=days, ma='ma20', scope=scope)
+    gt_ma(daima, days=days, ma='ma40', scope=scope)
+    gtma_maup(daima, days=days, ma='ma40', scope=scope)
 
 
     pass

@@ -196,7 +196,7 @@ class StepRange():
 
 if __name__ == '__main__':
 
-    daima = '999999'
+    daima = 'aul9'
     days=5
     ma='ma20'
     le = StepRange(daima)
@@ -204,8 +204,8 @@ if __name__ == '__main__':
     #le.maup_gtma_lt_200qian(days=days, ma=ma)
     
     #le.gt_ma(days=days, ma=ma)
-    le.lt_ma(days=days, ma=ma)
-    #le.ma_up(days=days, ma=ma)
+    #le.lt_ma(days=days, ma=ma)
+    le.ma_up(days=days, ma=ma)
     #le.ma_down(days=days, ma=ma)
     #le.maup_gtma(days=days, ma=ma)
     #le.madown_ltma(days=days, ma=ma)
