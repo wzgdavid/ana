@@ -154,20 +154,37 @@ class Normal():
         func_name = sys._getframe().f_code.co_name
         self._to_result(df, days, func_name)
 
+
+    @util.display_func_name
+    def new_high(self, days=5):
+        '''
+        '''
+        df = deepcopy(self.df)
+        daima = self.daima
+        df['rolling_high'] = pd.rolling_max(df.high, days)
+        df['new_high'] = df.rolling_high = df.high.shift(-1)
+        df['pct'] = np.where(df['new_high'], (df.open.shift(days) - df.open) / df.open, _NO_PCT)
+        df['low_pct'] = np.where(df['new_high'], (pd.rolling_min(df.low, days) - df.open) / df.open, _NO_PCT)
+        df['high_pct'] = np.where(df['new_high'],(pd.rolling_max(df.high, days) - df.open) / df.open, _NO_PCT)
+        func_name = sys._getframe().f_code.co_name
+        self._to_result(df, days, func_name)
+        self._to_normal_distribution(df, days, func_name)
+
+
     def _to_result(self, df, days, func_name):
         daima = self.daima
         df = df.loc[days: , :]  # 因为近期的看不到n天后的数据，所以没收益，因此不计算
         df.to_csv('files_tmp/looke_%s_%s.csv' % (func_name, daima))  # 以函数名作为文件名保存
 
-        df = df.where(df.earning != _NO_PCT) 
-        summ = df.earning.sum()
+        df = df[df['pct'] < _NO_PCT]
+  
 
-        count = df.earning.count() # 
-        mean = df.earning.mean()
-        median = df.earning.median()
-        print "earnings of  ---- mean:%s, median:%s, count:%s" %(mean, median, count)
+        count = df.pct.count() # 
+        mean = df.pct.mean()
+        median = df.pct.median()
+        print "pct of  ---- mean:%s, median:%s, count:%s" %(mean, median, count)
     
-        sorted_earnings = sorted(df.earning)
+        sorted_earnings = sorted(df.pct)
   
     def _to_normal_distribution(self, df, days, func_name):
         daima = self.daima
@@ -211,7 +228,7 @@ class Normal():
 if __name__ == '__main__':
 
     daima = 't001'
-    days=5
+    days=50
     ma='ma20'
     le = Normal(daima)
     #le.foo(days=days)
@@ -219,9 +236,10 @@ if __name__ == '__main__':
     #le.lt_ma(days=days, ma=ma)
     #le.ma_up(days=days, ma=ma)
     #le.ma_down(days=days, ma=ma)
-    le.maup_gtma(days=days, ma=ma)
+    #le.maup_gtma(days=days, ma=ma)
     #le.madown_ltma(days=days, ma=ma)
     #le.allmaup(days=days)
     #le.allmadown(days=days)
+    le.new_high(days=days)
     pass
 

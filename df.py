@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import util
+from copy import deepcopy
 '''
 看n天里最低，最高点,变动范围
 '''
@@ -19,38 +20,42 @@ class LookLow():
 
     @util.display_func_name
     def bar(self, days=5):
-        df = self.df
+        df = deepcopy(self.df)
         daima = self.daima
-        df['low_pct'] = (pd.rolling_min(df.low, days) - df.open) / df.open
-        df['high_pct'] = (pd.rolling_max(df.high, days) - df.open) / df.open
+        df['rollhigh'] = pd.rolling_max(df.high.shift(-1*days), days) #今天前days天的最高
+        df['rolllow'] = pd.rolling_min(df.low.shift(-1*days), days)   #今天前days天的最低
+        df['low_pct'] = (df.rolllow - df.open) / df.open 
+        df['high_pct'] = (df.rollhigh - df.open) / df.open
 
         func_name = sys._getframe().f_code.co_name
+        df.to_csv('files_tmp/looklow_%s_%s_before.csv' % (func_name, daima)) 
         self._to_result(df, days, func_name)
 
     @util.display_func_name
     def gt_ma(self, ma='ma5', days=5):
-        df = self.df
+        df = deepcopy(self.df)
         daima = self.daima
 
         df['gt_ma'] = df.low.shift(-1) > df[ma].shift(-1)
-        low_value = (pd.rolling_min(df.low, days) - df.open) / df.open
-        high_value = (pd.rolling_max(df.high, days) - df.open) / df.open
+        low_value = (pd.rolling_min(df.low.shift(-1*days), days) - df.open) / df.open
+        high_value = (pd.rolling_max(df.high.shift(-1*days), days) - df.open) / df.open
 
         df['low_pct'] = np.where(df['gt_ma'], low_value , 9)
         df['high_pct'] = np.where(df['gt_ma'], high_value , 9)
         
         func_name = sys._getframe().f_code.co_name
+        df.to_csv('files_tmp/looklow_%s_%s_before.csv' % (func_name, daima)) 
         self._to_result(df, days, func_name)
 
 
     @util.display_func_name
     def lt_ma(self, ma='ma5', days=5):
-        df = self.df
+        df = deepcopy(self.df)
         daima = self.daima
 
         df['lt_ma'] = df.high.shift(-1) < df[ma].shift(-1)
-        low_value = (pd.rolling_min(df.low, days) - df.open) / df.open
-        high_value = (pd.rolling_max(df.high, days) - df.open) / df.open
+        low_value = (pd.rolling_min(df.low.shift(-1*days), days) - df.open) / df.open
+        high_value = (pd.rolling_max(df.high.shift(-1*days), days) - df.open) / df.open
 
         df['low_pct'] = np.where(df['lt_ma'], low_value , 9)
         df['high_pct'] = np.where(df['lt_ma'], high_value , 9)
@@ -60,12 +65,12 @@ class LookLow():
 
     @util.display_func_name
     def ma_up(self, ma='ma5', days=5):
-        df = self.df
+        df = deepcopy(self.df)
         daima = self.daima
 
         df['ma_up'] = df[ma].shift(-1) > df[ma].shift(-2)
-        low_value = (pd.rolling_min(df.low, days) - df.open) / df.open
-        high_value = (pd.rolling_max(df.high, days) - df.open) / df.open
+        low_value = (pd.rolling_min(df.low.shift(-1*days), days) - df.open) / df.open
+        high_value = (pd.rolling_max(df.high.shift(-1*days), days) - df.open) / df.open
 
         df['low_pct'] = np.where(df['ma_up'], low_value , 9)
         df['high_pct'] = np.where(df['ma_up'], high_value , 9)
@@ -75,12 +80,12 @@ class LookLow():
 
     @util.display_func_name
     def ma_down(self, ma='ma5', days=5):
-        df = self.df
+        df = deepcopy(self.df)
         daima = self.daima
 
         df['ma_down'] = df[ma].shift(-1) < df[ma].shift(-2)
-        low_value = (pd.rolling_min(df.low, days) - df.open) / df.open
-        high_value = (pd.rolling_max(df.high, days) - df.open) / df.open
+        low_value = (pd.rolling_min(df.low.shift(-1*days), days) - df.open) / df.open
+        high_value = (pd.rolling_max(df.high.shift(-1*days), days) - df.open) / df.open
 
         df['low_pct'] = np.where(df['ma_down'], low_value , 9)
         df['high_pct'] = np.where(df['ma_down'], high_value , 9)
@@ -91,14 +96,14 @@ class LookLow():
 
     @util.display_func_name
     def maup_gtma(self, ma='ma5', days=5):
-        df = self.df
+        df = deepcopy(self.df)
         daima = self.daima
 
         df['ma_up'] = df[ma].shift(-1) > df[ma].shift(-2)
         df['gt_ma'] = df.low.shift(-1) > df[ma].shift(-1)
         df['all'] = df.ma_up & df.gt_ma
-        low_value = (pd.rolling_min(df.low, days) - df.open) / df.open
-        high_value = (pd.rolling_max(df.high, days) - df.open) / df.open
+        low_value = (pd.rolling_min(df.low.shift(-1*days), days) - df.open) / df.open
+        high_value = (pd.rolling_max(df.high.shift(-1*days), days) - df.open) / df.open
 
         df['low_pct'] = np.where(df['all'], low_value , 9)
         df['high_pct'] = np.where(df['all'], high_value , 9)
@@ -108,14 +113,14 @@ class LookLow():
 
     @util.display_func_name
     def maup_ltma(self, ma='ma5', days=5):
-        df = self.df
+        df = deepcopy(self.df)
         daima = self.daima
 
         df['ma_up'] = df[ma].shift(-1) > df[ma].shift(-2)
         df['lt_ma'] = df.high.shift(-1) < df[ma].shift(-1)
         df['all'] = df.ma_up & df.lt_ma
-        low_value = (pd.rolling_min(df.low, days) - df.open) / df.open
-        high_value = (pd.rolling_max(df.high, days) - df.open) / df.open
+        low_value = (pd.rolling_min(df.low.shift(-1*days), days) - df.open) / df.open
+        high_value = (pd.rolling_max(df.high.shift(-1*days), days) - df.open) / df.open
 
         df['low_pct'] = np.where(df['all'], low_value , 9)
         df['high_pct'] = np.where(df['all'], high_value , 9)
@@ -125,14 +130,14 @@ class LookLow():
 
     @util.display_func_name
     def madown_ltma(self, ma='ma5', days=5):
-        df = self.df
+        df = deepcopy(self.df)
         daima = self.daima
 
         df['ma_down'] = df[ma].shift(-1) < df[ma].shift(-2)
         df['lt_ma'] = df.high.shift(-1) < df[ma].shift(-1)
         df['all'] = df.ma_down & df.lt_ma
-        low_value = (pd.rolling_min(df.low, days) - df.open) / df.open
-        high_value = (pd.rolling_max(df.high, days) - df.open) / df.open
+        low_value = (pd.rolling_min(df.low.shift(-1*days), days) - df.open) / df.open
+        high_value = (pd.rolling_max(df.high.shift(-1*days), days) - df.open) / df.open
 
         df['low_pct'] = np.where(df['all'], low_value , 9)
         df['high_pct'] = np.where(df['all'], high_value , 9)
@@ -142,14 +147,14 @@ class LookLow():
 
     @util.display_func_name
     def madown_gtma(self, ma='ma5', days=5):
-        df = self.df
+        df = deepcopy(self.df)
         daima = self.daima
 
         df['ma_down'] = df[ma].shift(-1) < df[ma].shift(-2)
         df['gt_ma'] = df.low.shift(-1) > df[ma].shift(-1)
         df['all'] = df.ma_down & df.gt_ma
-        low_value = (pd.rolling_min(df.low, days) - df.open) / df.open
-        high_value = (pd.rolling_max(df.high, days) - df.open) / df.open
+        low_value = (pd.rolling_min(df.low.shift(-1*days), days) - df.open) / df.open
+        high_value = (pd.rolling_max(df.high.shift(-1*days), days) - df.open) / df.open
 
         df['low_pct'] = np.where(df['all'], low_value , 9)
         df['high_pct'] = np.where(df['all'], high_value , 9)
@@ -159,7 +164,7 @@ class LookLow():
 
     @util.display_func_name
     def ma51020_up(self, days=5):
-        df = self.df
+        df = deepcopy(self.df)
         daima = self.daima
 
         df['up1'] = df['ma5'].shift(-1) > df['ma5'].shift(-2)
@@ -167,8 +172,8 @@ class LookLow():
         df['up3'] = df['ma20'].shift(-1) > df['ma20'].shift(-2)
         
         df['all'] = df.up1 & df.up2 & df.up3
-        low_value = (pd.rolling_min(df.low, days) - df.open) / df.open
-        high_value = (pd.rolling_max(df.high, days) - df.open) / df.open
+        low_value = (pd.rolling_min(df.low.shift(-1*days), days) - df.open) / df.open
+        high_value = (pd.rolling_max(df.high.shift(-1*days), days) - df.open) / df.open
 
         df['low_pct'] = np.where(df['all'], low_value , 9)
         df['high_pct'] = np.where(df['all'], high_value , 9)
@@ -178,7 +183,7 @@ class LookLow():
 
     @util.display_func_name
     def ma5102040_up(self, days=5):
-        df = self.df
+        df = deepcopy(self.df)
         daima = self.daima
 
         df['up1'] = df['ma5'].shift(-1) > df['ma5'].shift(-2)
@@ -187,8 +192,8 @@ class LookLow():
         df['up4'] = df['ma40'].shift(-1) > df['ma40'].shift(-2)
         
         df['all'] = df.up1 & df.up2 & df.up3 & df.up4
-        low_value = (pd.rolling_min(df.low, days) - df.open) / df.open
-        high_value = (pd.rolling_max(df.high, days) - df.open) / df.open
+        low_value = (pd.rolling_min(df.low.shift(-1*days), days) - df.open) / df.open
+        high_value = (pd.rolling_max(df.high.shift(-1*days), days) - df.open) / df.open
 
         df['low_pct'] = np.where(df['all'], low_value , 9)
         df['high_pct'] = np.where(df['all'], high_value , 9)
@@ -199,7 +204,7 @@ class LookLow():
 
     @util.display_func_name
     def ma102040_up(self, days=5):
-        df = self.df
+        df = deepcopy(self.df)
         daima = self.daima
 
         
@@ -208,8 +213,8 @@ class LookLow():
         df['up4'] = df['ma40'].shift(-1) > df['ma40'].shift(-2)
         
         df['all'] = df.up2 & df.up3 & df.up4
-        low_value = (pd.rolling_min(df.low, days) - df.open) / df.open
-        high_value = (pd.rolling_max(df.high, days) - df.open) / df.open
+        low_value = (pd.rolling_min(df.low.shift(-1*days), days) - df.open) / df.open
+        high_value = (pd.rolling_max(df.high.shift(-1*days), days) - df.open) / df.open
 
         df['low_pct'] = np.where(df['all'], low_value , 9)
         df['high_pct'] = np.where(df['all'], high_value , 9)
@@ -221,7 +226,7 @@ class LookLow():
 
     @util.display_func_name
     def which_ma_up_and_gtma(self, which_ma=[], ma='', days=5):
-        df = self.df
+        df = deepcopy(self.df)
         daima = self.daima
 
         # first all true
@@ -242,8 +247,8 @@ class LookLow():
         df['gt_ma'] = df.low.shift(-1) > df[ma].shift(-1)
 
         df['all'] = df.up1 & df.up2 & df.up3 & df.up4 & df.gt_ma
-        low_value = (pd.rolling_min(df.low, days) - df.open) / df.open
-        high_value = (pd.rolling_max(df.high, days) - df.open) / df.open
+        low_value = (pd.rolling_min(df.low.shift(-1*days), days) - df.open) / df.open
+        high_value = (pd.rolling_max(df.high.shift(-1*days), days) - df.open) / df.open
 
         df['low_pct'] = np.where(df['all'], low_value , 9)
         df['high_pct'] = np.where(df['all'], high_value , 9)
@@ -259,15 +264,15 @@ class LookLow():
         '''
         gt bigger ma and lt smaller ma
         '''
-        df = self.df
+        df = deepcopy(self.df)
         daima = self.daima
 
         df['gt_ma'] = df.low.shift(-1) > df[ma].shift(-1)
         df['lt_ma'] = df.low.shift(-1) < df['ma5'].shift(-1)
 
         df['all'] = df.gt_ma & df.lt_ma
-        low_value = (pd.rolling_min(df.low, days) - df.open) / df.open
-        high_value = (pd.rolling_max(df.high, days) - df.open) / df.open
+        low_value = (pd.rolling_min(df.low.shift(-1*days), days) - df.open) / df.open
+        high_value = (pd.rolling_max(df.high.shift(-1*days), days) - df.open) / df.open
 
         df['low_pct'] = np.where(df['all'], low_value , 9)
         df['high_pct'] = np.where(df['all'], high_value , 9)
@@ -281,15 +286,15 @@ class LookLow():
         '''
         gt bigger ma and lt smaller ma
         '''
-        df = self.df
+        df = deepcopy(self.df)
         daima = self.daima
 
         df['gt_ma'] = df.low.shift(-1) > df[ma].shift(-1)
         df['lt_ma'] = df.low.shift(-1) < df['ma5'].shift(-1)
         df['ma_up'] = df[ma].shift(-1) > df[ma].shift(-2)
         df['all'] = df.gt_ma & df.lt_ma & df.ma_up
-        low_value = (pd.rolling_min(df.low, days) - df.open) / df.open
-        high_value = (pd.rolling_max(df.high, days) - df.open) / df.open
+        low_value = (pd.rolling_min(df.low.shift(-1*days), days) - df.open) / df.open
+        high_value = (pd.rolling_max(df.high.shift(-1*days), days) - df.open) / df.open
 
         df['low_pct'] = np.where(df['all'], low_value , 9)
         df['high_pct'] = np.where(df['all'], high_value , 9)
@@ -297,6 +302,24 @@ class LookLow():
         func_name = sys._getframe().f_code.co_name
         self._to_result(df, days, func_name)     
 
+
+    @util.display_func_name
+    def newhigh(self, days=5, rolling_days=5):
+        df = deepcopy(self.df)
+        daima = self.daima
+
+        df['rolling_high'] = pd.rolling_max(df.high.shift(-1*rolling_days), rolling_days) #今天前rolling_days天的最高
+        df['rolling_low'] = pd.rolling_min(df.low.shift(-1*rolling_days), rolling_days) #今天前rolling_days天的最低
+        df['new_high'] =  df.high.shift(-1) >= df.rolling_high
+        low_value = (pd.rolling_min(df.low.shift(-1*days), days) - df.open) / df.open
+        high_value = (pd.rolling_max(df.high.shift(-1*days), days) - df.open) / df.open
+        df['low_pct'] = np.where(df['new_high'], low_value , 9)
+        df['high_pct'] = np.where(df['new_high'], high_value , 9)
+
+        
+        func_name = sys._getframe().f_code.co_name
+        df.to_csv('files_tmp/looklow_%s_%s_before.csv' % (func_name, daima))  # 以函数名作为文件名保存
+        self._to_result(df, days, func_name)
 
     def _to_result(self, df, days, func_name):
         daima = self.daima
@@ -329,11 +352,11 @@ class LookLow():
 
 if __name__ == '__main__':
     #run_gtma()
-    days=5
+    days=200
     ma='ma20'
-    ll = LookLow('999999')
+    ll = LookLow('hs300')
     ll.bar(days=days)
-    #ll.ma_up(ma=ma,days=days)
+    ll.ma_up(ma=ma,days=days)
     ll.maup_gtma(ma=ma,days=days)
     #ll.ma102040_up(days=days)
     #ll.ma5102040_up(days=days)
@@ -341,6 +364,7 @@ if __name__ == '__main__':
 
     #ll.ma_up(ma='ma20',days=days)
     #ll.ma_up(ma='ma40',days=days)
-    #ll.gt_ma(ma='ma20',days=days)
+    ll.gt_ma(ma='ma20',days=days)
     #ll.gt_ma3(ma='ma40',days=days)
     #ll.gt_ma3(ma=ma,days=days)
+    #ll.newhigh(days=days)
