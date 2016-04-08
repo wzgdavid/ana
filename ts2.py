@@ -145,6 +145,31 @@ class LookEarnings():
 
 
     @util.display_func_name
+    def allmaup_first(self, days=5):
+        '''
+        
+        '''
+        df = deepcopy(self.df)
+        daima = self.daima
+        df['up1'] = df['ma5'].shift(-1) > df['ma5'].shift(-2)
+        df['up2'] = df['ma10'].shift(-1) > df['ma10'].shift(-2)
+        df['up3'] = df['ma20'].shift(-1) > df['ma20'].shift(-2)
+        df['up4'] = df['ma40'].shift(-1) > df['ma40'].shift(-2)
+
+        df['up1_b'] = df['ma5'].shift(-2) > df['ma5'].shift(-3)
+        df['up2_b'] = df['ma10'].shift(-2) > df['ma10'].shift(-3)
+        df['up3_b'] = df['ma20'].shift(-2) > df['ma20'].shift(-3)
+        df['up4_b'] = df['ma40'].shift(-2) > df['ma40'].shift(-3)
+        
+        df['all'] = df.up1 & df.up2 & df.up3 & df.up4
+        df['all_b'] = df.up1_b & df.up2_b & df.up3_b & df.up4_b
+        df['first'] = df['all'] & ~df['all_b']
+        df['earning'] = np.where(df['first'], df.open.shift(days) - df.open, _NO_EARNINGS)
+        
+        func_name = sys._getframe().f_code.co_name
+        self._to_result(df, days, func_name)
+
+    @util.display_func_name
     def allmadown(self, days=5):
         '''
         做空
@@ -197,7 +222,7 @@ class LookEarnings():
 
 if __name__ == '__main__':
 
-    daima = 'ml9'
+    daima = 'zxb'
     days=200
     ma='ma20'
     le = LookEarnings(daima)
@@ -212,5 +237,6 @@ if __name__ == '__main__':
     #le.maup_gtma(days=days, ma=ma)
     #le.madown_ltma(days=days, ma=ma)
     le.allmaup(days=days)
+    le.allmaup_first(days=days)
     le.allmadown(days=days)
     pass
