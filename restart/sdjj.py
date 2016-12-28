@@ -36,14 +36,56 @@ class Sdjj(GeneralIndex):
         self.df['tupo_sdl'] = self.df.tmp1 & self.df.tmp2
         # bk表示买开仓或买平仓，sk相反
         self.df['bksk'] = np.where(self.df['tupo_sdl'], 'sk' , self.df['bksk'])
+
+        cnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
+        kprice = 0 # 所有持仓的开仓价格之和，不是多仓就是空仓
+        total = 0
+
+        # 做多
         for i, bksk in enumerate(self.df.bksk):
-            bkcnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
+
+            idx = self.df.index[i]
+            
             if bksk == 'bk':
-                idx = self.df.index[i]
-               
+                
                 bkprice = self.df.loc[idx, 'sdjj'] # 买开仓的价位
                 #print bkprice
-                bkcnt += 1
+                kprice += bkprice
+                cnt += 1
+            elif bksk == 'sk' and cnt != 0:
+                skprice = self.df.loc[idx, 'sdjj']
+                gain = skprice*cnt - kprice # 平仓盈亏
+                #print skprice, kprice, gain
+                total += gain
+                print cnt, total
+                cnt = 0
+                kprice = 0
+                
+        
+
+        cnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
+        kprice = 0 # 所有持仓的开仓价格之和，不是多仓就是空仓
+        total = 0
+        # 做空 分开计算容易写
+        for i, bksk in enumerate(self.df.bksk):
+
+            idx = self.df.index[i]
+            
+            if bksk == 'sk':
+                
+                skprice = self.df.loc[idx, 'sdjj'] # 开仓的价位
+                #print skprice
+                kprice += skprice
+                cnt += 1
+            elif bksk == 'bk' and cnt != 0:
+                bkprice = self.df.loc[idx, 'sdjj'] # 平仓价格
+                gain = kprice - bkprice*cnt # 平仓盈亏
+                #print skprice, kprice, gain
+                total += gain
+                print cnt, total
+                cnt = 0
+                kprice = 0
+
 
 if __name__ == '__main__':
     s = Sdjj('rb')
