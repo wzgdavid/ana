@@ -4,7 +4,7 @@ from itertools import combinations
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import tushare as ts
+#import tushare as ts
 import util
 
 # tushare 的数据不准 节假日会多一天多余的数据
@@ -1574,7 +1574,7 @@ if __name__ == '__main__':
 
     #runn()
     #test_runall()
-    daima = 'aul9'
+    daima = 'zxb'
     days = 200
     ma = 'ma40'
     scope = 0.2
