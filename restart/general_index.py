@@ -16,16 +16,68 @@ class General(object):
     def foo(self):
         print self.df['o']
 
+    def run(self, df):
+        '''没有资金管理，没有止损，每出现一次开仓信号，就开一手，一旦出现相反信号全平仓'''
+        cnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
+        kprice = 0 # 所有持仓的开仓价格之和，不是多仓就是空仓
+        total = 0
+        icnt = 0 # 交易次数
+        # 做多
+        for i, bksk in enumerate(df.bksk):
+            
+            idx = df.index[i]
+            
+            if bksk == 'bk':
+                
+                bkprice = df.loc[idx, 'sdjj'] # 买开仓的价位
+                #print bkprice
+                kprice += bkprice
+                cnt += 1
+                
+            elif bksk == 'sk' and cnt != 0:
+                skprice = df.loc[idx, 'sdjj']
+                gain = skprice*cnt - kprice # 平仓盈亏
+                #print skprice, kprice, gain
+                total += gain
+                icnt += cnt
+                print icnt, cnt, total
+                cnt = 0
+                kprice = 0
+                
+        
+
+        cnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
+        kprice = 0 # 所有持仓的开仓价格之和，不是多仓就是空仓
+        total2 = 0
+
+        print '------------------------------------'
+        # 做空 分开计算容易写
+        for i, bksk in enumerate(df.bksk):
+
+            idx = df.index[i]
+            
+            if bksk == 'sk':
+                
+                skprice = df.loc[idx, 'sdjj'] # 开仓的价位
+                #print skprice
+                kprice += skprice
+                cnt += 1
+            elif bksk == 'bk' and cnt != 0:
+                bkprice = df.loc[idx, 'sdjj'] # 平仓价格
+                gain = kprice - bkprice*cnt # 平仓盈亏
+                #print skprice, kprice, gain
+                total2 += gain
+                icnt += cnt
+                print icnt, cnt, total2
+                cnt = 0
+                kprice = 0
+        print total + total2 
+
+
 
 class GeneralIndex(General):
     def __init__(self, daima):
         super(GeneralIndex, self).__init__(daima)
-        self.get_sdjj()
-    #def __new__(self, daima):
-    #    super(General, self).__init__(daima)
-
-    #def ma5(self, n):
-    #    self.ma5 = 
 
     def get_sdjj(self):
         '''

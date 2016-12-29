@@ -5,93 +5,70 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from general_index import General, GeneralIndex
+from copy import deepcopy
 
 
 class Sdjj(GeneralIndex):
     def __init__(self, daima):
         super(Sdjj, self).__init__(daima)
-        self.get_ma(5,10,20)
-
+        #self.get_ma(5,10,20)
+        self.get_sdjj()
 
     def foo(self):
         print self.df['o']
         pass
 
     def tupo_sdhsdl(self, n=10):
-        '''四点均线突破前n天最高开多，突破前n天最低开空
+        '''四点均线突破前n天最高开多，突破前n天最低开空，
+        
         暂时还想不出移动止损怎么写，先写不带移动止损的，用信号平仓的策略
+        # 暂时结果 rb 11(28008), 12(28080.25) 天最好
         '''
         self.get_nsdl(n)
         self.get_nsdh(n)
-        #self.df['tupo_sdh'] = self.df.sdjj.shift(1) < self.df.nsdh.shift(1) & self.df.sdjj > self.df.nsdh 
-        self.df['tmp1'] = self.df.sdjj.shift(1) < self.df.nsdh.shift(1)
-        self.df['tmp2'] = self.df.sdjj > self.df.nsdh
-        self.df['tupo_sdh'] = self.df.tmp1 & self.df.tmp2  #今天的四点均价突破前n天的四点均价高点
-        self.df['bksk'] = np.where(self.df['tupo_sdh'], 'bk' , None)
-        #self.df.loc[: ,'bkcnt'] = 0
-        #self.df['bkcnt'] = np.where(self.df['tupo_sdh'], self.df.bkcnt.shift(1)+1 , self.df.bkcnt.shift(2))
+        df = deepcopy(self.df) 
+        #df['tupo_sdh'] = df.sdjj.shift(1) < df.nsdh.shift(1) & df.sdjj > df.nsdh 
+        df['tmp1'] = df.sdjj.shift(1) < df.nsdh.shift(1)
+        df['tmp2'] = df.sdjj > df.nsdh
+        df['tupo_sdh'] = df.tmp1 & df.tmp2  #今天的四点均价突破前n天的四点均价高点
+        df['bksk'] = np.where(df['tupo_sdh'], 'bk' , None)
+        #df.loc[: ,'bkcnt'] = 0
+        #df['bkcnt'] = np.where(df['tupo_sdh'], df.bkcnt.shift(1)+1 , df.bkcnt.shift(2))
 
-        self.df['tmp1'] = self.df.sdjj.shift(1) > self.df.nsdl.shift(1)
-        self.df['tmp2'] = self.df.sdjj < self.df.nsdl
-        self.df['tupo_sdl'] = self.df.tmp1 & self.df.tmp2
+        df['tmp1'] = df.sdjj.shift(1) > df.nsdl.shift(1)
+        df['tmp2'] = df.sdjj < df.nsdl
+        df['tupo_sdl'] = df.tmp1 & df.tmp2
         # bk表示买开仓或买平仓，sk相反
-        self.df['bksk'] = np.where(self.df['tupo_sdl'], 'sk' , self.df['bksk'])
+        df['bksk'] = np.where(df['tupo_sdl'], 'sk' , df['bksk'])
 
-        cnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
-        kprice = 0 # 所有持仓的开仓价格之和，不是多仓就是空仓
-        total = 0
+        self.run(df)
 
-        # 做多
-        for i, bksk in enumerate(self.df.bksk):
+    def qian_n_ri(self, n=10):
+        '''比前n日高，买开仓，反之 (连着几天取这几天的第一天)'''
+        df = deepcopy(self.df) 
+        df['tmp1'] = df.sdjj > df.sdjj.shift(n)
+        df['tmp2'] = df.sdjj.shift(1) < df.sdjj.shift(n+1)
+        df['higher'] = df.tmp1 & df.tmp2 # 第一次比前第n天高
+        df['tmp1'] = df.sdjj < df.sdjj.shift(n)
+        df['tmp2'] = df.sdjj.shift(1) > df.sdjj.shift(n+1)
+        df['lower'] = df.tmp1 & df.tmp2 # 第一次比前第n天低
+          
+        df['bksk'] = np.where(df['higher'], 'bk' , None)
+        # bk表示买开仓或买平仓，sk相反
+        df['bksk'] = np.where(df['lower'], 'sk' , df['bksk'])
+        df.to_csv('tmp.csv')
+        #print df.loc[:, ['date','sdjj', 'higher']]
+        self.run(df)
 
-            idx = self.df.index[i]
-            
-            if bksk == 'bk':
-                
-                bkprice = self.df.loc[idx, 'sdjj'] # 买开仓的价位
-                #print bkprice
-                kprice += bkprice
-                cnt += 1
-            elif bksk == 'sk' and cnt != 0:
-                skprice = self.df.loc[idx, 'sdjj']
-                gain = skprice*cnt - kprice # 平仓盈亏
-                #print skprice, kprice, gain
-                total += gain
-                print cnt, total
-                cnt = 0
-                kprice = 0
-                
-        
 
-        cnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
-        kprice = 0 # 所有持仓的开仓价格之和，不是多仓就是空仓
-        total = 0
-        # 做空 分开计算容易写
-        for i, bksk in enumerate(self.df.bksk):
-
-            idx = self.df.index[i]
-            
-            if bksk == 'sk':
-                
-                skprice = self.df.loc[idx, 'sdjj'] # 开仓的价位
-                #print skprice
-                kprice += skprice
-                cnt += 1
-            elif bksk == 'bk' and cnt != 0:
-                bkprice = self.df.loc[idx, 'sdjj'] # 平仓价格
-                gain = kprice - bkprice*cnt # 平仓盈亏
-                #print skprice, kprice, gain
-                total += gain
-                print cnt, total
-                cnt = 0
-                kprice = 0
-
+  
 
 if __name__ == '__main__':
     s = Sdjj('rb')
     #s.foo()
     
-    s.tupo_sdhsdl()
+    s.tupo_sdhsdl(12) # rb 11(28008), 12(28080.25) 天最好
+    #s.qian_n_ri()
     #print s.df.index
     #print s.df.loc[:, ['date','sdjj', 'tupo_sdl', 'tupo_sdh']]
     #s.df.to_csv('tmp.csv')  
