@@ -115,8 +115,6 @@ class General(object):
                 kprice = 0
 
 
-
-
         #print '------------------------------------'
         # 做空 分开计算容易写
         cnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
@@ -143,6 +141,67 @@ class General(object):
                 kprice = 0
         total =  total + total2
         avg = total/icnt
+        print total, avg 
+
+    def run2b(self, df):
+        ''' 把run2的买卖写在一个for里
+        开仓和平仓信号参数不同，也就是开仓平仓分开，而不是像run那样平仓了马上反向开仓
+        比如
+        开慢平快：大于前20天高点，开多，小于前10日低点平仓，小于前20日低点开仓，大于前10日高点平仓
+        反过来就是，开快平慢：大于前10天高点，开多，小于前20日低点平仓，小于前10日低点开仓，大于前20日高点平仓
+        买开仓bk  卖开仓sk  多头平仓bp 空头平仓sp  
+        '''
+        if 'bpsp' not in df.columns:
+            print 'df has no bpsp'
+            return
+        bcnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
+        bhprice = 0 # 所有持仓的开仓价格之和，不是多仓就是空仓
+        total = 0
+        ibcnt = 0 # 开仓手数
+        scnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
+        shprice = 0 # 所有持仓的开仓价格之和，不是多仓就是空仓
+        iscnt = 0 # 开仓手数
+        # 做多
+        for i, bksk in enumerate(df.bksk):
+            
+            idx = df.index[i]
+            bpsp = df.loc[idx, 'bpsp']
+            if bksk == 'bk':
+                
+                bkprice = df.loc[idx, 'sdjj'] # 买开仓的价位
+                #print bkprice
+                bhprice += bkprice
+                bcnt += 1
+                print total
+                
+            elif bpsp == 'bp' and bcnt != 0:
+                skprice = df.loc[idx, 'sdjj']
+                gain = skprice * bcnt - bhprice # 平仓盈亏
+                #print skprice, bhprice, gain
+                total += gain
+                ibcnt += bcnt
+                #print ibcnt, bcnt, total
+                bcnt = 0
+                bhprice = 0
+
+            if bksk == 'sk':
+                
+                skprice = df.loc[idx, 'sdjj'] # 开仓的价位, 目前跑任何，开仓平仓价格默认四点均价
+                #print skprice
+                shprice += skprice
+                scnt += 1
+            elif bpsp == 'sp' and scnt != 0:
+                bkprice = df.loc[idx, 'sdjj'] # 平仓价格
+                gain = shprice - bkprice*scnt # 平仓盈亏
+                #print skprice, shprice, gain
+                total += gain
+                iscnt += scnt
+                #print iscnt, scnt, total
+                scnt = 0
+                shprice = 0
+
+                print total
+        avg = total/(ibcnt + iscnt)
         print total, avg 
 
 

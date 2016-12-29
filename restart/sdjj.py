@@ -249,10 +249,12 @@ if __name__ == '__main__':
     
     #s.tupo_sdhsdl(12) # rb 11(28008), 12(28080.25) 天最好
 
-    s.ma_cross(5,10)
-    s.ma_cross_run2(5,10,5,10)
-    #s.sdhsdl_run2(12,12)
-    #s.sdhsdl(12)
+    #s.ma_cross(5,15)
+    #s.ma_cross(5,25)
+    #s.ma_cross_run2(5,15,5,15)
+    #s.ma_cross_run2(5,25,5,15)
+    s.sdhsdl_run2(12,12)
+    s.sdhsdl(12)
     #s.tupo_ma(11)
     #s.qian_n_ri(11)
     #print s.df.index
