@@ -17,11 +17,13 @@ class General(object):
         print self.df['o']
 
     def run(self, df):
-        '''没有资金管理，没有止损，每出现一次开仓信号，就开一手，一旦出现相反信号全平仓'''
+        '''没有资金管理，没有止损，每出现一次开仓信号，就开一手，一旦出现相反信号全平仓
+        开平仓参数一样
+        '''
         cnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
         kprice = 0 # 所有持仓的开仓价格之和，不是多仓就是空仓
         total = 0
-        icnt = 0 # 交易次数
+        icnt = 0 # 开仓手数
         # 做多
         for i, bksk in enumerate(df.bksk):
             
@@ -40,25 +42,24 @@ class General(object):
                 #print skprice, kprice, gain
                 total += gain
                 icnt += cnt
-                print icnt, cnt, total
+                #print icnt, cnt, total
                 cnt = 0
                 kprice = 0
                 
         
-
         cnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
         kprice = 0 # 所有持仓的开仓价格之和，不是多仓就是空仓
         total2 = 0
 
-        print '------------------------------------'
+        #print '------------------------------------'
         # 做空 分开计算容易写
-        for i, bksk in enumerate(df.bksk):
+        for i, bksk in enumerate(df.bksk):  #[:90]
 
             idx = df.index[i]
             
             if bksk == 'sk':
                 
-                skprice = df.loc[idx, 'sdjj'] # 开仓的价位
+                skprice = df.loc[idx, 'sdjj'] # 开仓的价位, 目前跑任何，开仓平仓价格默认四点均价
                 #print skprice
                 kprice += skprice
                 cnt += 1
@@ -68,10 +69,12 @@ class General(object):
                 #print skprice, kprice, gain
                 total2 += gain
                 icnt += cnt
-                print icnt, cnt, total2
+                #print icnt, cnt, total2
                 cnt = 0
                 kprice = 0
-        print total + total2 
+        total =  total + total2
+        avg = total/icnt
+        print total, avg 
 
 
 
@@ -95,6 +98,12 @@ class GeneralIndex(General):
         '''
         for n in malist:
             self.df['ma%s' % n]  = self.df.c.rolling(window=n, center=False).mean()
+
+    def get_ma_sdjj(self, *malist):
+        '''四点均价的ma
+        '''
+        for n in malist:
+            self.df['sdjjma%s' % n]  = self.df.sdjj.rolling(window=n, center=False).mean()
 
     def get_high_percent(self, n):
         '''最高点向下百分比
@@ -136,6 +145,6 @@ if __name__ == '__main__':
     #gi.get_ma(5,10,20)
     
     #print gi.df.loc[:,['c','ma5', 'ma10', 'ma20']]
-    gi.get_nsdl(10)
-    print gi.df.loc[:, ['date','sdjj','nsdl']]
+    #gi.get_nsdl(10)
+    #print gi.df.loc[:, ['date','sdjj','nsdl']]
     #print gi.df.describe()
