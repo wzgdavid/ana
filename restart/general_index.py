@@ -20,6 +20,7 @@ class General(object):
         '''没有资金管理，没有止损，每出现一次开仓信号，就开一手，一旦出现相反信号全平仓
         开平仓参数一样
         '''
+
         cnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
         kprice = 0 # 所有持仓的开仓价格之和，不是多仓就是空仓
         total = 0
@@ -76,8 +77,73 @@ class General(object):
         avg = total/icnt
         print total, avg 
 
+    def run2(self, df):
+        '''
+        开仓和平仓信号参数不同，
+        比如
+        开慢平快：大于前20天高点，开多，小于前10日低点平仓，小于前20日低点开仓，大于前10日高点平仓
+        反过来就是，开快平慢：大于前10天高点，开多，小于前20日低点平仓，小于前10日低点开仓，大于前20日高点平仓
+        买开仓bk  卖开仓sk  多头平仓bp 空头平仓sp  
+        '''
+        if 'bpsp' not in df.columns:
+            print 'df has no bpsp'
+            return
+        cnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
+        kprice = 0 # 所有持仓的开仓价格之和，不是多仓就是空仓
+        total = 0
+        icnt = 0 # 开仓手数
+        # 做多
+        for i, bksk in enumerate(df.bksk):
+            
+            idx = df.index[i]
+            bpsp = df.loc[idx, 'bpsp']
+            if bksk == 'bk':
+                
+                bkprice = df.loc[idx, 'sdjj'] # 买开仓的价位
+                #print bkprice
+                kprice += bkprice
+                cnt += 1
+                
+            elif bpsp == 'bp' and cnt != 0:
+                skprice = df.loc[idx, 'sdjj']
+                gain = skprice*cnt - kprice # 平仓盈亏
+                #print skprice, kprice, gain
+                total += gain
+                icnt += cnt
+                #print icnt, cnt, total
+                cnt = 0
+                kprice = 0
 
 
+
+
+        #print '------------------------------------'
+        # 做空 分开计算容易写
+        cnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
+        kprice = 0 # 所有持仓的开仓价格之和，不是多仓就是空仓
+        total2 = 0
+        for i, bksk in enumerate(df.bksk):  #[:90]
+
+            idx = df.index[i]
+            bpsp = df.loc[idx, 'bpsp']
+            if bksk == 'sk':
+                
+                skprice = df.loc[idx, 'sdjj'] # 开仓的价位, 目前跑任何，开仓平仓价格默认四点均价
+                #print skprice
+                kprice += skprice
+                cnt += 1
+            elif bpsp == 'sp' and cnt != 0:
+                bkprice = df.loc[idx, 'sdjj'] # 平仓价格
+                gain = kprice - bkprice*cnt # 平仓盈亏
+                #print skprice, kprice, gain
+                total2 += gain
+                icnt += cnt
+                #print icnt, cnt, total2
+                cnt = 0
+                kprice = 0
+        total =  total + total2
+        avg = total/icnt
+        print total, avg 
 class GeneralIndex(General):
     def __init__(self, daima):
         super(GeneralIndex, self).__init__(daima)
@@ -130,6 +196,14 @@ class GeneralIndex(General):
     def get_nsdl(self, n):
         '''前n天四点均价最低点（不包含当天）'''
         self.df['nsdl'] = self.df.sdjj.shift(1).rolling(window=n, center=False).min()
+
+    def get_nsdhp(self, n):
+        '''前n天四点均价最高点（不包含当天） 平仓用'''
+        self.df['nsdhp'] = self.df.sdjj.shift(1).rolling(window=n, center=False).max()
+
+    def get_nsdlp(self, n):
+        '''前n天四点均价最低点（不包含当天） 平仓用'''
+        self.df['nsdlp'] = self.df.sdjj.shift(1).rolling(window=n, center=False).min()
 
 
 if __name__ == '__main__':

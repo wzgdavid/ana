@@ -65,6 +65,61 @@ class Sdjj(GeneralIndex):
         self.run(df)
 
     @util.display_func_name
+    def sdhsdl_run2(self, n=12, m=12):
+        '''四点均价比前n天最高还高开多， 反之开空  
+        开平仓参数不同， n 开仓参数， m平仓参数
+        '''
+        self.get_nsdl(n)
+        self.get_nsdh(n)
+        self.get_nsdhp(m)
+        self.get_nsdlp(m)
+        df = deepcopy(self.df) 
+
+        df['tupo_sdh'] = df.sdjj > df.nsdh  #今天的四点均价突破前n天的四点均价高点
+        df['bksk'] = np.where(df['tupo_sdh'], 'bk' , None)
+        df['tupo_sdl'] = df.sdjj < df.nsdl
+        df['bksk'] = np.where(df['tupo_sdl'], 'sk' , df['bksk'])
+
+        # 平仓
+        
+
+        df['tupo_sdhp'] = df.sdjj > df.nsdhp  
+        df['bpsp'] = np.where(df['tupo_sdhp'], 'sp' , None)
+        df['tupo_sdlp'] = df.sdjj < df.nsdlp
+        df['bpsp'] = np.where(df['tupo_sdlp'], 'bp' , df['bpsp'])
+        df.to_csv('tmp.csv')
+        #print df.columns
+        self.run2(df)
+
+    @util.display_func_name
+    def sdhsdl_ma(self, n=10, man=20, p=0.07):
+        '''四点均价比前n天最高还高开多， 反之开空  
+        和tupo_sdhsdl的区别， tupo_sdhsdl只是突破的那一天为信号， 此函数不管
+        目的是为了看满足这个条件下的概率，真实不可能开那么多仓位
+
+        再加个条件，离ma 一定 的距离，在1+-p范围外（避免震荡）
+        man为ma的参数
+        '''
+        self.get_nsdl(n)
+        self.get_nsdh(n)
+        self.get_ma_sdjj(man)
+        df = deepcopy(self.df)
+        ma = 'sdjjma%s' % man
+        df.to_csv('tmp.csv')
+
+        df['tupo_sdh'] = df.sdjj > df.nsdh  #今天的四点均价突破前n天的四点均价高点
+        df['bigger_than_ma'] = df.sdjj > df[ma] * (1+p)
+        df['canbk'] = df.tupo_sdh & df.bigger_than_ma
+        df['bksk'] = np.where(df['canbk'], 'bk' , None)
+        df['tupo_sdl'] = df.sdjj < df.nsdl
+        df['smaller_than_ma'] = df.sdjj < df[ma] * (1-p)
+        df['cansk'] = df.tupo_sdl & df.smaller_than_ma
+        # bk表示买开仓或买平仓，sk相反
+        df['bksk'] = np.where(df['cansk'], 'sk' , df['bksk'])
+
+        self.run(df)
+
+    @util.display_func_name
     def qian_n_ri(self, n=10):
         '''比第前n日高，买开仓，反之 (连着几天取这几天的第一天)
         
@@ -140,14 +195,24 @@ class Sdjj(GeneralIndex):
         #df.to_csv('tmp.csv')
         self.run(df)
 
+def rangerun(foo):
+    r1 = range(5, 15)
+    r2 = range(5, 50, 2)
+    for a in r1:
+        for b in r2:
+            print a, b
+            foo(a,b)
+
 
 if __name__ == '__main__':
     s = Sdjj('rb')
     #s.foo()
     
     #s.tupo_sdhsdl(12) # rb 11(28008), 12(28080.25) 天最好
-    #s.sdhsdl(12)
-    s.ma_cross(5,22)
+
+    #s.ma_cross(5,22)
+    s.sdhsdl_run2(12,12)
+    s.sdhsdl(12)
     #s.tupo_ma(11)
     #s.qian_n_ri(11)
     #print s.df.index
@@ -155,3 +220,4 @@ if __name__ == '__main__':
     #s.df.to_csv('tmp.csv')  
     #df = pd.read_csv('../data/%s.xls' % 'RBL9')
     #print df
+    #rangerun(s.sdhsdl_ma)
