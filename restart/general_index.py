@@ -79,7 +79,7 @@ class General(object):
 
     def run2(self, df):
         '''
-        开仓和平仓信号参数不同，
+        开仓和平仓信号参数不同，也就是开仓平仓分开，而不是像run那样平仓了马上反向开仓
         比如
         开慢平快：大于前20天高点，开多，小于前10日低点平仓，小于前20日低点开仓，大于前10日高点平仓
         反过来就是，开快平慢：大于前10天高点，开多，小于前20日低点平仓，小于前10日低点开仓，大于前20日高点平仓
@@ -144,6 +144,9 @@ class General(object):
         total =  total + total2
         avg = total/icnt
         print total, avg 
+
+
+
 class GeneralIndex(General):
     def __init__(self, daima):
         super(GeneralIndex, self).__init__(daima)

@@ -68,6 +68,7 @@ class Sdjj(GeneralIndex):
     def sdhsdl_run2(self, n=12, m=12):
         '''四点均价比前n天最高还高开多， 反之开空  
         开平仓参数不同， n 开仓参数， m平仓参数
+        和 xian 的 hl() 对应
         '''
         self.get_nsdl(n)
         self.get_nsdh(n)
@@ -195,6 +196,44 @@ class Sdjj(GeneralIndex):
         #df.to_csv('tmp.csv')
         self.run(df)
 
+    @util.display_func_name
+    def ma_cross_run2(self, a=5, b=25, c=10, d=30):
+        '''a  b 开仓的均线，  c  d  平仓用的均线
+        a比b小  c比d小
+        '''
+        self.get_ma_sdjj(a, b, c, d)
+        df = deepcopy(self.df) 
+        maa = 'sdjjma%s' % a
+        mab = 'sdjjma%s' % b
+        mac = 'sdjjma%s' % c
+        mad = 'sdjjma%s' % d
+        # 开仓
+        df['tmp1'] = df[maa].shift(1) < df[mab].shift(1)
+        df['tmp2'] = df[maa] > df[mab]
+        df['jincha'] = df.tmp1 & df.tmp2
+
+        df['tmp1'] = df[maa].shift(1) > df[mab].shift(1)
+        df['tmp2'] = df[maa] < df[mab]
+        df['sicha'] = df.tmp1 & df.tmp2
+        df['bksk'] = np.where(df['jincha'], 'bk' , None)
+        df['bksk'] = np.where(df['sicha'], 'sk' , df['bksk'])
+
+        # 平仓
+        df['tmp1'] = df[mac].shift(1) < df[mad].shift(1)
+        df['tmp2'] = df[mac] > df[mad]
+        df['jinchap'] = df.tmp1 & df.tmp2
+
+        df['tmp1'] = df[mac].shift(1) > df[mad].shift(1)
+        df['tmp2'] = df[mac] < df[mad]
+        df['sichap'] = df.tmp1 & df.tmp2
+        df['bpsp'] = np.where(df['jinchap'], 'sp' , None)
+        df['bpsp'] = np.where(df['sichap'], 'bp' , df['bpsp'])
+
+
+
+        df.to_csv('tmp.csv')
+        self.run2(df)
+
 def rangerun(foo):
     r1 = range(5, 15)
     r2 = range(5, 50, 2)
@@ -210,9 +249,10 @@ if __name__ == '__main__':
     
     #s.tupo_sdhsdl(12) # rb 11(28008), 12(28080.25) 天最好
 
-    #s.ma_cross(5,22)
-    s.sdhsdl_run2(12,12)
-    s.sdhsdl(12)
+    s.ma_cross(5,10)
+    s.ma_cross_run2(5,10,5,10)
+    #s.sdhsdl_run2(12,12)
+    #s.sdhsdl(12)
     #s.tupo_ma(11)
     #s.qian_n_ri(11)
     #print s.df.index

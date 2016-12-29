@@ -122,10 +122,10 @@ class Kxian(GeneralIndex):
 
 if __name__ == '__main__':
     k = Kxian('rb')
-    k.ma_updown(50)
+    #k.ma_updown(50)
     #k.cross_ma()
     #k.tupo_hl(20)
-    #k.hl(20)
+    k.hl(20)
     #k.ma_cross(10,50)
     '''r1 = range(11, 30)
     r2 = range(80, 222, 5)
