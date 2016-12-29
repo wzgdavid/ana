@@ -155,11 +155,11 @@ class General(object):
             print 'df has no bpsp'
             return
         bcnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
-        bhprice = 0 # 所有持仓的开仓价格之和，不是多仓就是空仓
+        bhprice = 0 # 所有多仓持仓的开仓价格之和
         total = 0
         ibcnt = 0 # 开仓手数
         scnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
-        shprice = 0 # 所有持仓的开仓价格之和，不是多仓就是空仓
+        shprice = 0 # 所有空仓持仓的开仓价格之和，
         iscnt = 0 # 开仓手数
         # 做多
         for i, bksk in enumerate(df.bksk):
@@ -172,7 +172,7 @@ class General(object):
                 #print bkprice
                 bhprice += bkprice
                 bcnt += 1
-                print total
+                #print total
                 
             elif bpsp == 'bp' and bcnt != 0:
                 skprice = df.loc[idx, 'sdjj']
@@ -200,10 +200,14 @@ class General(object):
                 scnt = 0
                 shprice = 0
 
-                print total
+                #print total
         avg = total/(ibcnt + iscnt)
-        print total, avg 
+        #print total, avg
+        return total, avg
 
+    def run3(self, df):
+        '''带资金管理的，没资金管理跑出来的曲线不现实'''
+        pass
 
 
 class GeneralIndex(General):

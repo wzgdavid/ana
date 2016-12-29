@@ -45,6 +45,42 @@ class Sdjj(GeneralIndex):
 
         self.run(df)
     
+    #@util.display_func_name
+    def tupo_sdhsdl_run2(self, n=10, m =11):
+        '''螺纹参数12,12最大？
+        '''
+        self.get_nsdl(n)
+        self.get_nsdh(n)
+        self.get_nsdhp(m)
+        self.get_nsdlp(m)
+        df = deepcopy(self.df) 
+
+        df['tmp1'] = df.sdjj.shift(1) < df.nsdh.shift(1)
+        df['tmp2'] = df.sdjj > df.nsdh
+        df['tupo_sdh'] = df.tmp1 & df.tmp2  
+        df['bksk'] = np.where(df['tupo_sdh'], 'bk' , None)
+
+        df['tmp1'] = df.sdjj.shift(1) > df.nsdl.shift(1)
+        df['tmp2'] = df.sdjj < df.nsdl
+        df['tupo_sdl'] = df.tmp1 & df.tmp2
+        df['bksk'] = np.where(df['tupo_sdl'], 'sk' , df['bksk'])
+        #平仓
+        df['tmp1'] = df.sdjj.shift(1) < df.nsdhp.shift(1)
+        df['tmp2'] = df.sdjj > df.nsdhp
+        df['tupo_sdhp'] = df.tmp1 & df.tmp2  
+        df['bpsp'] = np.where(df['tupo_sdhp'], 'sp' , None)
+
+        df['tmp1'] = df.sdjj.shift(1) > df.nsdlp.shift(1)
+        df['tmp2'] = df.sdjj < df.nsdlp
+        df['tupo_sdlp'] = df.tmp1 & df.tmp2
+        df['bpsp'] = np.where(df['tupo_sdlp'], 'bp' , df['bpsp'])
+
+        #df.to_csv('tmp.csv')
+        rtn = self.run2b(df)
+        #print rtn , 'print rtn'
+        return rtn
+
+
     @util.display_func_name
     def sdhsdl(self, n=10):
         '''四点均价比前n天最高还高开多， 反之开空  
@@ -82,13 +118,11 @@ class Sdjj(GeneralIndex):
         df['bksk'] = np.where(df['tupo_sdl'], 'sk' , df['bksk'])
 
         # 平仓
-        
-
         df['tupo_sdhp'] = df.sdjj > df.nsdhp  
         df['bpsp'] = np.where(df['tupo_sdhp'], 'sp' , None)
         df['tupo_sdlp'] = df.sdjj < df.nsdlp
         df['bpsp'] = np.where(df['tupo_sdlp'], 'bp' , df['bpsp'])
-        df.to_csv('tmp.csv')
+        #df.to_csv('tmp.csv')
         #print df.columns
         self.run2(df)
 
@@ -235,12 +269,32 @@ class Sdjj(GeneralIndex):
         self.run2(df)
 
 def rangerun(foo):
-    r1 = range(5, 15)
-    r2 = range(5, 50, 2)
+    '''选择最优参数, 画图看起来清晰'''
+    r1 = range(11, 15)   # max 11 到 15， 
+    r2 = range(11,15, 1)# max 11 到 15
+    index = []
+    total = []
+    avg = []
     for a in r1:
         for b in r2:
-            print a, b
-            foo(a,b)
+            index.append('%s-%s' % (a, b))
+            #print a, b
+            rtn = foo(a,b)
+
+            total.append(rtn[0])
+            avg.append(rtn[1])
+    df = pd.DataFrame(index=index,
+                  columns=['total', 'avg'])
+    #print index
+    data = {
+        'total' : pd.Series(total, index=index),
+        'avg' : pd.Series(avg, index=index)
+        }
+    
+    df = pd.DataFrame(data)
+    df['avg'] = df.avg*100
+    print df
+    df.plot();plt.show()
 
 
 if __name__ == '__main__':
@@ -248,13 +302,15 @@ if __name__ == '__main__':
     #s.foo()
     
     #s.tupo_sdhsdl(12) # rb 11(28008), 12(28080.25) 天最好
-
+    #print s.tupo_sdhsdl_run2(9, 8)
+    #print s.tupo_sdhsdl_run2(10, 12)
+    rangerun(s.tupo_sdhsdl_run2)
     #s.ma_cross(5,15)
     #s.ma_cross(5,25)
     #s.ma_cross_run2(5,15,5,15)
     #s.ma_cross_run2(5,25,5,15)
-    s.sdhsdl_run2(12,12)
-    s.sdhsdl(12)
+    #s.sdhsdl_run2(12,12)
+    #s.sdhsdl(12)
     #s.tupo_ma(11)
     #s.qian_n_ri(11)
     #print s.df.index
