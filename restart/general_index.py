@@ -205,9 +205,83 @@ class General(object):
         #print total, avg
         return total, avg
 
-    def run3(self, df):
-        '''带资金管理的，没资金管理跑出来的曲线不现实'''
-        pass
+    def run3b(self, df, zj=50000, f=0.02,zs=0.07):
+        # '''带资金管理的，没资金管理跑出来的曲线不现实'''
+        # 资金管理方式，有持仓不开仓，没持仓，按照f算能开几手
+        # zj 总资金
+        # zs  止损幅度， 开仓价的百分比
+        # f  总资金固定百分比风险  每次不能超过这个百分比
+        if 'bpsp' not in df.columns:
+            print 'df has no bpsp'
+            return
+        print 'run3b'
+        #bcnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
+        #bhprice = 0 # 所有多仓持仓的开仓价格之和
+        #total = 0 
+        ibcnt = 0 # 买开仓手数
+        #scnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
+        #shprice = 0 # 所有空仓持仓的开仓价格之和，
+        iscnt = 0 # 卖开仓手数
+        chicang = 0 # 持仓资金
+        keyong = 0 # 可用资金
+        kjs = 0 # 一次开仓几手
+        bs = '' # 表示多头还是空头
+        # 做多
+        for i, bksk in enumerate(df.bksk):
+            
+            idx = df.index[i]
+            bpsp = df.loc[idx, 'bpsp']
+            if bksk == 'bk': # 开多
+
+                if kjs == 0: # 可开仓
+                    bkprice = df.loc[idx, 'sdjj']
+                    #print bkprice
+                    kczs = bkprice * zs *10# 开仓止损
+                    kjs = int((zj*f)/kczs)  # 这次可开几手
+                    bs = 'b'
+                    chicang = bkprice * kjs * 10 # 我一般做的都是一手10个单位
+                    print 'bk  ', bkprice, kczs, kjs, chicang
+                    
+                    #print total
+                else: # 不可开仓
+                    pass
+                
+            elif bpsp == 'bp' and kjs != 0 and bs == 'b': # 多头平仓
+                print 'bp'
+                spprice = df.loc[idx, 'sdjj']  # 平仓价格
+                gain = spprice * kjs * 10 - chicang # 平仓收益
+                zj += gain
+                ibcnt += kjs
+                chicang = 0
+                kjs = 0
+                print zj
+                
+            if bksk == 'sk':  # 开空
+                
+                if kjs == 0: # 可开仓
+                    skprice = df.loc[idx, 'sdjj']
+                    kczs = skprice * zs * 10# 开仓止损
+                    kjs = int((zj*f)/kczs)  # 这次可开几手
+                    bs = 's'
+                    chicang = skprice * kjs * 10 # 我一般做的都是一手10个单位
+                    print 'sk  ', bkprice, kczs, kjs, chicang
+                    # keyong = zj - chicang
+                    
+                else: # 不可开仓
+                    pass
+
+            elif bpsp == 'sp' and kjs != 0 and bs == 's': # 空头平仓
+                print 'sp'
+                bpprice = df.loc[idx, 'sdjj']
+                gain = chicang - bpprice * kjs * 10 
+                zj += gain
+                iscnt += kjs
+                chicang = 0
+                kjs = 0
+                print zj
+        #avg = zj/(ibcnt + iscnt)
+        
+        return zj
 
 
 class GeneralIndex(General):

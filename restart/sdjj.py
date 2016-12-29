@@ -101,6 +101,33 @@ class Sdjj(GeneralIndex):
         self.run(df)
 
     @util.display_func_name
+    def sdhsdl_run3(self, n=10, m=10):
+        '''四点均价比前n天最高还高开多， 反之开空  
+        和tupo_sdhsdl的区别， tupo_sdhsdl只是突破的那一天为信号， 此函数不管
+        目的是为了看满足这个条件下的概率，真实不可能开那么多仓位
+        '''
+        self.get_nsdl(n)
+        self.get_nsdh(n)
+        self.get_nsdhp(m)
+        self.get_nsdlp(m)
+        df = deepcopy(self.df) 
+
+        df['tupo_sdh'] = df.sdjj > df.nsdh  #今天的四点均价突破前n天的四点均价高点
+        df['bksk'] = np.where(df['tupo_sdh'], 'bk' , None)
+        df['tupo_sdl'] = df.sdjj < df.nsdl
+        df['bksk'] = np.where(df['tupo_sdl'], 'sk' , df['bksk'])
+
+        # 平仓
+        df['tupo_sdhp'] = df.sdjj > df.nsdhp  
+        df['bpsp'] = np.where(df['tupo_sdhp'], 'sp' , None)
+        df['tupo_sdlp'] = df.sdjj < df.nsdlp
+        df['bpsp'] = np.where(df['tupo_sdlp'], 'bp' , df['bpsp'])
+        df.to_csv('tmp.csv')
+        #print df.columns
+
+        return self.run3b(df, 100000, 0.06, 0.06)
+
+    @util.display_func_name
     def sdhsdl_run2(self, n=12, m=12):
         '''四点均价比前n天最高还高开多， 反之开空  
         开平仓参数不同， n 开仓参数， m平仓参数
@@ -304,7 +331,7 @@ if __name__ == '__main__':
     #s.tupo_sdhsdl(12) # rb 11(28008), 12(28080.25) 天最好
     #print s.tupo_sdhsdl_run2(9, 8)
     #print s.tupo_sdhsdl_run2(10, 12)
-    rangerun(s.tupo_sdhsdl_run2)
+    #rangerun(s.tupo_sdhsdl_run2)
     #s.ma_cross(5,15)
     #s.ma_cross(5,25)
     #s.ma_cross_run2(5,15,5,15)
@@ -319,3 +346,4 @@ if __name__ == '__main__':
     #df = pd.read_csv('../data/%s.xls' % 'RBL9')
     #print df
     #rangerun(s.sdhsdl_ma)
+    print s.sdhsdl_run3()
