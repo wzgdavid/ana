@@ -4,7 +4,7 @@ sys.path.append("..")
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from general_index import General, GeneralIndex
+from general_index import General, GeneralIndex, rangerun, rangerun3
 from copy import deepcopy
 import util
 
@@ -122,10 +122,10 @@ class Sdjj(GeneralIndex):
         df['bpsp'] = np.where(df['tupo_sdhp'], 'sp' , None)
         df['tupo_sdlp'] = df.sdjj < df.nsdlp
         df['bpsp'] = np.where(df['tupo_sdlp'], 'bp' , df['bpsp'])
-        df.to_csv('tmp.csv')
+        #df.to_csv('tmp.csv')
         #print df.columns
 
-        return self.run3b(df, 100000, 0.06, 0.06)
+        return self.run3b(df, zj=60000, f=0.06, zs=0.02)
 
     @util.display_func_name
     def sdhsdl_run2(self, n=12, m=12):
@@ -201,6 +201,8 @@ class Sdjj(GeneralIndex):
         #print df.loc[:, ['date','sdjj', 'higher']]
         self.run(df)
 
+
+
     @util.display_func_name
     def qian_n_ri2(self, n=10):
         '''比前n日高，买开仓，反之'''
@@ -214,7 +216,25 @@ class Sdjj(GeneralIndex):
         #df.to_csv('tmp.csv')
         #print df.loc[:, ['date','sdjj', 'higher']]
         self.run(df)
-  
+
+    @util.display_func_name
+    def qian_n_ri2_run3(self, n=10, m=10):
+        df = deepcopy(self.df) 
+        df['higher'] = df.sdjj > df.sdjj.shift(n)
+        df['lower'] = df.sdjj < df.sdjj.shift(n)
+          
+        df['bksk'] = np.where(df['higher'], 'bk' , None)
+        # bk表示买开仓或买平仓，sk相反
+        df['bksk'] = np.where(df['lower'], 'sk' , df['bksk'])
+
+        df['higherp'] = df.sdjj > df.sdjj.shift(m)
+        df['lowerp'] = df.sdjj < df.sdjj.shift(m)
+          
+        df['bpsp'] = np.where(df['higherp'], 'sp' , None)
+        df['bpsp'] = np.where(df['lowerp'], 'bp' , df['bpsp'])
+        df.to_csv('tmp.csv')
+        return self.run3b(df, zj=60000, f=0.06, zs=0.02)
+
     @util.display_func_name
     def tupo_ma(self, n=10):
         '''向上穿过ma，买开，向下，卖; 相反信号平仓
@@ -294,34 +314,44 @@ class Sdjj(GeneralIndex):
 
         df.to_csv('tmp.csv')
         self.run2(df)
+    @util.display_func_name
+    def ma_cross_run3(self, a=5, b=25, c=10, d=30):
+        '''a  b 开仓的均线，  c  d  平仓用的均线
+        a比b小  c比d小
+        '''
+        self.get_ma_sdjj(a, b, c, d)
+        df = deepcopy(self.df) 
+        maa = 'sdjjma%s' % a
+        mab = 'sdjjma%s' % b
+        mac = 'sdjjma%s' % c
+        mad = 'sdjjma%s' % d
+        # 开仓
+        df['tmp1'] = df[maa].shift(1) < df[mab].shift(1)
+        df['tmp2'] = df[maa] > df[mab]
+        df['jincha'] = df.tmp1 & df.tmp2
 
-def rangerun(foo):
-    '''选择最优参数, 画图看起来清晰'''
-    r1 = range(11, 15)   # max 11 到 15， 
-    r2 = range(11,15, 1)# max 11 到 15
-    index = []
-    total = []
-    avg = []
-    for a in r1:
-        for b in r2:
-            index.append('%s-%s' % (a, b))
-            #print a, b
-            rtn = foo(a,b)
+        df['tmp1'] = df[maa].shift(1) > df[mab].shift(1)
+        df['tmp2'] = df[maa] < df[mab]
+        df['sicha'] = df.tmp1 & df.tmp2
+        df['bksk'] = np.where(df['jincha'], 'bk' , None)
+        df['bksk'] = np.where(df['sicha'], 'sk' , df['bksk'])
 
-            total.append(rtn[0])
-            avg.append(rtn[1])
-    df = pd.DataFrame(index=index,
-                  columns=['total', 'avg'])
-    #print index
-    data = {
-        'total' : pd.Series(total, index=index),
-        'avg' : pd.Series(avg, index=index)
-        }
-    
-    df = pd.DataFrame(data)
-    df['avg'] = df.avg*100
-    print df
-    df.plot();plt.show()
+        # 平仓
+        df['tmp1'] = df[mac].shift(1) < df[mad].shift(1)
+        df['tmp2'] = df[mac] > df[mad]
+        df['jinchap'] = df.tmp1 & df.tmp2
+
+        df['tmp1'] = df[mac].shift(1) > df[mad].shift(1)
+        df['tmp2'] = df[mac] < df[mad]
+        df['sichap'] = df.tmp1 & df.tmp2
+        df['bpsp'] = np.where(df['jinchap'], 'sp' , None)
+        df['bpsp'] = np.where(df['sichap'], 'bp' , df['bpsp'])
+
+        df.to_csv('tmp.csv')
+        return self.run3b(df, zj=60000, f=0.1, zs=0.01)
+
+
+
 
 
 if __name__ == '__main__':
@@ -347,3 +377,7 @@ if __name__ == '__main__':
     #print df
     #rangerun(s.sdhsdl_ma)
     print s.sdhsdl_run3()
+    #print s.qian_n_ri2_run3(4,12)
+    #print s.qian_n_ri2_run3(12,4)
+    #rangerun3(s.qian_n_ri2_run3)
+    #print s.ma_cross_run3(10,20,10,20)

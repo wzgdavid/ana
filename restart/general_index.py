@@ -208,7 +208,7 @@ class General(object):
     def run3b(self, df, zj=50000, f=0.02,zs=0.07):
         '''带开仓止损的资金管理，没资金管理跑出来的曲线不现实
         （移动止损不好做）
-        资金管理方式，有持仓不开仓，没持仓，按照f算能开几手
+        资金管理方式，有持仓不开仓(加仓)，不对冲，没持仓，按照f算能开几手
         zj 总资金
         zs  止损幅度， 开仓价的百分比
         f  总资金固定百分比风险  每次不能超过这个百分比
@@ -218,7 +218,7 @@ class General(object):
         if 'bpsp' not in df.columns:
             print 'df has no bpsp'
             return
-        print 'run3b'
+        #print 'run3b'
         #bcnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
         #bhprice = 0 # 所有多仓持仓的开仓价格之和
         #total = 0 
@@ -230,6 +230,8 @@ class General(object):
         keyong = 0 # 可用资金
         kjs = 0 # 一次开仓几手
         bs = '' # 表示多头还是空头
+        klimit = 999999 # 单次交易开仓手数限制， 无限制才厉害,但好像不太现实，
+                        # 跑策略时不限制才能看出策略本身好坏
         # 做多
         for i, bksk in enumerate(df.bksk):
             
@@ -241,10 +243,10 @@ class General(object):
                     #print bkprice
                     bkczs = bkprice * zs *10 # 开仓止损幅度
                     bpoint =bkprice - bkprice * zs # 开仓止损点位
-                    kjs = int((zj*f)/bkczs)  # 这次可开几手
+                    kjs = min(int((zj*f)/bkczs), klimit)  # 这次可开几手, 最大限制100手
                     bs = 'b'
                     bki = i
-                    print 'bk  ', bkprice, bpoint,kjs
+                    #print 'bk  ', bkprice, bpoint,kjs
                     
                 else: # 不可开仓
                     pass
@@ -255,17 +257,20 @@ class General(object):
                 bmin = df.loc[bki:i,'l'].min()  # 买开仓之后的最低点
                 # 买开仓止损的点位
                 if bmin <= bpoint: # 碰到止损   平仓
+                    
                     gain = (bpoint  - bkprice) * kjs* 10 # 平仓收益
-                    print '止损bp', gain
+                    #print '止损bp', gain
                 else: # 信号平仓
                     spprice = df.loc[idx, 'sdjj']  # 平仓价格
                     gain = (spprice  - bkprice) * kjs* 10 # 平仓收益
-                    print '信号bp', gain
-                zj += gain
+                    #print '信号bp', spprice, gain
+                sxf = bkprice/1000 * kjs# 手续费定为开仓价格的千分之一
+                hd = bkprice/100 * kjs  # 滑点定为2%
+                zj += gain - sxf - hd
                 ibcnt += kjs
 
                 kjs = 0
-                print zj
+                #print zj
                 
             if bksk == 'sk':  # 开空
                 
@@ -273,10 +278,10 @@ class General(object):
                     skprice = df.loc[idx, 'sdjj']
                     skczs = skprice * zs * 10# 开仓止损
                     spoint =skprice + skprice * zs # 开仓止损点位
-                    kjs = int((zj*f)/skczs)  # 这次可开几手
+                    kjs = min(int((zj*f)/skczs), klimit)  # 这次可开几手
                     bs = 's'
                     ski = i
-                    print 'sk  ', bkprice,  spoint,kjs
+                    #print 'sk  ', skprice,  spoint,kjs
                     # keyong = zj - chicang
                     
                 else: # 不可开仓
@@ -287,15 +292,17 @@ class General(object):
                 smax = df.loc[ski:i,'h'].max()  # 卖开仓之后  价格的最高点
                 if smax >= spoint:
                     gain = (skprice - spoint)  * kjs * 10
-                    print '止损sp', gain
+                    #print '止损sp', gain
                 else:
                     bpprice = df.loc[idx, 'sdjj']
                     gain = (skprice - bpprice) * kjs * 10 
-                    print '信号损sp', gain
-                zj += gain
+                    #print '信号sp', bpprice, gain
+                sxf = skprice/1000 * kjs# 手续费定为开仓价格的千分之一
+                hd = skprice/100 * kjs # 滑点
+                zj += gain - sxf - hd
                 iscnt += kjs
                 kjs = 0
-                print zj
+                #print zj
         #avg = zj/(ibcnt + iscnt)
         
         return zj
@@ -372,6 +379,67 @@ class GeneralIndex(General):
     def get_nsdlp(self, n):
         '''前n天四点均价最低点（不包含当天） 平仓用'''
         self.df['nsdlp'] = self.df.sdjj.shift(1).rolling(window=n, center=False).min()
+
+
+def rangerun(foo):
+    '''选择最优参数, 画图看起来清晰'''
+    r1 = range(11, 15)   # max 11 到 15， 
+    r2 = range(11,15, 1)# max 11 到 15
+    index = []
+    total = []
+    avg = []
+    for a in r1:
+        for b in r2:
+            index.append('%s-%s' % (a, b))
+            #print a, b
+            rtn = foo(a,b)
+
+            total.append(rtn[0])
+            avg.append(rtn[1])
+    df = pd.DataFrame(index=index,
+                  columns=['total', 'avg'])
+    #print index
+    data = {
+        'total' : pd.Series(total, index=index),
+        'avg' : pd.Series(avg, index=index)
+        }
+    
+    df = pd.DataFrame(data)
+    df['avg'] = df.avg*100
+    print df
+    df.plot();plt.show()
+
+
+def rangerun3(foo, r1, r2):
+    '''选择最优参数, 画图看起来清晰,  跑run3的结果
+
+    先用这个函数选择优势的参数， 然后用这个参数看具体的资金曲线，回撤什么的
+
+    跑了几次，结果， 相同的策略不同的品种结果不一样， 没有最优参数
+    '''
+    #r1 = range(1,17)   # max 11 到 15， 
+    #r2 = range(1,17, 1)# max 11 到 15
+    index = []
+    zj = []
+
+    for a in r1:
+        for b in r2:
+            index.append('%s-%s' % (a, b))
+            #print a, b
+            rtn = foo(a,b)
+            zj.append(rtn)
+            
+    df = pd.DataFrame(index=index,
+                  columns=['zj'])
+    #print index
+    data = {
+        'zj' : pd.Series(zj, index=index),
+        
+        }
+    
+    df = pd.DataFrame(data)
+    #print df
+    df.plot();plt.show()
 
 
 if __name__ == '__main__':
