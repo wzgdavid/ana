@@ -13,6 +13,7 @@ class Kxian(GeneralIndex):
         super(Kxian, self).__init__(daima)
         #self.get_ma(5,10,20,30,40)
         self.get_sdjj()
+        self.get_atr(100)
 
     @util.display_func_name
     def tupo_hl(self, n=10):
@@ -141,20 +142,21 @@ class Kxian(GeneralIndex):
 
 
     @util.display_func_name
-    def ma_updown_run3(self, n=10, m=10):
+    def ma_updown_run3(self, n=10, m=10, x=1):
+        '''ma比前x天高开多，反之开空'''
         self.get_ma(n)
         self.get_ma(m)
         df = deepcopy(self.df) 
         ma1 = 'ma%s' % n
         ma2 = 'ma%s' % m
 
-        df['maup'] = df[ma1] > df[ma1].shift(1)
-        df['madown'] = df[ma1] < df[ma1].shift(1)
+        df['maup'] = df[ma1] > df[ma1].shift(x)
+        df['madown'] = df[ma1] < df[ma1].shift(x)
         df['bksk'] = np.where(df['maup'], 'bk' , None)
         df['bksk'] = np.where(df['madown'], 'sk' , df['bksk'])
 
-        df['pmaup'] = df[ma2] > df[ma2].shift(1)
-        df['pmadown'] = df[ma2] < df[ma2].shift(1)
+        df['pmaup'] = df[ma2] > df[ma2].shift(x)
+        df['pmadown'] = df[ma2] < df[ma2].shift(x)
         df['bpsp'] = np.where(df['pmaup'], 'sp' , None)
         df['bpsp'] = np.where(df['pmadown'], 'bp' , df['bpsp'])
         #df.to_csv('tmp.csv')
@@ -210,20 +212,39 @@ class Kxian(GeneralIndex):
         df['bpsp'] = np.where(df['pbigger'], 'sp' , None)
         df['bpsp'] = np.where(df['psmaller'], 'bp' , df['bpsp'])
         df.to_csv('tmp.csv')
+        return self.run3b(df, zj=60000, f=0.02, zs=0.02)
+
+
+    @util.display_func_name
+    def qian_n_ri2_run3(self, n=10, m=10):
+        '''比前n日高，买开仓，反之'''
+        df = deepcopy(self.df) 
+        df['higher'] = df.sdjj > df.sdjj.shift(n)
+        df['lower'] = df.sdjj < df.sdjj.shift(n)
+          
+        df['bksk'] = np.where(df['higher'], 'bk' , None)
+        # bk表示买开仓或买平仓，sk相反
+        df['bksk'] = np.where(df['lower'], 'sk' , df['bksk'])
+
+        df['higherp'] = df.sdjj > df.sdjj.shift(m)
+        df['lowerp'] = df.sdjj < df.sdjj.shift(m)
+          
+        df['bpsp'] = np.where(df['higherp'], 'sp' , None)
+        df['bpsp'] = np.where(df['lowerp'], 'bp' , df['bpsp'])
+        df.to_csv('tmp.csv')
         return self.run3b(df, zj=60000, f=0.06, zs=0.02)
 
-        
-
 if __name__ == '__main__':
-    k = Kxian('c')
+    k = Kxian('m')
     #k.ma_updown(50)
     #k.cross_ma()
     #k.tupo_hl(20)
     #k.hl(20)
     #k.ma_cross(10,50)
     #print k.hl_run3()
-    print k.ma_updown_run3()
+    print k.ma_updown_run3(10,10)
     #print k.bigger_smaller_than_ma_run3(10)
     #rangerun3(k.ma_updown_run3, range(2,20), range(8,9))
 
     #print k.suijikaicang()
+    #print k.qian_n_ri2_run3()

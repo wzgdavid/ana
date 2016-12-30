@@ -374,7 +374,7 @@ class Sdjj(GeneralIndex):
 
 
 if __name__ == '__main__':
-    s = Sdjj('c')
+    s = Sdjj('m')
     #s.foo()
     
     #s.tupo_sdhsdl(12) # rb 11(28008), 12(28080.25) 天最好
@@ -400,4 +400,4 @@ if __name__ == '__main__':
     #print s.qian_n_ri2_run3(12,4)
     #rangerun3(s.qian_n_ri2_run3)
     #print s.ma_cross_run3(5,20,5,20)
-    print s.ma_updown_run3()
+    print s.ma_updown_run3(10,10)

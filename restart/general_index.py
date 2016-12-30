@@ -205,7 +205,7 @@ class General(object):
         #print total, avg
         return total, avg
 
-    def run3b(self, df, zj=50000, f=0.02,zs=0.07):
+    def run3b(self, df, zj=50000, f=0.02, zs=0.02):
         '''带开仓止损的资金管理，没资金管理跑出来的曲线不现实
         （移动止损不好做）
         资金管理方式，有持仓不开仓(加仓)，不对冲，没持仓，按照f算能开几手
@@ -265,8 +265,8 @@ class General(object):
                     spprice = df.loc[idx, 'sdjj']  # 平仓价格
                     gain = (spprice  - bkprice) * kjs* 10 # 平仓收益
                     #print '信号bp', spprice, gain
-                sxf = bkprice/1000 * kjs# 手续费定为开仓价格的千分之一
-                hd = bkprice/100 * kjs  # 滑点定为2%
+                sxf = bkprice/1000 * kjs# 手续费定为开仓价格的0.1%
+                hd = bkprice/100 * kjs  # 滑点定为1%
                 zj += gain - sxf - hd
                 ibcnt += kjs
                 
@@ -298,7 +298,7 @@ class General(object):
                     bpprice = df.loc[idx, 'sdjj']
                     gain = (skprice - bpprice) * kjs * 10 
                     #print '信号sp', bpprice, gain
-                sxf = skprice/1000 * kjs# 手续费定为开仓价格的千分之一
+                sxf = skprice/1000 * kjs# 手续费定为开仓价格的0.1%
                 hd = skprice/100 * kjs # 滑点
                 zj += gain - sxf - hd
                 iscnt += kjs
@@ -318,7 +318,7 @@ class General(object):
         
         df2 = pd.DataFrame(data)
         #print df
-        df2.plot();plt.show()
+        #df2.plot();plt.show()
         return zj
 
 
