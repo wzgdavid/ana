@@ -318,6 +318,7 @@ class Sdjj(GeneralIndex):
     def ma_cross_run3(self, a=5, b=25, c=10, d=30):
         '''a  b 开仓的均线，  c  d  平仓用的均线
         a比b小  c比d小
+        跑下来 不太好
         '''
         self.get_ma_sdjj(a, b, c, d)
         df = deepcopy(self.df) 
@@ -348,14 +349,32 @@ class Sdjj(GeneralIndex):
         df['bpsp'] = np.where(df['sichap'], 'bp' , df['bpsp'])
 
         df.to_csv('tmp.csv')
-        return self.run3b(df, zj=60000, f=0.1, zs=0.01)
+        return self.run3b(df, zj=60000, f=0.06, zs=0.02)
 
 
+    @util.display_func_name
+    def ma_updown_run3(self, n=10, m=10):
+        self.get_ma_sdjj(n, m)
+        df = deepcopy(self.df) 
+        ma1 = 'sdjjma%s' % n
+        ma2 = 'sdjjma%s' % m
 
+
+        df['maup'] = df[ma1] > df[ma1].shift(1)
+        df['madown'] = df[ma1] < df[ma1].shift(1)
+        df['bksk'] = np.where(df['maup'], 'bk' , None)
+        df['bksk'] = np.where(df['madown'], 'sk' , df['bksk'])
+
+        df['pmaup'] = df[ma2] > df[ma2].shift(1)
+        df['pmadown'] = df[ma2] < df[ma2].shift(1)
+        df['bpsp'] = np.where(df['pmaup'], 'sp' , None)
+        df['bpsp'] = np.where(df['pmadown'], 'bp' , df['bpsp'])
+        #df.to_csv('tmp.csv')
+        return self.run3b(df, zj=60000, f=0.06, zs=0.02) # 相同的策略不同的品种结果不一样，但同一种品种，f 和 zs还是有相对优势的参数
 
 
 if __name__ == '__main__':
-    s = Sdjj('rb')
+    s = Sdjj('c')
     #s.foo()
     
     #s.tupo_sdhsdl(12) # rb 11(28008), 12(28080.25) 天最好
@@ -376,8 +395,9 @@ if __name__ == '__main__':
     #df = pd.read_csv('../data/%s.xls' % 'RBL9')
     #print df
     #rangerun(s.sdhsdl_ma)
-    print s.sdhsdl_run3()
+    #print s.sdhsdl_run3()
     #print s.qian_n_ri2_run3(4,12)
     #print s.qian_n_ri2_run3(12,4)
     #rangerun3(s.qian_n_ri2_run3)
-    #print s.ma_cross_run3(10,20,10,20)
+    #print s.ma_cross_run3(5,20,5,20)
+    print s.ma_updown_run3()

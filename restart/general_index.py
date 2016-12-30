@@ -221,7 +221,7 @@ class General(object):
         #print 'run3b'
         #bcnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
         #bhprice = 0 # 所有多仓持仓的开仓价格之和
-        #total = 0 
+        zjqx = [] # 资金曲线，画图用
         ibcnt = 0 # 买开仓手数
         #scnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
         #shprice = 0 # 所有空仓持仓的开仓价格之和，
@@ -230,8 +230,9 @@ class General(object):
         keyong = 0 # 可用资金
         kjs = 0 # 一次开仓几手
         bs = '' # 表示多头还是空头
-        klimit = 999999 # 单次交易开仓手数限制， 无限制才厉害,但好像不太现实，
+        klimit = 100 # 单次交易开仓手数限制， 无限制才厉害,但好像不太现实，
                         # 跑策略时不限制才能看出策略本身好坏
+                        # 不限制，时间长一点，可能会有大回撤
         # 做多
         for i, bksk in enumerate(df.bksk):
             
@@ -268,7 +269,7 @@ class General(object):
                 hd = bkprice/100 * kjs  # 滑点定为2%
                 zj += gain - sxf - hd
                 ibcnt += kjs
-
+                
                 kjs = 0
                 #print zj
                 
@@ -302,9 +303,22 @@ class General(object):
                 zj += gain - sxf - hd
                 iscnt += kjs
                 kjs = 0
+            zjqx.append(zj)
                 #print zj
         #avg = zj/(ibcnt + iscnt)
         
+        # 开始画资金曲线
+        df2 = pd.DataFrame(index=df.date,
+                      columns=['zj'])
+        #print index
+        data = {
+            'zj' : pd.Series(zjqx, index=df.date),
+            
+            }
+        
+        df2 = pd.DataFrame(data)
+        #print df
+        df2.plot();plt.show()
         return zj
 
 
