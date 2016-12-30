@@ -206,11 +206,15 @@ class General(object):
         return total, avg
 
     def run3b(self, df, zj=50000, f=0.02,zs=0.07):
-        # '''带资金管理的，没资金管理跑出来的曲线不现实'''
-        # 资金管理方式，有持仓不开仓，没持仓，按照f算能开几手
-        # zj 总资金
-        # zs  止损幅度， 开仓价的百分比
-        # f  总资金固定百分比风险  每次不能超过这个百分比
+        '''带开仓止损的资金管理，没资金管理跑出来的曲线不现实
+        （移动止损不好做）
+        资金管理方式，有持仓不开仓，没持仓，按照f算能开几手
+        zj 总资金
+        zs  止损幅度， 开仓价的百分比
+        f  总资金固定百分比风险  每次不能超过这个百分比
+        保证金为10%
+        '''
+
         if 'bpsp' not in df.columns:
             print 'df has no bpsp'
             return
@@ -232,27 +236,34 @@ class General(object):
             idx = df.index[i]
             bpsp = df.loc[idx, 'bpsp']
             if bksk == 'bk': # 开多
-
                 if kjs == 0: # 可开仓
                     bkprice = df.loc[idx, 'sdjj']
                     #print bkprice
-                    kczs = bkprice * zs *10# 开仓止损
-                    kjs = int((zj*f)/kczs)  # 这次可开几手
+                    bkczs = bkprice * zs *10 # 开仓止损幅度
+                    bpoint =bkprice - bkprice * zs # 开仓止损点位
+                    kjs = int((zj*f)/bkczs)  # 这次可开几手
                     bs = 'b'
-                    chicang = bkprice * kjs * 10 # 我一般做的都是一手10个单位
-                    print 'bk  ', bkprice, kczs, kjs, chicang
+                    bki = i
+                    print 'bk  ', bkprice, bpoint,kjs
                     
-                    #print total
                 else: # 不可开仓
                     pass
-                
             elif bpsp == 'bp' and kjs != 0 and bs == 'b': # 多头平仓
-                print 'bp'
-                spprice = df.loc[idx, 'sdjj']  # 平仓价格
-                gain = spprice * kjs * 10 - chicang # 平仓收益
+                
+                # 在开仓的index到平仓信号的index间，检查是否碰到开仓止损
+                # 如果最低点小于买开仓止损，则以最低点平仓
+                bmin = df.loc[bki:i,'l'].min()  # 买开仓之后的最低点
+                # 买开仓止损的点位
+                if bmin <= bpoint: # 碰到止损   平仓
+                    gain = (bpoint  - bkprice) * kjs* 10 # 平仓收益
+                    print '止损bp', gain
+                else: # 信号平仓
+                    spprice = df.loc[idx, 'sdjj']  # 平仓价格
+                    gain = (spprice  - bkprice) * kjs* 10 # 平仓收益
+                    print '信号bp', gain
                 zj += gain
                 ibcnt += kjs
-                chicang = 0
+
                 kjs = 0
                 print zj
                 
@@ -260,23 +271,29 @@ class General(object):
                 
                 if kjs == 0: # 可开仓
                     skprice = df.loc[idx, 'sdjj']
-                    kczs = skprice * zs * 10# 开仓止损
-                    kjs = int((zj*f)/kczs)  # 这次可开几手
+                    skczs = skprice * zs * 10# 开仓止损
+                    spoint =skprice + skprice * zs # 开仓止损点位
+                    kjs = int((zj*f)/skczs)  # 这次可开几手
                     bs = 's'
-                    chicang = skprice * kjs * 10 # 我一般做的都是一手10个单位
-                    print 'sk  ', bkprice, kczs, kjs, chicang
+                    ski = i
+                    print 'sk  ', bkprice,  spoint,kjs
                     # keyong = zj - chicang
                     
                 else: # 不可开仓
                     pass
 
             elif bpsp == 'sp' and kjs != 0 and bs == 's': # 空头平仓
-                print 'sp'
-                bpprice = df.loc[idx, 'sdjj']
-                gain = chicang - bpprice * kjs * 10 
+                
+                smax = df.loc[ski:i,'h'].max()  # 卖开仓之后  价格的最高点
+                if smax >= spoint:
+                    gain = (skprice - spoint)  * kjs * 10
+                    print '止损sp', gain
+                else:
+                    bpprice = df.loc[idx, 'sdjj']
+                    gain = (skprice - bpprice) * kjs * 10 
+                    print '信号损sp', gain
                 zj += gain
                 iscnt += kjs
-                chicang = 0
                 kjs = 0
                 print zj
         #avg = zj/(ibcnt + iscnt)
@@ -330,7 +347,7 @@ class GeneralIndex(General):
         #self.df['tr'] = max(self.df.hl, self.df.ch, self.df.cl)
         #
         self.df['tr'] = self.df.loc[:, ['hl','ch', 'cl']].apply(lambda x: x.max(), axis=1)
-        self.df['atr'] = self.df.tr.rolling(window=n, center=False).mean()
+        self.df['atr%s' % n] = self.df.tr.rolling(window=n, center=False).mean()
 
     def get_nhh(self, n):
         '''前n天最高价最高点（不包含当天）'''
@@ -362,7 +379,7 @@ if __name__ == '__main__':
     #g = General('rb')
     #g.foo()
     gi = GeneralIndex('rb')
-    gi.get_atr(2)
+    gi.get_atr(99)
     gi.df.to_csv('tmp.csv')
     #print gi.df['sdjj']
     #gi.get_ma5()
