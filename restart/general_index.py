@@ -321,6 +321,17 @@ class GeneralIndex(General):
         '''
         self.df['lp'] = self.df.l * (1 + float(n)/100)
 
+    def get_atr(self, n):
+        '''TR : MAX( MAX( (HIGH-LOW),ABS(REF(CLOSE,1)-HIGH) ), ABS(REF(CLOSE,1)-LOW));文华的公式
+        '''
+        self.df['hl'] = self.df.h - self.df.l
+        self.df['ch'] = abs(self.df.c.shift(1) - self.df.h)
+        self.df['cl'] = abs(self.df.c.shift(1) - self.df.l)
+        #self.df['tr'] = max(self.df.hl, self.df.ch, self.df.cl)
+        #
+        self.df['tr'] = self.df.loc[:, ['hl','ch', 'cl']].apply(lambda x: x.max(), axis=1)
+        self.df['atr'] = self.df.tr.rolling(window=n, center=False).mean()
+
     def get_nhh(self, n):
         '''前n天最高价最高点（不包含当天）'''
         self.df['nhh'] = self.df.h.shift(1).rolling(window=n, center=False).max()
@@ -351,6 +362,8 @@ if __name__ == '__main__':
     #g = General('rb')
     #g.foo()
     gi = GeneralIndex('rb')
+    gi.get_atr(2)
+    gi.df.to_csv('tmp.csv')
     #print gi.df['sdjj']
     #gi.get_ma5()
     #print gi.df.loc[:, ['c','ma5']]
