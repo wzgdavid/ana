@@ -13,7 +13,9 @@ class Kxian(GeneralIndex):
         super(Kxian, self).__init__(daima)
         #self.get_ma(5,10,20,30,40)
         self.get_sdjj()
-        self.get_atr(100)
+        
+        #self.df.dropna(how='any')
+        #print self.df
 
     @util.display_func_name
     def tupo_hl(self, n=10):
@@ -146,7 +148,13 @@ class Kxian(GeneralIndex):
         '''ma比前x天高开多，反之开空'''
         self.get_ma(n)
         self.get_ma(m)
+        #self.get_atr(100)
+
+        #self.df.loc[1:100, 'bksk'] = None
+        #print df
+        #print self.df
         df = deepcopy(self.df) 
+        #df.loc[df.index[0]:df.index[100], 'bksk'] = 50
         ma1 = 'ma%s' % n
         ma2 = 'ma%s' % m
 
@@ -159,7 +167,7 @@ class Kxian(GeneralIndex):
         df['pmadown'] = df[ma2] < df[ma2].shift(x)
         df['bpsp'] = np.where(df['pmaup'], 'sp' , None)
         df['bpsp'] = np.where(df['pmadown'], 'bp' , df['bpsp'])
-        #df.to_csv('tmp.csv')
+        df.to_csv('tmp.csv')
         return self.run3b(df, zj=60000, f=0.06, zs=0.02) # 相同的策略不同的品种结果不一样，但同一种品种，f 和 zs还是有相对优势的参数
    
     @util.display_func_name
@@ -235,7 +243,7 @@ class Kxian(GeneralIndex):
         return self.run3b(df, zj=60000, f=0.06, zs=0.02)
 
 if __name__ == '__main__':
-    k = Kxian('m')
+    k = Kxian('c')
     #k.ma_updown(50)
     #k.cross_ma()
     #k.tupo_hl(20)
@@ -247,4 +255,4 @@ if __name__ == '__main__':
     #rangerun3(k.ma_updown_run3, range(2,20), range(8,9))
 
     #print k.suijikaicang()
-    #print k.qian_n_ri2_run3()
+    print k.qian_n_ri2_run3()

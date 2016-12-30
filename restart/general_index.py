@@ -210,7 +210,7 @@ class General(object):
         （移动止损不好做）
         资金管理方式，有持仓不开仓(加仓)，不对冲，没持仓，按照f算能开几手
         zj 总资金
-        zs  止损幅度， 开仓价的百分比
+        zs  止损幅度， 如果是小于1，代表开仓价的百分比， 如果是整数，代表几个atr（100天参数）
         f  总资金固定百分比风险  每次不能超过这个百分比
         保证金为10%
         '''
@@ -230,7 +230,7 @@ class General(object):
         keyong = 0 # 可用资金
         kjs = 0 # 一次开仓几手
         bs = '' # 表示多头还是空头
-        klimit = 100 # 单次交易开仓手数限制， 无限制才厉害,但好像不太现实，
+        klimit = 200 # 单次交易开仓手数限制， 无限制才厉害,但好像不太现实，
                         # 跑策略时不限制才能看出策略本身好坏
                         # 不限制，时间长一点，可能会有大回撤
         # 做多
@@ -242,8 +242,13 @@ class General(object):
                 if kjs == 0: # 可开仓
                     bkprice = df.loc[idx, 'sdjj']
                     #print bkprice
-                    bkczs = bkprice * zs *10 # 开仓止损幅度
-                    bpoint =bkprice - bkprice * zs # 开仓止损点位
+                    if zs < 1: # 百分比开仓止损
+                        bkczs = bkprice * zs *10 # 开仓止损幅度
+                        bpoint =bkprice - bkprice * zs # 开仓止损点位
+                    else: # atr开仓止损
+                        bkczs = df.loc[idx, 'atr'] * zs * 10 # 开仓止损幅度
+                        
+                        bpoint =bkprice - df.loc[idx, 'atr'] # 开仓止损点位
                     kjs = min(int((zj*f)/bkczs), klimit)  # 这次可开几手, 最大限制100手
                     bs = 'b'
                     bki = i
@@ -277,9 +282,15 @@ class General(object):
                 
                 if kjs == 0: # 可开仓
                     skprice = df.loc[idx, 'sdjj']
-                    skczs = skprice * zs * 10# 开仓止损
-                    spoint =skprice + skprice * zs # 开仓止损点位
+                    if zs < 1:
+                        skczs = skprice * zs * 10# 开仓止损
+                        spoint =skprice + skprice * zs # 开仓止损点位
+                    else:
+                        #print 'atr', df.loc[idx, 'atr']
+                        skczs = df.loc[idx, 'atr'] * zs * 10 # 开仓止损幅度
+                        spoint =skprice + df.loc[idx, 'atr'] # 开仓止损点位
                     kjs = min(int((zj*f)/skczs), klimit)  # 这次可开几手
+
                     bs = 's'
                     ski = i
                     #print 'sk  ', skprice,  spoint,kjs
@@ -368,7 +379,7 @@ class GeneralIndex(General):
         #self.df['tr'] = max(self.df.hl, self.df.ch, self.df.cl)
         #
         self.df['tr'] = self.df.loc[:, ['hl','ch', 'cl']].apply(lambda x: x.max(), axis=1)
-        self.df['atr%s' % n] = self.df.tr.rolling(window=n, center=False).mean()
+        self.df['atr'] = self.df.tr.rolling(window=n, center=False).mean()
 
     def get_nhh(self, n):
         '''前n天最高价最高点（不包含当天）'''
