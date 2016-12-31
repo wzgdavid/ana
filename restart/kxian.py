@@ -47,7 +47,6 @@ class Kxian(GeneralIndex):
     def tupo_hl_run3(self, n=10):
         '''最高价突破前n天最高开多，最低突破前n天最低开空，
         
-        暂时还想不出移动止损怎么写，先写不带移动止损的，用信号平仓的策略
 
         '''
         self.get_nhh(n)
@@ -68,7 +67,8 @@ class Kxian(GeneralIndex):
         df['bksk'] = np.where(df['tupo_l'], 'sk' , df['bksk'])
         df['bpsp'] = np.where(df['tupo_l'], 'bp' , df['bpsp'])
         df.to_csv('tmp.csv')
-        return self.run3b(df, zj=100000, f=0.06, zs=0.02)
+        #return self.run3b(df, zj=100000, f=0.06, zs=0.02)
+        return self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.04)
 
     @util.display_func_name
     def hl(self, n=10):
@@ -109,7 +109,8 @@ class Kxian(GeneralIndex):
         df['plower'] = df.l < df.nll
         df['bpsp'] = np.where(df['plower'], 'bp' , df['bpsp'])
         df.to_csv('tmp.csv')
-        return self.run3b(df, zj=200000, f=0.06, zs=0.02)
+        #return self.run3b(df, zj=100000, f=0.06, zs=0.02)
+        #return self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.04)
 
     @util.display_func_name
     def ma_cross(self, a=5, b=25):
@@ -161,6 +162,7 @@ class Kxian(GeneralIndex):
 
         df.to_csv('tmp.csv')
         return self.run3b(df, zj=100000, f=0.06, zs=0.02)
+        #return self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.06)
 
     @util.display_func_name
     def cross_ma(self, n=20):
@@ -201,36 +203,7 @@ class Kxian(GeneralIndex):
         self.run(df)
 
 
-    @util.display_func_name
-    def ma_updown_run3(self, n=10, m=10, x=1):
-        '''ma比前x天高开多，反之开空
-        不管哪个品种，策略间比较，跑下来这个最好
-        '''
-        self.get_ma(n)
-        self.get_ma(m)
-        #self.get_atr(100)
 
-        #self.df.loc[1:100, 'bksk'] = None
-        #print df
-        #print self.df
-        df = deepcopy(self.df) 
-        #df.loc[df.index[0]:df.index[100], 'bksk'] = 50
-        ma1 = 'ma%s' % n
-        ma2 = 'ma%s' % m
-
-        df['maup'] = df[ma1] > df[ma1].shift(x)
-        df['madown'] = df[ma1] < df[ma1].shift(x)
-        df['bksk'] = np.where(df['maup'], 'bk' , None)
-        df['bksk'] = np.where(df['madown'], 'sk' , df['bksk'])
-
-        df['pmaup'] = df[ma2] > df[ma2].shift(x)
-        df['pmadown'] = df[ma2] < df[ma2].shift(x)
-        df['bpsp'] = np.where(df['pmaup'], 'sp' , None)
-        df['bpsp'] = np.where(df['pmadown'], 'bp' , df['bpsp'])
-        df.to_csv('tmp.csv')
-        return self.run3b(df, zj=200000, f=0.06, zs=0.02) # 相同的策略不同的品种结果不一样，但同一种品种，f 和 zs还是有相对优势的参数
-                            # zs 一般最优是0.02， f是越大收益越高，风险也越大，和资金管理书上说的如出一辙
-    
     @util.display_func_name
     def ma_start_updown_run3(self, n=10, m=10):
         '''大前天和昨天ma比前天高，开多，反之开空
@@ -260,7 +233,8 @@ class Kxian(GeneralIndex):
         df['bpsp'] = np.where(df['pma_startup'], 'sp' , None)
         df['bpsp'] = np.where(df['pma_startdown'], 'bp' , df['bpsp'])
         df.to_csv('tmp.csv')
-        return self.run3b(df, zj=100000, f=0.06, zs=0.02)
+        #return self.run3b(df, zj=100000, f=0.06, zs=0.02)
+        return self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.06)
 
     @util.display_func_name
     def ma_updown_2day_run3(self, n=10, m=10):
@@ -327,34 +301,33 @@ class Kxian(GeneralIndex):
         df.to_csv('tmp.csv')
         return self.run3b(df, zj=100000, f=0.06, zs=0.02)
 
+
     @util.display_func_name
-    def ma_updown_run3_shift(self, n=10, m=10):
-        '''
-        昨天ma比前天ma高，开多，反之开空
+    def ma_updown_run3(self, n=10, m=10):
+        '''ma比昨天高开多，反之开空
+        不管哪个品种，策略间比较，跑下来这个最好
         '''
         self.get_ma(n)
         self.get_ma(m)
-        #self.get_atr(100)
-
-        #self.df.loc[1:100, 'bksk'] = None
-        #print df
-        #print self.df
         df = deepcopy(self.df) 
-        #df.loc[df.index[0]:df.index[100], 'bksk'] = 50
         ma1 = 'ma%s' % n
         ma2 = 'ma%s' % m
 
-        df['maup'] = df[ma1].shift(1) > df[ma1].shift(2)
-        df['madown'] = df[ma1].shift(1) < df[ma1].shift(2)
+        df['maup'] = df[ma1] > df[ma1].shift(1)
+        df['madown'] = df[ma1] < df[ma1].shift(1)
         df['bksk'] = np.where(df['maup'], 'bk' , None)
         df['bksk'] = np.where(df['madown'], 'sk' , df['bksk'])
 
-        df['pmaup'] = df[ma2].shift(1) > df[ma2].shift(2)
-        df['pmadown'] = df[ma2].shift(1) < df[ma2].shift(2)
+        df['pmaup'] = df[ma2] > df[ma2].shift(1)
+        df['pmadown'] = df[ma2] < df[ma2].shift(1)
         df['bpsp'] = np.where(df['pmaup'], 'sp' , None)
         df['bpsp'] = np.where(df['pmadown'], 'bp' , df['bpsp'])
         df.to_csv('tmp.csv')
-        return self.run3b(df, zj=100000, f=0.06, zs=0.02) 
+        return self.run3b(df, zj=100000, f=0.06, zs=0.02) # 相同的策略不同的品种结果不一样，但同一种品种，f 和 zs还是有相对优势的参数
+                            # zs 一般最优是0.02， f是越大收益越高，风险也越大，和资金管理书上说的如出一辙
+        #return self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.06)
+
+
 
     @util.display_func_name
     def suijikaicang(self, n=10):
@@ -373,7 +346,8 @@ class Kxian(GeneralIndex):
         df['bpsp'] = np.where(df['krandint'].shift(2)== 0, 'sp' , None)
         df['bpsp'] = np.where(df['krandint'].shift(2)==2*n-1, 'bp' , df['bpsp'])
         df.to_csv('tmp.csv')
-        return self.run3b(df, zj=100000, f=0.06, zs=0.02)
+        #return self.run3b(df, zj=100000, f=0.06, zs=0.02)
+        return self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.06)
 
     def gudingkaicang(self, mode=3, n=10):
         '''
@@ -460,33 +434,64 @@ class Kxian(GeneralIndex):
 
     @util.display_func_name
     def maupdown_qiannri(self, n=10, m=10):
-        '''n天maupdown开仓， m天qiannri高低平仓'''
+        '''n天ma向上，比m天前sdjj高，开多仓，反之开空仓
+        '''
         self.get_ma(n)
         df = deepcopy(self.df) 
         ma1 = 'ma%s' % n
 
         df['maup'] = df[ma1].shift(1) > df[ma1].shift(2)
         df['madown'] = df[ma1].shift(1) < df[ma1].shift(2)
+        df['higher'] = df.sdjj.shift(1) > df.sdjj.shift(m+1)
+        df['lower'] = df.sdjj.shift(1) < df.sdjj.shift(m+1)
+        df['bksk'] = np.where(df.maup & df.higher, 'bk' , None)
+        df['bksk'] = np.where(df.madown & df.lower, 'sk' , df['bksk'])
+
+        df['pmaup'] = df[ma1].shift(1) > df[ma1].shift(2)
+        df['pmadown'] = df[ma1].shift(1) < df[ma1].shift(2)
+        df['phigher'] = df.sdjj.shift(1) > df.sdjj.shift(m+1)
+        df['plower'] = df.sdjj.shift(1) < df.sdjj.shift(m+1)
+        df['bpsp'] = np.where(df.phigher & df.pmaup, 'sp' , None)
+        df['bpsp'] = np.where(df.plower & df.pmadown, 'bp' , df['bpsp'])
+        df.to_csv('tmp.csv')
+        #return self.run3b(df, zj=100000, f=0.06, zs=0.02)
+        #return self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.06)
+
+    @util.display_func_name
+    def ma_updown_run3_shift(self, n=10, m=10):
+        '''
+        昨天ma比前天ma高，开多，反之开空
+        这个跑下来 run4比run3b好？ 和其他相反？
+        为什么ma_updown_run3_shift  和ma_updown_run3 相差那么大？
+        '''
+        self.get_ma(n)
+        self.get_ma(m)
+        df = deepcopy(self.df) 
+        ma1 = 'ma%s' % n
+        ma2 = 'ma%s' % m
+
+        df['maup'] = df[ma1].shift(1) > df[ma1].shift(2)
+        df['madown'] = df[ma1].shift(1) < df[ma1].shift(2)
         df['bksk'] = np.where(df['maup'], 'bk' , None)
         df['bksk'] = np.where(df['madown'], 'sk' , df['bksk'])
-        
-        df['higherp'] = df.sdjj.shift(1) > df.sdjj.shift(m+1)
-        df['lowerp'] = df.sdjj.shift(1) < df.sdjj.shift(m+1)
-        df['bpsp'] = np.where(df['higherp'], 'sp' , None)
-        df['bpsp'] = np.where(df['lowerp'], 'bp' , df['bpsp'])
-        df.to_csv('tmp.csv')
-        return self.run3b(df, zj=100000, f=0.06, zs=0.02)
 
+        df['pmaup'] = df[ma2].shift(1) > df[ma2].shift(2)
+        df['pmadown'] = df[ma2].shift(1) < df[ma2].shift(2)
+        df['bpsp'] = np.where(df['pmaup'], 'sp' , None)
+        df['bpsp'] = np.where(df['pmadown'], 'bp' , df['bpsp'])
+        df.to_csv('tmp.csv')
+        return self.run3b(df, zj=100000, f=0.06, zs=0.02) 
+        #return self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.06)
 
 if __name__ == '__main__':
-    k = Kxian('ta')
+    k = Kxian('c')
     #k.gudingkaicang()
     #k.ma_updown(50)
     #k.cross_ma()
     #k.tupo_hl(20)
     #k.hl(20)
     #k.ma_cross(5,10)
-    print k.hl_run3(10,10)
+    #print k.hl_run3(10,10)
     #print k.tupo_hl_run3()
     #print k.ma_updown_run3(10)
     #print k.ma_updown_run3_shift()
@@ -495,9 +500,9 @@ if __name__ == '__main__':
 
     #print k.suijikaicang()
     #print k.qian_n_ri2_run3(10)
-    #print k.maupdown_qiannri()
+    print k.maupdown_qiannri()
 
-    #print k.ma_start_updown_run3(5)
+    #print k.ma_start_updown_run3(10)
     #print k.ma_updown_2day_run3(10)
     #print k.ma_updown_3day_run3()
-    #print k.ma_cross_run3(5,10)
+    #print k.ma_cross_run3(5,20)
