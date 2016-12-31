@@ -1,5 +1,5 @@
-data/
+data/*.xls
 files_tmp/
 *.pyc
-util.pyc
+
 restart/tmp.csv

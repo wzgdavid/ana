@@ -329,7 +329,7 @@ class General(object):
         
         df2 = pd.DataFrame(data)
         #print df
-        #df2.plot();plt.show()
+        df2.plot();plt.show()
         return zj
 
 
@@ -472,8 +472,8 @@ if __name__ == '__main__':
     #g = General('rb')
     #g.foo()
     gi = GeneralIndex('rb')
-    gi.get_atr(99)
-    gi.df.to_csv('tmp.csv')
+    #gi.get_atr(99)
+    #gi.df.to_csv('tmp.csv')
     #print gi.df['sdjj']
     #gi.get_ma5()
     #print gi.df.loc[:, ['c','ma5']]

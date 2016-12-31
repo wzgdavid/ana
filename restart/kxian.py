@@ -145,7 +145,9 @@ class Kxian(GeneralIndex):
 
     @util.display_func_name
     def ma_updown_run3(self, n=10, m=10, x=1):
-        '''ma比前x天高开多，反之开空'''
+        '''ma比前x天高开多，反之开空
+        不管哪个品种，策略间比较，跑下来这个最好
+        '''
         self.get_ma(n)
         self.get_ma(m)
         #self.get_atr(100)
@@ -169,6 +171,7 @@ class Kxian(GeneralIndex):
         df['bpsp'] = np.where(df['pmadown'], 'bp' , df['bpsp'])
         df.to_csv('tmp.csv')
         return self.run3b(df, zj=60000, f=0.06, zs=0.02) # 相同的策略不同的品种结果不一样，但同一种品种，f 和 zs还是有相对优势的参数
+                            # zs 一般最优是0.02， f是越大收益越高，风险也越大，和资金管理书上说的如出一辙
    
     @util.display_func_name
     def suijikaicang(self, n=5):
@@ -243,16 +246,16 @@ class Kxian(GeneralIndex):
         return self.run3b(df, zj=60000, f=0.06, zs=0.02)
 
 if __name__ == '__main__':
-    k = Kxian('c')
+    k = Kxian('rb')
     #k.ma_updown(50)
     #k.cross_ma()
     #k.tupo_hl(20)
     #k.hl(20)
     #k.ma_cross(10,50)
-    #print k.hl_run3()
+    #print k.hl_run3(10,10)
     print k.ma_updown_run3(10,10)
     #print k.bigger_smaller_than_ma_run3(10)
     #rangerun3(k.ma_updown_run3, range(2,20), range(8,9))
 
     #print k.suijikaicang()
-    print k.qian_n_ri2_run3()
+    #print k.qian_n_ri2_run3(10)
