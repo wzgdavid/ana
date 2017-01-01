@@ -161,7 +161,7 @@ class Kxian(GeneralIndex):
         df['bpsp'] = np.where(df['psicha'], 'bp' , df['bpsp'])
 
         df.to_csv('tmp.csv')
-        return self.run3b(df, zj=100000, f=0.06, zs=0.02)
+        return self.run3b(df, zj=100000, f=0.06, zs=0.02, jiacang=0.2)
         #return self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.06)
 
     @util.display_func_name
@@ -323,7 +323,7 @@ class Kxian(GeneralIndex):
         df['bpsp'] = np.where(df['pmaup'], 'sp' , None)
         df['bpsp'] = np.where(df['pmadown'], 'bp' , df['bpsp'])
         df.to_csv('tmp.csv')
-        return self.run3b(df, zj=100000, f=0.06, zs=0.02) # 相同的策略不同的品种结果不一样，但同一种品种，f 和 zs还是有相对优势的参数
+        return self.run3b(df, zj=100000, f=0.06, zs=0.02, jiacang=0.05) # 相同的策略不同的品种结果不一样，但同一种品种，f 和 zs还是有相对优势的参数
                             # zs 一般最优是0.02， f是越大收益越高，风险也越大，和资金管理书上说的如出一辙
         #return self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.06)
 
@@ -484,7 +484,7 @@ class Kxian(GeneralIndex):
         #return self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.06)
 
 if __name__ == '__main__':
-    k = Kxian('c')
+    k = Kxian('rb')
     #k.gudingkaicang()
     #k.ma_updown(50)
     #k.cross_ma()
@@ -493,16 +493,16 @@ if __name__ == '__main__':
     #k.ma_cross(5,10)
     #print k.hl_run3(10,10)
     #print k.tupo_hl_run3()
-    #print k.ma_updown_run3(10)
+    #print k.ma_updown_run3(20)
     #print k.ma_updown_run3_shift()
     #print k.bigger_smaller_than_ma_run3(10)
     #rangerun3(k.ma_updown_run3, range(2,20), range(8,9))
 
     #print k.suijikaicang()
     #print k.qian_n_ri2_run3(10)
-    print k.maupdown_qiannri()
+    #print k.maupdown_qiannri()
 
     #print k.ma_start_updown_run3(10)
     #print k.ma_updown_2day_run3(10)
     #print k.ma_updown_3day_run3()
-    #print k.ma_cross_run3(5,20)
+    print k.ma_cross_run3(10,40)
