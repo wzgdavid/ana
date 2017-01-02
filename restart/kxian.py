@@ -160,9 +160,41 @@ class Kxian(GeneralIndex):
         df['bpsp'] = np.where(df['pjincha'], 'sp' , None)
         df['bpsp'] = np.where(df['psicha'], 'bp' , df['bpsp'])
 
-        df.to_csv('tmp.csv')
-        return self.run3b(df, zj=100000, f=0.06, zs=0.02, jiacang=0.2)
-        #return self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.06)
+        #df.to_csv('tmp.csv')
+        #return self.run3b(df, zj=100000, f=0.06, zs=0.02, jiacang=0)
+        return self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.06,jiacang=0)
+
+    @util.display_func_name
+    def ma_cross_run3_shift(self, a=5, b=25):
+        '''因为信号出来都是后一天处理，所以要shift 1 
+        '''
+        self.get_ma(a, b)
+        df = deepcopy(self.df) 
+        maa = 'ma%s' % a
+        mab = 'ma%s' % b
+        df['tmp1'] = df[maa].shift(2) < df[mab].shift(2)
+        df['tmp2'] = df[maa].shift(1) > df[mab].shift(1)
+        df['jincha'] = df.tmp1 & df.tmp2
+
+        df['tmp1'] = df[maa].shift(2) > df[mab].shift(2)
+        df['tmp2'] = df[maa].shift(1) < df[mab].shift(1)
+        df['sicha'] = df.tmp1 & df.tmp2
+        df['bksk'] = np.where(df['jincha'], 'bk' , None)
+        df['bksk'] = np.where(df['sicha'], 'sk' , df['bksk'])
+
+        df['tmp1'] = df[maa].shift(2) < df[mab].shift(2)
+        df['tmp2'] = df[maa].shift(1) > df[mab].shift(1)
+        df['pjincha'] = df.tmp1 & df.tmp2
+
+        df['tmp1'] = df[maa].shift(2) > df[mab].shift(2)
+        df['tmp2'] = df[maa].shift(1) < df[mab].shift(1)
+        df['psicha'] = df.tmp1 & df.tmp2
+        df['bpsp'] = np.where(df['pjincha'], 'sp' , None)
+        df['bpsp'] = np.where(df['psicha'], 'bp' , df['bpsp'])
+
+        #df.to_csv('tmp.csv')
+        #return self.run3b(df, zj=100000, f=0.06, zs=0.02, jiacang=0)
+        return self.run4(df, zj=100000, f=0.07, zs=0.02, ydzs=0.06,jiacang=0)
 
     @util.display_func_name
     def cross_ma(self, n=20):
@@ -323,9 +355,9 @@ class Kxian(GeneralIndex):
         df['bpsp'] = np.where(df['pmaup'], 'sp' , None)
         df['bpsp'] = np.where(df['pmadown'], 'bp' , df['bpsp'])
         df.to_csv('tmp.csv')
-        return self.run3b(df, zj=100000, f=0.06, zs=0.02, jiacang=0.05) # 相同的策略不同的品种结果不一样，但同一种品种，f 和 zs还是有相对优势的参数
+        #return self.run3b(df, zj=100000, f=0.06, zs=0.02, jiacang=0.05) # 相同的策略不同的品种结果不一样，但同一种品种，f 和 zs还是有相对优势的参数
                             # zs 一般最优是0.02， f是越大收益越高，风险也越大，和资金管理书上说的如出一辙
-        #return self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.06)
+        return self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.06, jiacang=0)
 
 
 
@@ -346,8 +378,8 @@ class Kxian(GeneralIndex):
         df['bpsp'] = np.where(df['krandint'].shift(2)== 0, 'sp' , None)
         df['bpsp'] = np.where(df['krandint'].shift(2)==2*n-1, 'bp' , df['bpsp'])
         df.to_csv('tmp.csv')
-        #return self.run3b(df, zj=100000, f=0.06, zs=0.02)
-        return self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.06)
+        return self.run3b(df, zj=100000, f=0.06, zs=0.02, jiacang=0.1)
+        #return self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.06)
 
     def gudingkaicang(self, mode=3, n=10):
         '''
@@ -480,11 +512,11 @@ class Kxian(GeneralIndex):
         df['bpsp'] = np.where(df['pmaup'], 'sp' , None)
         df['bpsp'] = np.where(df['pmadown'], 'bp' , df['bpsp'])
         df.to_csv('tmp.csv')
-        return self.run3b(df, zj=100000, f=0.06, zs=0.02) 
-        #return self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.06)
+        #return self.run3b(df, zj=100000, f=0.06, zs=0.02, jiacang=0) 
+        return self.run4(df, zj=100000, f=0.02, zs=0.02, ydzs=0.06,jiacang=0.1)
 
 if __name__ == '__main__':
-    k = Kxian('rb')
+    k = Kxian('m')
     #k.gudingkaicang()
     #k.ma_updown(50)
     #k.cross_ma()
@@ -498,11 +530,12 @@ if __name__ == '__main__':
     #print k.bigger_smaller_than_ma_run3(10)
     #rangerun3(k.ma_updown_run3, range(2,20), range(8,9))
 
-    #print k.suijikaicang()
+    #print k.suijikaicang(22)
     #print k.qian_n_ri2_run3(10)
     #print k.maupdown_qiannri()
 
     #print k.ma_start_updown_run3(10)
     #print k.ma_updown_2day_run3(10)
     #print k.ma_updown_3day_run3()
-    print k.ma_cross_run3(10,40)
+    #print k.ma_cross_run3(10,20)
+    print k.ma_cross_run3_shift(8,30)
