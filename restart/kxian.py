@@ -194,12 +194,15 @@ class Kxian(GeneralIndex):
 
         #df.to_csv('tmp.csv')
         #return self.run3b(df, zj=100000, f=0.06, zs=0.02, jiacang=0)
-        return self.run4(df, zj=100000, f=0.07, zs=0.02, ydzs=0.06,jiacang=0)
+
+        self.run4(df, zj=100000, f=0.06, zs=0.03, ydzs=0.08,jiacang=0.5)
+
 
     @util.display_func_name
     def cross_ma(self, n=20):
         '''k线穿越ma, 定义，前一天开盘价在ma下，今天开盘在ma上为一次向上穿越，反之
-        跑下来这个策略收益低
+        跑下来这个策略收益低?
+        为什么低？其实不低，主要是这个策略开仓信号比较少，但平均收益还是不错的
         '''
         self.get_ma(n)
         df = deepcopy(self.df) 
@@ -366,20 +369,21 @@ class Kxian(GeneralIndex):
         '''
         随机平均n天开一仓，方向随机
 
-        跑下来随机开，结果也比较随机，基本也就在初始本金上下几倍里
+        
         '''
         df = deepcopy(self.df)
-        print np.random.randint(n*2, size=len(df)) # 得到随机0 到2n-1的整数
+        #print np.random.randint(n*2, size=len(df)) # 得到随机0 到2n-1的整数
         df['krandint'] = np.random.randint(n*2, size=len(df))
         df['prandint'] = np.random.randint(n*2, size=len(df))
 
         df['bksk'] = np.where(df['krandint']== 0, 'bk' , None)
         df['bksk'] = np.where(df['krandint']==2*n-1, 'sk' , df['bksk'])
-        df['bpsp'] = np.where(df['krandint'].shift(2)== 0, 'sp' , None)
-        df['bpsp'] = np.where(df['krandint'].shift(2)==2*n-1, 'bp' , df['bpsp'])
-        df.to_csv('tmp.csv')
-        return self.run3b(df, zj=100000, f=0.06, zs=0.02, jiacang=0.1)
-        #return self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.06)
+        #df['bpsp'] = np.where(df['krandint'].shift(2)== 0, 'sp' , None)
+        #df['bpsp'] = np.where(df['krandint'].shift(2)==2*n-1, 'bp' , df['bpsp'])
+        #df.to_csv('tmp.csv')
+        #return self.run3b(df, zj=100000, f=0.06, zs=0.02, jiacang=0.1)
+
+        return self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.06)
 
     def gudingkaicang(self, mode=3, n=10):
         '''
@@ -513,10 +517,15 @@ class Kxian(GeneralIndex):
         df['bpsp'] = np.where(df['pmadown'], 'bp' , df['bpsp'])
         df.to_csv('tmp.csv')
         #return self.run3b(df, zj=100000, f=0.06, zs=0.02, jiacang=0) 
-        return self.run4(df, zj=100000, f=0.02, zs=0.02, ydzs=0.06,jiacang=0.1)
+        self.run3b(df, zj=100000, f=0.06, zs=0.01, jiacang=0.2)
+        #self.run3b(df, zj=100000, f=0.06, zs=0.03, jiacang=0.1)
+        #self.run3b(df, zj=100000, f=0.06, zs=0.03, jiacang=0.2)
+        #self.run3b(df, zj=100000, f=0.06, zs=0.03, jiacang=0.3)
+        #self.run3b(df, zj=100000, f=0.06, zs=0.03, jiacang=0.4)
+        #return self.run4(df, zj=100000, f=0.02, zs=0.02, ydzs=0.06,jiacang=0.1)
 
 if __name__ == '__main__':
-    k = Kxian('m')
+    k = Kxian('999999')
     #k.gudingkaicang()
     #k.ma_updown(50)
     #k.cross_ma()
@@ -526,11 +535,11 @@ if __name__ == '__main__':
     #print k.hl_run3(10,10)
     #print k.tupo_hl_run3()
     #print k.ma_updown_run3(20)
-    #print k.ma_updown_run3_shift()
+    print k.ma_updown_run3_shift(20,20)
     #print k.bigger_smaller_than_ma_run3(10)
     #rangerun3(k.ma_updown_run3, range(2,20), range(8,9))
 
-    #print k.suijikaicang(22)
+    #print k.suijikaicang(2)
     #print k.qian_n_ri2_run3(10)
     #print k.maupdown_qiannri()
 
@@ -538,4 +547,4 @@ if __name__ == '__main__':
     #print k.ma_updown_2day_run3(10)
     #print k.ma_updown_3day_run3()
     #print k.ma_cross_run3(10,20)
-    print k.ma_cross_run3_shift(8,30)
+    #print k.ma_cross_run3_shift(5,25)

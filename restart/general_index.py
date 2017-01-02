@@ -416,12 +416,13 @@ class General(object):
 
         df2.plot()#;plt.show()
         #df3.plot();plt.show()
+        print zj-zj_init,(zj-zj_init)/sscnt, sscnt
         return zj-zj_init,(zj-zj_init)/sscnt
 
 
     def run4(self, df, zj=100000, f=0.06, zs=0.02, ydzs=0.06, jiacang=0):
         '''
-        资金管理方式，有持仓不开仓(加仓)，不对冲，没持仓，按照f算能开几手
+        按照f算能开几手
         zj 总资金
         zs  开仓止损幅度， 代表开仓价的百分比，
         f  总资金固定百分比风险  每次不能超过这个百分比
@@ -456,7 +457,7 @@ class General(object):
         for i, bksk in enumerate(df.bksk):
             
             idx = df.index[i]
-            bpsp = df.loc[idx, 'bpsp']
+            #bpsp = df.loc[idx, 'bpsp']
 
             if bpoint!=0 and kjs!=0 and bs=='b': # 多头止损平仓
                 byd_point = max(byd_point, df.loc[idx, 'h'] * (1-ydzs)) #
@@ -576,6 +577,7 @@ class General(object):
 
         df2.plot()#;plt.show()
         #df3.plot();plt.show()
+        print zj-zj_init,(zj-zj_init)/sscnt
         return zj-zj_init,(zj-zj_init)/sscnt
 
 
