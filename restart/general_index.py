@@ -253,6 +253,8 @@ class General(object):
         bjccnt = 0 # 加仓计数
         sjccnt = 0 # 加仓计数
         sscnt = 0 # 总交易手数计数
+        sxfbl = 100 # 手续费比例
+        huadianbl = 100 # 滑点比例
         # 做多
         for i, bksk in enumerate(df.bksk):
             
@@ -262,9 +264,9 @@ class General(object):
             if bpoint!=0 and kjs!=0 and bs=='b': # 多头止损平仓
                 if df.loc[idx, 'l'] <= bpoint: 
                     gain = (bpoint  - bkprice) * kjs* 10 # 平仓收益
-                    #print i, '止损bp', gain
-                    sxf = bkprice/1000 * kjs# 手续费定为开仓价格的0.1%
-                    hd = bkprice/1000 * kjs  # 滑点定为0.1%
+                    print i, '止损bp', gain
+                    sxf = bkprice/sxfbl * kjs# 手续费定为开仓价格的0.1%
+                    hd = bkprice/huadianbl * kjs  # 滑点定为0.1%
                     zj += gain - sxf - hd
                     sscnt += kjs
                     bpoint = 0
@@ -278,9 +280,9 @@ class General(object):
                 
                 bpprice = df.loc[idx, 'sdjj']  # 平仓价格
                 gain = (bpprice  - bkprice) * kjs* 10 # 平仓收益
-                #print '信号bp', bpprice, gain
-                sxf = bkprice/1000 * kjs# 手续费定为开仓价格的0.1%
-                hd = bkprice/1000 * kjs  # 
+                print i, '信号bp', bpprice, gain
+                sxf = bkprice/sxfbl * kjs# 手续费定为开仓价格的0.1%
+                hd = bkprice/huadianbl * kjs  # 
                 zj += gain - sxf - hd
                 
                 sscnt += kjs
@@ -295,9 +297,9 @@ class General(object):
             if spoint!=0 and kjs!=0 and bs=='s': # 空头止损平仓
                 if df.loc[idx, 'h'] >= spoint: 
                     gain = (skprice - spoint)  * kjs * 10
-                    #print i, '止损sp', gain
-                    sxf = skprice/1000 * kjs# 手续费定为开仓价格的0.1%
-                    hd = skprice/1000 * kjs  # 
+                    print i, '止损sp', gain
+                    sxf = skprice/sxfbl * kjs# 
+                    hd = skprice/huadianbl * kjs  # 
                     zj += gain - sxf - hd
                     
                     sscnt += kjs
@@ -312,9 +314,9 @@ class General(object):
 
                 spprice = df.loc[idx, 'sdjj']
                 gain = (skprice - spprice) * kjs * 10 
-                #print i, '信号sp', spprice, gain
-                sxf = skprice/1000 * kjs# 手续费定为开仓价格的0.1%
-                hd = skprice/1000 * kjs # 滑点
+                print i, '信号sp', spprice, gain
+                sxf = skprice/sxfbl * kjs# 手续费定为开仓价格的0.1%
+                hd = skprice/huadianbl * kjs # 滑点
                 zj += gain - sxf - hd
                 sscnt += kjs
                 spoint = 0
@@ -325,7 +327,11 @@ class General(object):
                 
             if bksk=='bk' and kjs==0: # 开多
                
-                bkprice = df.loc[idx, 'sdjj']
+                #bkprice = df.loc[idx, 'sdjj']
+                if df.loc[idx, 'l'] < df.loc[idx, 'nhh'] < df.loc[idx, 'h']: # 用前n天高价开多
+                    bkprice = df.loc[idx, 'nhh'] # 
+                else:  
+                    bkprice = df.loc[idx, 'sdjj']
                 #print bkprice
                 if zs < 1: # 百分比开仓止损
                     bkczs = bkprice * zs *10 # 开仓止损幅度
@@ -337,14 +343,17 @@ class General(object):
                 kjs = min(int((zj*f)/bkczs), klimit)  # 这次可开几手, 最大限制100手
                 bs = 'b'
                 bki = i
-                #print i, 'bk  ', bkprice, bpoint,kjs
+                print i, 'bk  ', bkprice, bpoint,kjs
                 kccnt += 1
                 #kccs.append(kccnt)
 
             if bksk=='sk' and kjs==0:  # 开空
-                
-           
-                skprice = df.loc[idx, 'sdjj']
+
+                #skprice = df.loc[idx, 'sdjj']
+                if df.loc[idx, 'l'] < df.loc[idx, 'nll'] < df.loc[idx, 'h']: # 
+                    skprice = df.loc[idx, 'nll'] # 
+                else:  
+                    skprice = df.loc[idx, 'sdjj']
                 if zs < 1:
                     skczs = skprice * zs * 10# 开仓止损
                     spoint =skprice + skprice * zs # 开仓止损点位
@@ -355,7 +364,7 @@ class General(object):
                 kjs = min(int((zj*f)/skczs), klimit)  # 这次可开几手
                 bs = 's'
                 ski = i
-                #print i, 'sk  ', skprice,  spoint, kjs
+                print i, 'sk  ', skprice,  spoint, kjs
                 # keyong = zj - chicang
                 kccnt += 1
 
@@ -444,7 +453,7 @@ class General(object):
         sscnt = 0 # 总交易手数计数
         kjs = 0 # 一次开仓几手
         bs = '' # 表示多头还是空头
-        klimit = 10099999 # 单次交易开仓手数限制， 无限制才厉害,但好像不太现实，
+        klimit = 1000 # 单次交易开仓手数限制， 无限制才厉害,但好像不太现实，
         bpoint = 0
         spoint = 0
         byd_point = 0 # 多头移动止损
@@ -453,7 +462,7 @@ class General(object):
         newlow = 0 # 空头开仓之后，点位的新低
         bjccnt = 0 # 加仓计数
         sjccnt = 0 # 加仓计数
-        ssfbl = 100 # 手续费比例
+        sxfbl = 100 # 手续费比例
         huadianbl = 100 # 滑点比例
         # 做多
         for i, bksk in enumerate(df.bksk):
@@ -474,7 +483,7 @@ class General(object):
                 if df.loc[idx, 'l'] <= bzs: 
                     gain = (bzs  - bkprice) * kjs* 10 # 平仓收益
                     #print '止损bp', bzs, gain
-                    sxf = bkprice/ssfbl * kjs# 手续费定为开仓价格的0.1%
+                    sxf = bkprice/sxfbl * kjs# 手续费定为开仓价格的0.1%
                     hd = bkprice/huadianbl * kjs  #
                     zj += gain - sxf - hd
                     sscnt += kjs
@@ -496,7 +505,7 @@ class General(object):
                 if df.loc[idx, 'h'] >= szs: 
                     gain = (skprice - szs)  * kjs * 10
                     #print '止损sp', szs, gain
-                    sxf = skprice/ssfbl * kjs# 手续费定为开仓价格的0.1%
+                    sxf = skprice/sxfbl * kjs# 手续费定为开仓价格的0.1%
                     hd = skprice/huadianbl * kjs  #
                     zj += gain - sxf - hd
                     sscnt += kjs
@@ -507,61 +516,61 @@ class General(object):
                  
             if bksk=='bk' and kjs==0: # 开多
                 #bkprice = df.loc[idx, 'sdjj']
-                bkprice = df.loc[df.index[i-1], 'l'] # 跑hl_run3用昨天最高点开多
-                if df.loc[idx, 'l'] < bkprice < df.loc[idx, 'h']:
-                    atr = df.loc[idx, 'atr']
-                    if pd.isnull(atr):
-                        atr = df.loc[idx, 'tr']
-                    if zs < 1: # 百分比开仓止损
-                        bkczs = bkprice * zs *10 # 开仓止损幅度
-                        bpoint =bkprice - bkprice * zs # 开仓止损点位
-
-                    else: # atr开仓止损
-
-                        #print 'atr', atr
-                        bkczs = atr * zs * 10 # 开仓止损幅度
-                        bpoint =bkprice - zs * atr # 开仓止损点位
-                    if ydzs < 1:
-                        byd_point = df.loc[idx, 'h'] * (1-ydzs)
-                        #print 'byd_point', byd_point
-                    else:
-                        byd_point = df.loc[idx, 'h'] - ydzs * atr
-                    kjs = min(int((zj*f)/bkczs), klimit)  # 这次可开几手, 最大限制100手
                 
-                    bs = 'b'
-                    #bki = i
-                    print 'bk  ', bkprice, bpoint, kjs
-                    #kccnt += 1
+                if df.loc[idx, 'l'] < df.loc[idx, 'nhh'] < df.loc[idx, 'h']: # 用前n天高价价开多
+                    bkprice = df.loc[idx, 'nhh'] # 
+                else:  
+                    bkprice = df.loc[idx, 'sdjj']
+                atr = df.loc[idx, 'atr']
+                if pd.isnull(atr):
+                    atr = df.loc[idx, 'tr']
+                if zs < 1: # 百分比开仓止损
+                    bkczs = bkprice * zs *10 # 开仓止损幅度
+                    bpoint =bkprice - bkprice * zs # 开仓止损点位
+                else: # atr开仓止损
+                    #print 'atr', atr
+                    bkczs = atr * zs * 10 # 开仓止损幅度
+                    bpoint =bkprice - zs * atr # 开仓止损点位
+                if ydzs < 1:
+                    byd_point = df.loc[idx, 'h'] * (1-ydzs)
+                    
+                else:
+                    byd_point = df.loc[idx, 'h'] - ydzs * atr
+                #print 'byd_point', byd_point
+                kjs = min(int((zj*f)/bkczs), klimit)  # 这次可开几手, 最大限制100手
+            
+                bs = 'b'
+                #bki = i
+                print 'bk  ', bkprice, bpoint, kjs
+                #kccnt += 1
 
             if bksk=='sk' and kjs==0:  # 开空
                 #skprice = df.loc[idx, 'sdjj']
-                skprice = df.loc[df.index[i-1], 'h'] # 
-
-                    atr = df.loc[idx, 'atr']
-                    if pd.isnull(atr):
-                        atr = df.loc[idx, 'tr']
+                if df.loc[idx, 'l'] < df.loc[idx, 'nll'] < df.loc[idx, 'h']: # 
+                    skprice = df.loc[idx, 'nll'] # 
+                else:  
+                    skprice = df.loc[idx, 'sdjj']
                 
-                    if zs < 1:
-                        skczs = skprice * zs * 10# 开仓止损
-                        spoint =skprice + skprice * zs # 开仓止损点位
-                    
-                    else:
-                    
-                        #print 'atr', atr
-                        skczs = atr * zs * 10 # 开仓止损幅度
-                        spoint =skprice + zs * atr # 开仓止损点位
-
-                    if ydzs < 1: # 百分比移动止损
-                        syd_point = df.loc[idx, 'l'] * (1+ydzs)
-                    
-                    else: # atr移动止损
-                        syd_point = df.loc[idx, 'l'] + ydzs * atr
-                    print 'syd_point', syd_point
-                    kjs = min(int((zj*f)/skczs), klimit)  # 这次可开几手
-                
-                    bs = 's'
-                    #ski = i
-                    print 'sk  ', skprice,  spoint, kjs
+                atr = df.loc[idx, 'atr']
+                if pd.isnull(atr):
+                    atr = df.loc[idx, 'tr']
+                if zs < 1:
+                    skczs = skprice * zs * 10# 开仓止损
+                    spoint =skprice + skprice * zs # 开仓止损点位
+                else:
+                    #print 'atr', atr
+                    skczs = atr * zs * 10 # 开仓止损幅度
+                    spoint =skprice + zs * atr # 开仓止损点位
+                if ydzs < 1: # 百分比移动止损
+                    syd_point = df.loc[idx, 'l'] * (1+ydzs)
+                else: # atr移动止损
+                    syd_point = df.loc[idx, 'l'] + ydzs * atr
+                #print 'syd_point', syd_point
+                kjs = min(int((zj*f)/skczs), klimit)  # 这次可开几手
+            
+                bs = 's'
+                #ski = i
+                print 'sk  ', skprice,  spoint, kjs
 
                 #kccnt += 1
             if jiacang:  # 加仓
@@ -594,6 +603,199 @@ class General(object):
                         kjs += jcjs
                         sjccnt += 1
                         #kccnt += 1
+
+            zjqx.append(zj)
+            if sscnt >0:
+                kccs.append((zj-zj_init)/sscnt)
+            else:
+                kccs.append(0)
+
+        # 开始画资金曲线
+        df2 = pd.DataFrame(index=df.date,
+                      columns=['total'])
+        data = {
+            'total' : pd.Series(zjqx, index=df.date),
+            }
+        
+        df2 = pd.DataFrame(data)
+        
+        # 开始画平均每次开仓盈利
+        df3 = pd.DataFrame(index=df.date,
+                      columns=['avg'])
+        #print index
+        data = {
+            'avg' : pd.Series(kccs, index=df.date),
+            }
+        df3 = pd.DataFrame(data)
+
+        df2.plot();plt.show()
+        #df3.plot();plt.show()
+        print zj-zj_init,(zj-zj_init)/sscnt
+        return zj-zj_init,(zj-zj_init)/sscnt
+
+    def run5(self, df, zj=100000, f=0.02, zs=0.01, ydzs=0.01):
+        '''
+        按照f算能开几手
+        zj 总资金
+        zs  开仓止损幅度， 代表开仓价的百分比，
+        f  总资金固定百分比风险  每次不能超过这个百分比
+        保证金为10%
+    
+        开仓方式， 信号开仓
+        平仓方式，  开仓止损价平仓（zs）,移动止损平仓（ydzs）,信号止损， 出任何一个止损都平仓
+        开仓写在平仓前面，效果是平仓日 不再开仓
+        开仓写在平仓后面，效果是平仓日 还能开仓。
+
+        '''
+        zj_init = zj
+        zjqx = [] # 资金曲线，画图用
+        kccs = [] # 开仓次数
+        kccnt = 0  # 开仓计数
+        ibcnt = 0 # 买开仓手数
+        iscnt = 0 # 卖开仓手数
+        sscnt = 0 # 总交易手数计数
+        kjs = 0 # 一次开仓几手
+        bs = '' # 表示多头还是空头
+        klimit = 1000 # 单次交易开仓手数限制， 无限制才厉害,但好像不太现实，
+        bpoint = 0
+        spoint = 0
+        byd_point = 0 # 多头移动止损
+        syd_point = 0 # 空头移动止损
+        newhigh = 0 # 多头开仓之后，点位的新高
+        newlow = 0 # 空头开仓之后，点位的新低
+        bjccnt = 0 # 加仓计数
+        sjccnt = 0 # 加仓计数
+        sxfbl = 100 # 手续费比例
+        huadianbl = 100 # 滑点比例
+
+        for i, bksk in enumerate(df.bksk):
+            
+            idx = df.index[i]
+            bpsp = df.loc[idx, 'bpsp']
+
+            if bpsp == 'bp' and kjs != 0 and bs == 'b': # 多头信号平仓
+                
+                bpprice = df.loc[idx, 'sdjj']  # 平仓价格
+                gain = (bpprice  - bkprice) * kjs* 10 # 平仓收益
+                print i, '信号bp', bpprice, gain
+                sxf = bkprice/sxfbl * kjs# 手续费定为开仓价格的0.1%
+                hd = bkprice/huadianbl * kjs  # 
+                zj += gain - sxf - hd
+                
+                sscnt += kjs
+                bpoint = 0
+                kjs = 0
+                bs = ''
+                
+
+            if bpsp == 'sp' and kjs != 0 and bs == 's': # 空头信号平仓
+                spprice = df.loc[idx, 'sdjj']
+                gain = (skprice - spprice) * kjs * 10 
+                print i, '信号sp', spprice, gain
+                sxf = skprice/sxfbl * kjs# 手续费定为开仓价格的0.1%
+                hd = skprice/huadianbl * kjs # 滑点
+                zj += gain - sxf - hd
+                sscnt += kjs
+                spoint = 0
+                kjs = 0
+                bs = ''
+
+            if bpoint!=0 and kjs!=0 and bs=='b': # 多头止损平仓
+                if ydzs < 1:# 百分比
+                    byd_point = max(byd_point, df.loc[idx, 'h'] * (1-ydzs)) #
+                else: #atr
+                    atr = df.loc[idx, 'atr']
+                    if pd.isnull(atr):
+                        atr = df.loc[idx, 'tr']
+                    byd_point = max(byd_point, df.loc[idx, 'h'] - ydzs*atr) #
+                bzs = max(bpoint, byd_point)
+                print 'byd_point', byd_point, bpoint
+                if df.loc[idx, 'l'] <= bzs: 
+                    gain = (bzs  - bkprice) * kjs* 10 # 平仓收益
+                    #print '止损bp', bzs, gain
+                    sxf = bkprice/sxfbl * kjs# 手续费定为开仓价格的0.1%
+                    hd = bkprice/huadianbl * kjs  #
+                    zj += gain - sxf - hd
+                    sscnt += kjs
+                    bpoint = 0
+                    byd_point = 0
+                    kjs = 0
+                    bs = ''
+
+            if spoint!=0 and kjs!=0 and bs=='s': # 空头止损平仓
+                if ydzs < 1:# 百分比
+                    syd_point = min(syd_point, df.loc[idx, 'l'] * (1+ydzs)) #
+                else: # atr
+                    atr = df.loc[idx, 'atr']
+                    if pd.isnull(atr):
+                        atr = df.loc[idx, 'tr']
+                    syd_point = min(syd_point, df.loc[idx, 'l'] + ydzs*atr) #
+                szs = min(spoint, syd_point)
+                #print 'syd_point', syd_point, spoint
+                if df.loc[idx, 'h'] >= szs: 
+                    gain = (skprice - szs)  * kjs * 10
+                    #print '止损sp', szs, gain
+                    sxf = skprice/sxfbl * kjs# 手续费定为开仓价格的0.1%
+                    hd = skprice/huadianbl * kjs  #
+                    zj += gain - sxf - hd
+                    sscnt += kjs
+                    spoint = 0
+                    syd_point = 0
+                    kjs = 0
+                    bs = ''
+                 
+            if bksk=='bk' and kjs==0: # 开多
+                #bkprice = df.loc[idx, 'sdjj']
+                if df.loc[idx, 'l'] < df.loc[idx, 'nhh'] < df.loc[idx, 'h']: # 用前n天高价价开多
+                    bkprice = df.loc[idx, 'nhh'] # 
+                else:  
+                    bkprice = df.loc[idx, 'sdjj']
+                atr = df.loc[idx, 'atr']
+                if pd.isnull(atr):
+                    atr = df.loc[idx, 'tr']
+                if zs < 1: # 百分比开仓止损
+                    bkczs = bkprice * zs *10 # 开仓止损幅度
+                    bpoint =bkprice - bkprice * zs # 开仓止损点位
+                else: # atr开仓止损
+                    #print 'atr', atr
+                    bkczs = atr * zs * 10 # 开仓止损幅度
+                    bpoint =bkprice - zs * atr # 开仓止损点位
+                if ydzs < 1:
+                    byd_point = df.loc[idx, 'h'] * (1-ydzs)
+                else:
+                    byd_point = df.loc[idx, 'h'] - ydzs * atr
+                #print 'byd_point', byd_point
+                kjs = min(int((zj*f)/bkczs), klimit)  # 这次可开几手, 最大限制100手
+                bs = 'b'
+                print 'bk  ', bkprice, bpoint, kjs
+                #kccnt += 1
+
+            if bksk=='sk' and kjs==0:  # 开空
+                #skprice = df.loc[idx, 'sdjj']
+                if df.loc[idx, 'l'] < df.loc[idx, 'nll'] < df.loc[idx, 'h']: # 
+                    skprice = df.loc[idx, 'nll'] # 
+                else:  
+                    skprice = df.loc[idx, 'sdjj']
+                
+                atr = df.loc[idx, 'atr']
+                if pd.isnull(atr):
+                    atr = df.loc[idx, 'tr']
+                if zs < 1:
+                    skczs = skprice * zs * 10# 开仓止损
+                    spoint =skprice + skprice * zs # 开仓止损点位
+                else:
+                    #print 'atr', atr
+                    skczs = atr * zs * 10 # 开仓止损幅度
+                    spoint =skprice + zs * atr # 开仓止损点位
+                if ydzs < 1: # 百分比移动止损
+                    syd_point = df.loc[idx, 'l'] * (1+ydzs)
+                else: # atr移动止损
+                    syd_point = df.loc[idx, 'l'] + ydzs * atr
+                #print 'syd_point', syd_point
+                kjs = min(int((zj*f)/skczs), klimit)  # 这次可开几手
+                bs = 's'
+                print 'sk  ', skprice,  spoint, kjs
+                #kccnt += 1
 
             zjqx.append(zj)
             if sscnt >0:

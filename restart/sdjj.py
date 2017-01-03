@@ -374,7 +374,7 @@ class Sdjj(GeneralIndex):
 
 
 if __name__ == '__main__':
-    s = Sdjj('m')
+    s = Sdjj('ta')
     #s.foo()
     
     #s.tupo_sdhsdl(12) # rb 11(28008), 12(28080.25) 天最好
