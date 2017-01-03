@@ -13,7 +13,7 @@ class Kxian(GeneralIndex):
         super(Kxian, self).__init__(daima)
         #self.get_ma(5,10,20,30,40)
         self.get_sdjj()
-        
+        self.get_atr(50)
         #self.df.dropna(how='any')
         #print self.df
 
@@ -113,6 +113,38 @@ class Kxian(GeneralIndex):
         #return self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.04)
 
     @util.display_func_name
+    def hl_run3_shift(self, n=10, m=10):
+        '''昨天最高价比前n天高，今天开多仓，反之'''
+        self.get_nhh(n)
+        self.get_nll(n)
+        self.get_nhh(m)
+        self.get_nll(m)
+        df = deepcopy(self.df) 
+
+        df['higher'] = df.h.shift(1) > df.nhh.shift(1) 
+        df['bksk'] = np.where(df['higher'], 'bk' , None)
+        df['lower'] = df.l.shift(1) < df.nll.shift(1)
+        df['bksk'] = np.where(df['lower'], 'sk' , df['bksk'])
+
+        df['phigher'] = df.h.shift(1) > df.nhh.shift(1) 
+        df['bpsp'] = np.where(df['phigher'], 'sp' , None)
+        df['plower'] = df.l.shift(1) < df.nll.shift(1)
+        df['bpsp'] = np.where(df['plower'], 'bp' , df['bpsp'])
+        df.to_csv('tmp.csv')
+        #return self.run3b(df, zj=100000, f=0.06, zs=0.02)
+        #return self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.04)
+        #self.run3b(df, zj=100000, f=0.02, zs=0.02,jiacang=0)
+        #self.run3b(df, zj=100000, f=0.02, zs=0.02,jiacang=0)
+        #self.run3b(df, zj=100000, f=0.06, zs=0.03,jiacang=0.2)
+        #self.run3b(df, zj=100000, f=0.06, zs=0.03,jiacang=0.3)
+        #self.run3b(df, zj=100000, f=0.06, zs=0.03,jiacang=0.4)
+        #self.run4(df, zj=100000, f=0.02, zs=0.02, ydzs=0.07,jiacang=0)
+        self.run4(df, zj=100000, f=0.02, zs=0.01, ydzs=0.01,jiacang=0)
+        #self.run4(df, zj=100000, f=0.06, zs=0.01, ydzs=0.07,jiacang=0.2)
+        #self.run4(df, zj=100000, f=0.06, zs=0.01, ydzs=0.07,jiacang=0.3)
+        #self.run4(df, zj=100000, f=0.02, zs=0.02, ydzs=0.06,jiacang=0.4)
+
+    @util.display_func_name
     def ma_cross(self, a=5, b=25):
         '''ma金叉死叉 a比b小
         '''
@@ -195,7 +227,7 @@ class Kxian(GeneralIndex):
         #df.to_csv('tmp.csv')
         #return self.run3b(df, zj=100000, f=0.06, zs=0.02, jiacang=0)
 
-        self.run4(df, zj=100000, f=0.06, zs=0.03, ydzs=0.08,jiacang=0.5)
+        self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.08,jiacang=0)
 
 
     @util.display_func_name
@@ -380,10 +412,10 @@ class Kxian(GeneralIndex):
         df['bksk'] = np.where(df['krandint']==2*n-1, 'sk' , df['bksk'])
         #df['bpsp'] = np.where(df['krandint'].shift(2)== 0, 'sp' , None)
         #df['bpsp'] = np.where(df['krandint'].shift(2)==2*n-1, 'bp' , df['bpsp'])
-        #df.to_csv('tmp.csv')
+        df.to_csv('tmp.csv')
         #return self.run3b(df, zj=100000, f=0.06, zs=0.02, jiacang=0.1)
 
-        return self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.06)
+        return self.run4(df, zj=100000, f=0.02, zs=0.01, ydzs=0.02)
 
     def gudingkaicang(self, mode=3, n=10):
         '''
@@ -515,31 +547,32 @@ class Kxian(GeneralIndex):
         df['pmadown'] = df[ma2].shift(1) < df[ma2].shift(2)
         df['bpsp'] = np.where(df['pmaup'], 'sp' , None)
         df['bpsp'] = np.where(df['pmadown'], 'bp' , df['bpsp'])
-        df.to_csv('tmp.csv')
-        #return self.run3b(df, zj=100000, f=0.06, zs=0.02, jiacang=0) 
-        self.run3b(df, zj=100000, f=0.06, zs=0.01, jiacang=0.2)
+        #df.to_csv('tmp.csv')
+        #return self.run3b(df, zj=100000, f=0.02, zs=0.01, jiacang=0) 
+        #self.run3b(df, zj=100000, f=0.06, zs=0.01, jiacang=0.2)
         #self.run3b(df, zj=100000, f=0.06, zs=0.03, jiacang=0.1)
         #self.run3b(df, zj=100000, f=0.06, zs=0.03, jiacang=0.2)
         #self.run3b(df, zj=100000, f=0.06, zs=0.03, jiacang=0.3)
         #self.run3b(df, zj=100000, f=0.06, zs=0.03, jiacang=0.4)
-        #return self.run4(df, zj=100000, f=0.02, zs=0.02, ydzs=0.06,jiacang=0.1)
+        return self.run4(df, zj=100000, f=0.02, zs=1, ydzs=1,jiacang=0)
 
 if __name__ == '__main__':
-    k = Kxian('999999')
+    k = Kxian('rb')
     #k.gudingkaicang()
-    #k.ma_updown(50)
+    #k.ma_updown(4)
     #k.cross_ma()
     #k.tupo_hl(20)
     #k.hl(20)
     #k.ma_cross(5,10)
     #print k.hl_run3(10,10)
+    print k.hl_run3_shift(2,2)
     #print k.tupo_hl_run3()
-    #print k.ma_updown_run3(20)
-    print k.ma_updown_run3_shift(20,20)
+    #print k.ma_updown_run3(2)
+    #print k.ma_updown_run3_shift(2,2)
     #print k.bigger_smaller_than_ma_run3(10)
     #rangerun3(k.ma_updown_run3, range(2,20), range(8,9))
 
-    #print k.suijikaicang(2)
+    #print k.suijikaicang(5)
     #print k.qian_n_ri2_run3(10)
     #print k.maupdown_qiannri()
 
@@ -547,4 +580,4 @@ if __name__ == '__main__':
     #print k.ma_updown_2day_run3(10)
     #print k.ma_updown_3day_run3()
     #print k.ma_cross_run3(10,20)
-    #print k.ma_cross_run3_shift(5,25)
+    #print k.ma_cross_run3_shift(4,20)
