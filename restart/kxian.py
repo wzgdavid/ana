@@ -17,87 +17,12 @@ class Kxian(GeneralIndex):
         #self.df.dropna(how='any')
         #print self.df
 
-    @util.display_func_name
-    def tupo_hl(self, n=10):
-        '''最高价突破前n天最高开多，最低突破前n天最低开空，
-        n=5 效果不错
-        暂时还想不出移动止损怎么写，先写不带移动止损的，用信号平仓的策略
-
-        '''
-        self.get_nhh(n)
-        self.get_nll(n)
-        df = deepcopy(self.df) 
-        #df['tupo_sdh'] = df.sdjj.shift(1) < df.nsdh.shift(1) & df.sdjj > df.nsdh 
-        df['tmp1'] = df.h.shift(1) < df.nhh.shift(1)
-        df['tmp2'] = df.h > df.nhh
-        df['tupo_h'] = df.tmp1 & df.tmp2  #今天的四点均价突破前n天的四点均价高点
-        df['bksk'] = np.where(df['tupo_h'], 'bk' , None)
-        #df.loc[: ,'bkcnt'] = 0
-        #df['bkcnt'] = np.where(df['tupo_sdh'], df.bkcnt.shift(1)+1 , df.bkcnt.shift(2))
-
-        df['tmp1'] = df.l.shift(1) > df.nll.shift(1)
-        df['tmp2'] = df.l < df.nll
-        df['tupo_l'] = df.tmp1 & df.tmp2
-        # bk表示买开仓或买平仓，sk相反
-        df['bksk'] = np.where(df['tupo_l'], 'sk' , df['bksk'])
-        df.to_csv('tmp.csv')
-        self.run4(df, zj=100000, f=0.02, zs=0.01, ydzs=0.01)
-
-    @util.display_func_name
-    def tupo_hl_run3(self, n=10):
-        '''最高价突破前n天最高开多，最低突破前n天最低开空，
-        
-
-        '''
-        self.get_nhh(n)
-        self.get_nll(n)
-
-        df = deepcopy(self.df) 
-        #df['tupo_sdh'] = df.sdjj.shift(1) < df.nsdh.shift(1) & df.sdjj > df.nsdh 
-        df['tmp1'] = df.h.shift(1) < df.nhh.shift(1)
-        df['tmp2'] = df.h > df.nhh
-        df['tupo_h'] = df.tmp1 & df.tmp2  #今天的四点均价突破前n天的四点均价高点
-        df['bksk'] = np.where(df['tupo_h'], 'bk' , None)
-        df['bpsp'] = np.where(df['tupo_h'], 'sp' , None)
-
-        df['tmp1'] = df.l.shift(1) > df.nll.shift(2)
-        df['tmp2'] = df.l < df.nll
-        df['tupo_l'] = df.tmp1 & df.tmp2
-
-        df['bksk'] = np.where(df['tupo_l'], 'sk' , df['bksk'])
-        df['bpsp'] = np.where(df['tupo_l'], 'bp' , df['bpsp'])
-        df.to_csv('tmp.csv')
-        #
-        #return self.run3b(df, zj=100000, f=0.02, zs=0.01)
-        return self.run5(df, zj=100000, f=0.02, zs=0.01, ydzs=0.01)
 
     @util.display_func_name
     def hl(self, n=10):
-        '''最高价比前n天最高还高开多， 最低价比前n天最低还低开空  
-        和tupo_hl的区别， tupo_hl只是突破的那一天为信号， 此函数不管
-        目的是为了看满足这个条件下的概率，真实不可能开那么多仓位
-        基本上tupo_hl 和 hl 的平均值差不多
-        '''
+        '''突破前n天最高价开多， 突破前n天最低价开空 '''
         self.get_nhh(n)
         self.get_nll(n)
-        df = deepcopy(self.df) 
-
-
-        df['higher'] = df.h > df.nhh 
-        df['bksk'] = np.where(df['higher'], 'bk' , None)
-        df['lower'] = df.l < df.nll
-        # bk表示买开仓或买平仓，sk相反
-        df['bksk'] = np.where(df['lower'], 'sk' , df['bksk'])
-        df.to_csv('tmp.csv')
-        self.run(df)
-
-    @util.display_func_name
-    def hl_run3(self, n=10, m=10):
-        '''其实不带run3的函数就像是带run3的一种情况n=m'''
-        self.get_nhh(n)
-        self.get_nll(n)
-        self.get_nhh(m)
-        self.get_nll(m)
         df = deepcopy(self.df) 
 
         df['higher'] = df.h > df.nhh 
@@ -110,9 +35,31 @@ class Kxian(GeneralIndex):
         df['plower'] = df.l < df.nll
         df['bpsp'] = np.where(df['plower'], 'bp' , df['bpsp'])
         df.to_csv('tmp.csv')
-        #return self.run3b(df, zj=100000, f=0.02, zs=0.01)
-        self.run4(df, zj=100000, f=0.02, zs=0.01, ydzs=0.01)
+        return self.run3b(df, zj=100000, f=0.02, zs=0.02, usehl=True)
+        #self.run4(df, zj=100000, f=0.02, zs=0.02, ydzs=0.06, usehl=True)
+        #self.run6(df, zj=100000, kclimit=2, f=0.02, zs=0.02, usehl=True)
 
+
+    @util.display_func_name
+    def chl(self, n=10):
+        '''前一天收盘价比前n天最高价高，开多，反之'''
+        self.get_nhh(n)
+        self.get_nll(n)
+        df = deepcopy(self.df) 
+
+        df['higher'] = df.c.shift(1) > df.nhh.shift(1)
+        df['bksk'] = np.where(df['higher'], 'bk' , None)
+        df['lower'] = df.c.shift(1) < df.nll.shift(1)
+        df['bksk'] = np.where(df['lower'], 'sk' , df['bksk'])
+
+        df['phigher'] = df.c.shift(1) > df.nhh.shift(1) 
+        df['bpsp'] = np.where(df['phigher'], 'sp' , None)
+        df['plower'] = df.c.shift(1) < df.nll.shift(1)
+        df['bpsp'] = np.where(df['plower'], 'bp' , df['bpsp'])
+        df.to_csv('tmp.csv')
+
+        return self.run3b(df, zj=100000, f=0.02, zs=0.02)
+        #self.run4(df, zj=100000, f=0.02, zs=0.02, ydzs=0.06)
 
     @util.display_func_name
     def ma_cross(self, a=5, b=25):
@@ -163,8 +110,8 @@ class Kxian(GeneralIndex):
         df['bpsp'] = np.where(df['psicha'], 'bp' , df['bpsp'])
 
         #df.to_csv('tmp.csv')
-        #return self.run3b(df, zj=100000, f=0.06, zs=0.02, jiacang=0)
-        return self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.06,jiacang=0)
+        #return self.run3b(df, zj=100000, f=0.02, zs=0.02, jiacang=0)
+        #return self.run4(df, zj=100000, f=0.02, zs=0.02, ydzs=0.06,jiacang=0)
 
     @util.display_func_name
     def ma_cross_run3_shift(self, a=5, b=25):
@@ -194,10 +141,10 @@ class Kxian(GeneralIndex):
         df['bpsp'] = np.where(df['pjincha'], 'sp' , None)
         df['bpsp'] = np.where(df['psicha'], 'bp' , df['bpsp'])
 
-        #df.to_csv('tmp.csv')
-        #return self.run3b(df, zj=100000, f=0.06, zs=0.02, jiacang=0)
+        df.to_csv('tmp.csv')
+        return self.run3b(df, zj=100000, f=0.02, zs=0.02, jiacang=0)
 
-        self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.08,jiacang=0)
+        #self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.07,jiacang=0.2)
 
 
     @util.display_func_name
@@ -385,7 +332,7 @@ class Kxian(GeneralIndex):
         df.to_csv('tmp.csv')
         #return self.run3b(df, zj=100000, f=0.06, zs=0.02, jiacang=0.1)
 
-        return self.run4(df, zj=100000, f=0.02, zs=0.01, ydzs=0.03)
+        return self.run4(df, zj=100000, f=0.02, zs=0.02, ydzs=0.06)
 
     def gudingkaicang(self, mode=3, n=10):
         '''
@@ -492,7 +439,7 @@ class Kxian(GeneralIndex):
         df['bpsp'] = np.where(df.phigher & df.pmaup, 'sp' , None)
         df['bpsp'] = np.where(df.plower & df.pmadown, 'bp' , df['bpsp'])
         df.to_csv('tmp.csv')
-        #return self.run3b(df, zj=100000, f=0.06, zs=0.02)
+        return self.run3b(df, zj=100000, f=0.06, zs=0.02)
         #return self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.06)
 
     @util.display_func_name
@@ -526,16 +473,128 @@ class Kxian(GeneralIndex):
         #self.run3b(df, zj=100000, f=0.06, zs=0.03, jiacang=0.4)
         #return self.run4(df, zj=100000, f=0.02, zs=1, ydzs=1,jiacang=0)
 
+    @util.display_func_name
+    def ma_shangxia_ma(self, a=5, b=10):
+        '''
+        小ma在大ma上开多，反之开空
+        ma_cross就等于这个的一种特殊情况
+        '''
+        self.get_ma(a)
+        self.get_ma(b)
+        
+        df = deepcopy(self.df) 
+        ma1 = 'ma%s' % a
+        ma2 = 'ma%s' % b
+
+        df['maup'] = df[ma1].shift(1) > df[ma2].shift(1)
+        df['madown'] = df[ma1].shift(1) < df[ma2].shift(1)
+        df['bksk'] = np.where(df['maup'], 'bk' , None)
+        df['bksk'] = np.where(df['madown'], 'sk' , df['bksk'])
+
+
+        df.to_csv('tmp.csv')
+        return self.run4(df, zj=100000, f=0.02, zs=0.01, ydzs=0.01)
+
+    @util.display_func_name
+    def ma_shangxia_ma__3xian(self, a=5, b=10, c=20):
+        '''
+        小ma在大ma上开多，反之开空
+        ma_cross就等于这个的一种特殊情况
+        '''
+        self.get_ma(a)
+        self.get_ma(b)
+        self.get_ma(c)
+        df = deepcopy(self.df) 
+        maa = 'ma%s' % a
+        mab = 'ma%s' % b
+        mac = 'ma%s' % c
+
+        df['ab'] = df[maa].shift(1) > df[mab].shift(1)
+        df['bc'] = df[mab].shift(1) > df[mac].shift(1)
+        df['mabup'] = df[mab].shift(1) > df[mab].shift(2)
+        df['ab2'] = df[maa].shift(1) < df[mab].shift(1)
+        df['bc2'] = df[mab].shift(1) < df[mac].shift(1)
+        df['mabdown'] = df[mab].shift(1) < df[mab].shift(2)
+
+        df['bksk'] = np.where(df.ab & df.bc & df.mabup, 'bk' , None)
+        df['bksk'] = np.where(df.ab2 & df.bc2 & df.mabdown, 'sk' , df['bksk'])
+
+        df.to_csv('tmp.csv')
+        return self.run4(df, zj=100000, f=0.02, zs=0.03, ydzs=0.07) 
+
+    @util.display_func_name
+    def maupdown_gtltma(self, n=10, m=10):
+        '''
+        ma向上，k线大于ma, 开多
+        '''
+        self.get_ma(n)
+        self.get_ma(m)
+        df = deepcopy(self.df) 
+        ma1 = 'ma%s' % n
+        ma2 = 'ma%s' % m
+
+        df['maup'] = df[ma1].shift(1) > df[ma1].shift(2)
+        df['gtma'] = df.l.shift(1) > df[ma1].shift(1)
+        df['madown'] = df[ma1].shift(1) < df[ma1].shift(2)
+        df['ltma'] = df.h.shift(1) < df[ma1].shift(1)
+        df['bksk'] = np.where(df['maup'] & df.gtma, 'bk' , None)
+        df['bksk'] = np.where(df['madown'] & df.ltma, 'sk' , df['bksk'])
+
+        df['pmaup'] = df[ma2].shift(1) > df[ma2].shift(2)
+        df['pgtma'] = df.l.shift(1) > df[ma2].shift(1)
+        df['pmadown'] = df[ma2].shift(1) < df[ma2].shift(2)
+        df['pltma'] = df.h.shift(1) < df[ma2].shift(1)
+        df['bpsp'] = np.where(df['pmaup'] & df.pgtma, 'sp' , None)
+        df['bpsp'] = np.where(df['pmadown'] & df.pltma, 'bp' , df['bpsp'])
+
+
+        df.to_csv('tmp.csv')
+        return self.run3b(df, zj=100000, f=0.02, zs=0.02)
+        #self.run4(df, zj=100000, f=0.02, zs=0.02, ydzs=0.06)
+
+    @util.display_func_name
+    def maupdown_cgtltma(self, n=10, m=10):
+        '''
+        ma向上，收盘线大于ma, 开多
+        '''
+        self.get_ma(n)
+        self.get_ma(m)
+        df = deepcopy(self.df) 
+        ma1 = 'ma%s' % n
+        ma2 = 'ma%s' % m
+
+        df['maup'] = df[ma1].shift(1) > df[ma1].shift(2)
+        df['gtma'] = df.c.shift(1) > df[ma1].shift(1)
+        df['madown'] = df[ma1].shift(1) < df[ma1].shift(2)
+        df['ltma'] = df.c.shift(1) < df[ma1].shift(1)
+        df['bksk'] = np.where(df['maup'] & df.gtma, 'bk' , None)
+        df['bksk'] = np.where(df['madown'] & df.ltma, 'sk' , df['bksk'])
+
+        df['pmaup'] = df[ma2].shift(1) > df[ma2].shift(2)
+        df['pgtma'] = df.c.shift(1) > df[ma2].shift(1)
+        df['pmadown'] = df[ma2].shift(1) < df[ma2].shift(2)
+        df['pltma'] = df.c.shift(1) < df[ma2].shift(1)
+        df['bpsp'] = np.where(df['pmaup'] & df.pgtma, 'sp' , None)
+        df['bpsp'] = np.where(df['pmadown'] & df.pltma, 'bp' , df['bpsp'])
+
+
+        df.to_csv('tmp.csv')
+        return self.run3b(df, zj=100000, f=0.02, zs=0.02)
+        #self.run4(df, zj=100000, f=0.02, zs=0.02, ydzs=0.06)
+
 if __name__ == '__main__':
-    k = Kxian('rb') # ta rb c m dy 999999
+    k = Kxian('dy') # ta rb c m dy 999999
+    #k.ma_shangxia_ma()
+    #k.ma_shangxia_ma__3xian(5,10,20)
+    #k.hl(20) # run3b   rb16  ta20  c16 m18 dy21  999999 20
     #k.gudingkaicang()
     #k.ma_updown(4)
     #k.cross_ma()
     #k.tupo_hl(10)
-    #k.hl(20)
+    k.hl(20)
     #k.ma_cross(5,10)
-    print k.hl_run3(3,3)
-    
+    #print k.hl_run3(2,2)
+    #k.hl_run3(2)
     #print k.tupo_hl_run3(2)
     #print k.ma_updown_run3(2)
     #print k.ma_updown_run3_shift(2,2)
@@ -543,6 +602,8 @@ if __name__ == '__main__':
     #rangerun3(k.ma_updown_run3, range(2,20), range(8,9))
 
     #print k.suijikaicang(10)
+    #print k.maupdown_gtltma(20)
+    #print k.maupdown_cgtltma(20)
     #print k.qian_n_ri2_run3(10)
     #print k.maupdown_qiannri()
 
@@ -550,4 +611,4 @@ if __name__ == '__main__':
     #print k.ma_updown_2day_run3(10)
     #print k.ma_updown_3day_run3()
     #print k.ma_cross_run3(10,20)
-    #print k.ma_cross_run3_shift(4,20)
+    #print k.ma_cross_run3_shift(7,20)
