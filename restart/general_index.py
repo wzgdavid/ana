@@ -265,7 +265,7 @@ class General(object):
             if bpoint!=0 and kjs!=0 and bs=='b': # 多头止损平仓
                 if df.loc[idx, 'l'] <= bpoint: 
                     gain = (bpoint  - bkprice) * kjs* 10 # 平仓收益
-                    print i, '止损bp', gain
+                    #print i, '止损bp', gain
                     sxf = bkprice/sxfbl * kjs# 手续费定为开仓价格的0.1%
                     hd = bkprice/huadianbl * kjs  # 滑点定为0.1%
                     zj += gain - sxf - hd
@@ -281,7 +281,7 @@ class General(object):
                 
                 bpprice = df.loc[idx, 'sdjj']  # 平仓价格
                 gain = (bpprice  - bkprice) * kjs* 10 # 平仓收益
-                print i, '信号bp', bpprice, gain
+                #print i, '信号bp', bpprice, gain
                 sxf = bkprice/sxfbl * kjs# 手续费定为开仓价格的0.1%
                 hd = bkprice/huadianbl * kjs  # 
                 zj += gain - sxf - hd
@@ -298,7 +298,7 @@ class General(object):
             if spoint!=0 and kjs!=0 and bs=='s': # 空头止损平仓
                 if df.loc[idx, 'h'] >= spoint: 
                     gain = (skprice - spoint)  * kjs * 10
-                    print i, '止损sp', gain
+                    #print i, '止损sp', gain
                     sxf = skprice/sxfbl * kjs# 
                     hd = skprice/huadianbl * kjs  # 
                     zj += gain - sxf - hd
@@ -315,7 +315,7 @@ class General(object):
 
                 spprice = df.loc[idx, 'sdjj']
                 gain = (skprice - spprice) * kjs * 10 
-                print i, '信号sp', spprice, gain
+                #print i, '信号sp', spprice, gain
                 sxf = skprice/sxfbl * kjs# 手续费定为开仓价格的0.1%
                 hd = skprice/huadianbl * kjs # 滑点
                 zj += gain - sxf - hd
@@ -345,7 +345,7 @@ class General(object):
                 kjs = min(int((zj*f)/bkczs), klimit)  # 这次可开几手, 最大限制100手
                 bs = 'b'
                 bki = i
-                print i, 'bk  ', bkprice, bpoint,kjs
+                #print i, 'bk  ', bkprice, bpoint,kjs
                 kccnt += 1
                 #kccs.append(kccnt)
 
@@ -367,7 +367,7 @@ class General(object):
                 kjs = min(int((zj*f)/skczs), klimit)  # 这次可开几手
                 bs = 's'
                 ski = i
-                print i, 'sk  ', skprice,  spoint, kjs
+                #print i, 'sk  ', skprice,  spoint, kjs
                 # keyong = zj - chicang
                 kccnt += 1
 
@@ -428,7 +428,7 @@ class General(object):
 
         df2.plot();plt.show()
         #df3.plot();plt.show()
-        print zj-zj_init,(zj-zj_init)/sscnt, sscnt
+        print int(zj-zj_init), int((zj-zj_init)/sscnt), kccnt
         return zj-zj_init,(zj-zj_init)/sscnt
 
 
@@ -636,7 +636,7 @@ class General(object):
 
         df2.plot();plt.show()
         #df3.plot();plt.show()
-        print zj-zj_init,(zj-zj_init)/sscnt
+        print zj-zj_init,(zj-zj_init)/sscnt, sscnt
         return zj-zj_init,(zj-zj_init)/sscnt
 
     def run5(self, df, zj=100000, f=0.02, zs=0.01, ydzs=0.01, usehl=False):
@@ -664,7 +664,7 @@ class General(object):
         sscnt = 0 # 总交易手数计数
         kjs = 0 # 一次开仓几手
         bs = '' # 表示多头还是空头
-        klimit = 1000 # 单次交易开仓手数限制， 无限制才厉害,但好像不太现实，
+        klimit = 999999999 # 单次交易开仓手数限制， 无限制才厉害,但好像不太现实，
         bpoint = 0
         spoint = 0
         byd_point = 0 # 多头移动止损
@@ -1046,7 +1046,7 @@ class General(object):
 
         df2.plot();plt.show()
         #df3.plot();plt.show()
-        print zj-zj_init,(zj-zj_init)/sscnt, sscnt
+        print zj-zj_init,(zj-zj_init)/sscnt, kccnt
         return zj-zj_init,(zj-zj_init)/sscnt
 
 
@@ -1103,9 +1103,23 @@ class GeneralIndex(General):
         '''前n天最高价最高点（不包含当天）'''
         self.df['nhh'] = self.df.h.shift(1).rolling(window=n, center=False).max()
 
+    def get_nhhp(self, n):
+        '''前n天最高价最高点（不包含当天）, 平仓用'''
+        self.df['nhhp'] = self.df.h.shift(1).rolling(window=n, center=False).max()
+
+    def get_nhh_ma(self, n):
+        self.df['nhh_ma']  = self.df.nhh.rolling(window=n, center=False).mean()
+
     def get_nll(self, n):
         '''前n天最低价最低点（不包含当天）'''
         self.df['nll'] = self.df.l.shift(1).rolling(window=n, center=False).min()
+
+    def get_nllp(self, n):
+        '''前n天最低价最低点（不包含当天）, 平仓用'''
+        self.df['nllp'] = self.df.l.shift(1).rolling(window=n, center=False).min()
+
+    def get_nll_ma(self, n):
+        self.df['nll_ma'] = self.df.nll.rolling(window=n, center=False).mean()
 
     def get_nsdh(self, n):
         '''前n天四点均价最高点（不包含当天）'''
