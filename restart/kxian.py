@@ -58,7 +58,7 @@ class Kxian(GeneralIndex):
         df['plower'] = df.l < df.nllp
         df['bpsp'] = np.where(df['plower'], 'bp' , df['bpsp'])
         df.to_csv('tmp.csv')
-        return self.run3b(df, zj=100000, f=0.02, zs=0.02, usehl=True)
+        return self.runhl(df, zj=100000, f=0.02, zs=1)
         #self.run4(df, zj=100000, f=0.02, zs=0.02, ydzs=0.08, usehl=True)
         #self.run6(df, zj=100000, kclimit=2, f=0.02, zs=0.02, usehl=True)
 
@@ -653,20 +653,23 @@ class Kxian(GeneralIndex):
         #self.run4(df, zj=100000, f=0.02, zs=0.02, ydzs=0.06)
 
 if __name__ == '__main__':
-    k = Kxian('m') # ta rb c m dy 999999
-    
-    #k.hl(4) # 跑下来 综合还是这个最好
-    #k.hl(5)
-    #k.hl(6)
-    #k.hl(7)
+    k = Kxian('c5') # ta rb c m a ma jd dy 999999
+    #k.hl2(3,3)
+    #k.hl2(4,4) #
+    #k.hl2(5,5)
+    #k.hl2(6,6)
+    #k.hl2(7,7)
+    #k.hl2(8,8)
+    #k.hl2(9,9)
     #k.hl2(11,10)
     #k.hl2(11,9)
     #k.hl2(11,8)
     #k.hl2(11,7)
     #k.hl2(11,6)
-    k.hl2(11,5)
-    k.hl2(5,11)
-    
+    #k.hl2(11,5)
+    #k.hl2(11,4)
+    #k.hl2(11,3)
+
     #k.hl2(17,15)
     #k.hl2(17,13)
     #k.hl2(17,11)
@@ -675,11 +678,26 @@ if __name__ == '__main__':
     #k.hl2(17,5)
     #k.hl2(17,4)
     #k.hl2(17,3)
-
+    
+    #k.hl2(9,2)
+    #k.hl2(2,9)
+    #k.hl2(2,11)
+    #k.hl2(2,10)
+    k.hl2(2,9)
+    k.hl2(2,8)
+    k.hl2(2,7)
+    #k.hl2(2,6)
+    #k.hl2(2,5)
+    #k.hl2(3,6)
+    #k.hl2(3,9)
+    #k.hl2(3,9)
+    #k.hl2(3,8)
+    #k.hl2(3,7)
     #k.hl2(12,6)
     #k.hl2(10,5)
     #k.hl2(8,4)
     #k.hl2(6,3)
+
     #k.hl2(6,12)
     #k.hl2(5,10)
     #k.hl2(4,8)
