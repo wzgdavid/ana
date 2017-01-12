@@ -653,7 +653,7 @@ class Kxian(GeneralIndex):
         #self.run4(df, zj=100000, f=0.02, zs=0.02, ydzs=0.06)
 
 if __name__ == '__main__':
-    k = Kxian('c5') # ta rb c m a ma jd dy 999999
+    k = Kxian('ma') # ta rb c m a ma jd dy 999999
     #k.hl2(3,3)
     #k.hl2(4,4) #
     #k.hl2(5,5)
@@ -684,8 +684,8 @@ if __name__ == '__main__':
     #k.hl2(2,11)
     #k.hl2(2,10)
     k.hl2(2,9)
-    k.hl2(2,8)
-    k.hl2(2,7)
+    #k.hl2(2,8)
+    #k.hl2(2,7)
     #k.hl2(2,6)
     #k.hl2(2,5)
     #k.hl2(3,6)
