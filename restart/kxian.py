@@ -39,28 +39,6 @@ class Kxian(GeneralIndex):
         #self.run4(df, zj=100000, f=0.05, zs=0.02, ydzs=0.07, usehl=True)
         #self.run6(df, zj=100000, kclimit=3, f=0.02, zs=0.02, usehl=True)
 
-    @util.display_func_name
-    def hl2(self, n=11, m=10):
-        '''突破nhh,且这天的c比n天前的c高，开多 '''
-        self.get_nhh(n)
-        self.get_nll(n)
-        self.get_nhhp(m)
-        self.get_nllp(m)
-        df = deepcopy(self.df) 
-
-        df['higher'] = df.h > df.nhh
-        df['bksk'] = np.where(df['higher'], 'bk' , None)
-        df['lower'] = df.l < df.nll
-        df['bksk'] = np.where(df['lower'], 'sk' , df['bksk'])
-
-        df['phigher'] = df.h > df.nhhp 
-        df['bpsp'] = np.where(df['phigher'], 'sp' , None)
-        df['plower'] = df.l < df.nllp
-        df['bpsp'] = np.where(df['plower'], 'bp' , df['bpsp'])
-        df.to_csv('tmp.csv')
-        return self.runhl(df, zj=100000, f=0.02, zs=1)
-        #self.run4(df, zj=100000, f=0.02, zs=0.02, ydzs=0.08, usehl=True)
-        #self.run6(df, zj=100000, kclimit=2, f=0.02, zs=0.02, usehl=True)
 
     @util.display_func_name
     def hl_ma(self, n=10, m=3):
@@ -649,11 +627,37 @@ class Kxian(GeneralIndex):
 
 
         df.to_csv('tmp.csv')
-        return self.run3b(df, zj=100000, f=0.02, zs=0.02)
+        return self.run3b(df, zj=100000, f=0.02, zs=1)
         #self.run4(df, zj=100000, f=0.02, zs=0.02, ydzs=0.06)
 
+
+    @util.display_func_name
+    def hl2(self, n=5, m=10):
+        '''用runhl跑，runhl专为hl写的 '''
+        self.get_nhh(n)
+        self.get_nll(n)
+        self.get_nhhp(m)
+        self.get_nllp(m)
+        df = deepcopy(self.df) 
+
+        df['higher'] = df.h > df.nhh
+        df['bksk'] = np.where(df['higher'], 'bk' , None)
+        df['lower'] = df.l < df.nll
+        df['bksk'] = np.where(df['lower'], 'sk' , df['bksk'])
+
+        df['phigher'] = df.h > df.nhhp 
+        df['bpsp'] = np.where(df['phigher'], 'sp' , None)
+        df['plower'] = df.l < df.nllp
+        df['bpsp'] = np.where(df['plower'], 'bp' , df['bpsp'])
+        df.to_csv('tmp.csv')
+        #return self.runhl(df, zj=100000, f=0.02, zs=1)
+        return self.runhl(df, zj=100000, f=0.02, zs=1)
+        
+        #self.run4(df, zj=100000, f=0.02, zs=0.02, ydzs=0.08, usehl=True)
+        #self.run6(df, zj=100000, kclimit=2, f=0.02, zs=0.02, usehl=True)
+
 if __name__ == '__main__':
-    k = Kxian('ma') # ta rb c m a ma jd dy 999999
+    k = Kxian('rb') # ta rb c m a ma jd dy 999999
     #k.hl2(3,3)
     #k.hl2(4,4) #
     #k.hl2(5,5)
@@ -678,15 +682,23 @@ if __name__ == '__main__':
     #k.hl2(17,5)
     #k.hl2(17,4)
     #k.hl2(17,3)
+
+    k.hl2(2,9)
+    #k.hl2(2,7)
     
-    #k.hl2(9,2)
-    #k.hl2(2,9)
     #k.hl2(2,11)
     #k.hl2(2,10)
-    k.hl2(2,9)
+    #k.hl2(2,9)
     #k.hl2(2,8)
     #k.hl2(2,7)
     #k.hl2(2,6)
+    #print '==========================='
+    #k.hl2(3,11)
+    #k.hl2(3,10)
+    #k.hl2(3,9)
+    #k.hl2(3,8)
+    #k.hl2(3,7)
+    #k.hl2(3,6)
     #k.hl2(2,5)
     #k.hl2(3,6)
     #k.hl2(3,9)
@@ -702,7 +714,7 @@ if __name__ == '__main__':
     #k.hl2(5,10)
     #k.hl2(4,8)
     #k.hl2(3,6)
-
+    #k.hl2(2,9)
     #k.gtlt_ma(11,11)
     #k.maupdown_gtltma(11,11)
     #k.ma_cross_run3_shift(5,20)
