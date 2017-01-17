@@ -17,12 +17,14 @@ class Sdjj(GeneralIndex):
 
 
     @util.display_func_name
-    def sdhl(self, n=10):
+    def sdhl(self, n=10, m=9):
         '''四点均价比前n天最高还高开多， 反之开空  
         
         '''
         self.get_nsdl(n)
         self.get_nsdh(n)
+        self.get_nsdlp(m)
+        self.get_nsdhp(m)
         df = deepcopy(self.df) 
 
         df['tupo_sdh'] = df.sdjj > df.nsdh  #今天的四点均价突破前n天的四点均价高点
@@ -31,14 +33,15 @@ class Sdjj(GeneralIndex):
         df['bksk'] = np.where(df['tupo_sdl'], 'sk' , df['bksk'])
 
         # 平仓
-        df['tupo_sdhp'] = df.sdjj > df.nsdh 
+        df['tupo_sdhp'] = df.sdjj > df.nsdhp 
         df['bpsp'] = np.where(df['tupo_sdhp'], 'sp' , None)
-        df['tupo_sdlp'] = df.sdjj < df.nsdl
+        df['tupo_sdlp'] = df.sdjj < df.nsdlp
         df['bpsp'] = np.where(df['tupo_sdlp'], 'bp' , df['bpsp'])
-        #df.to_csv('tmp.csv')
+        df.to_csv('tmp.csv')
         #print df.columns
 
         return self.run3b(df, zj=100000, f=0.02, zs=0.02)
+
 
     @util.display_func_name
     def sdhsdl_run2(self, n=12, m=12):
@@ -264,9 +267,9 @@ class Sdjj(GeneralIndex):
 
 
 if __name__ == '__main__':
-    s = Sdjj('ma')
+    s = Sdjj('a')
     #s.foo()
-    s.sdhl(11)
+    s.sdhl(2,9)
     #s.tupo_sdhsdl(12) # rb 11(28008), 12(28080.25) 天最好
     #print s.tupo_sdhsdl_run2(9, 8)
     #print s.tupo_sdhsdl_run2(10, 12)

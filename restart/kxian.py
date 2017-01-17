@@ -169,7 +169,7 @@ class Kxian(GeneralIndex):
         df['bpsp'] = np.where(df['psicha'], 'bp' , df['bpsp'])
 
         df.to_csv('tmp.csv')
-        return self.run3b(df, zj=100000, f=0.02, zs=0.02, jiacang=0)
+        return self.run3b(df, zj=100000, f=0.02, zs=0.03, jiacang=0)
 
         #self.run4(df, zj=100000, f=0.06, zs=0.02, ydzs=0.07,jiacang=0.2)
 
@@ -213,6 +213,26 @@ class Kxian(GeneralIndex):
         df.to_csv('tmp.csv')
         self.run(df)
 
+    @util.display_func_name
+    def ma_updown_run3(self, n=20):
+        '''ma向上开多， ma向下开空
+        单跑这个策略收益低
+        '''
+        self.get_ma(n)
+        df = deepcopy(self.df) 
+        ma = 'ma%s' % n
+
+        df['maup'] = df[ma] > df[ma].shift(1)
+        df['madown'] = df[ma] < df[ma].shift(1)
+        df['bksk'] = np.where(df['maup'], 'bk' , None)
+        df['bksk'] = np.where(df['madown'], 'sk' , df['bksk'])
+
+        df['pmaup'] = df[ma] > df[ma].shift(1)
+        df['pmadown'] = df[ma] < df[ma].shift(1)
+        df['bpsp'] = np.where(df['pmaup'], 'sp' , None)
+        df['bpsp'] = np.where(df['pmadown'], 'bp' , df['bpsp'])
+        df.to_csv('tmp.csv')
+        return self.run3b(df, zj=100000, f=0.02, zs=0.02)
 
 
     @util.display_func_name
@@ -658,15 +678,40 @@ class Kxian(GeneralIndex):
         df['bpsp'] = np.where(df['phigher'], 'sp' , None)
         df['plower'] = df.l < df.nllp
         df['bpsp'] = np.where(df['plower'], 'bp' , df['bpsp'])
+
+        df['s'] = np.where(df['higher'] & df['lower'], 1 , None)
+        df['cumsum'] = df['s'].cumsum()
         df.to_csv('tmp.csv')
-        #return self.runhl(df, zj=100000, f=0.02, zs=1)
-        return self.runhl2(df, zj=100000, f=0.01, zs=1)
+        #return self.run3b(df, zj=100000, f=0.02, zs=0.02, usehl=True)
+        return self.runhl2(df, zj=100000, f=0.02, zs=1)
+        #return self.runhl2b(df, zj=100000, f=0.02, zs=1)
         
         #self.run4(df, zj=100000, f=0.02, zs=0.02, ydzs=0.08, usehl=True)
         #self.run6(df, zj=100000, kclimit=2, f=0.02, zs=0.02, usehl=True)
 
+    @util.display_func_name
+    def chl(self, n=5, m=10):
+        self.get_nch(n)
+        self.get_ncl(n)
+        self.get_nchp(m)
+        self.get_nclp(m)
+        df = deepcopy(self.df) 
+
+        df['higher'] = df.c > df.nch
+        df['bksk'] = np.where(df['higher'], 'bk' , None)
+        df['lower'] = df.c < df.ncl
+        df['bksk'] = np.where(df['lower'], 'sk' , df['bksk'])
+
+        df['phigher'] = df.c > df.nchp 
+        df['bpsp'] = np.where(df['phigher'], 'sp' , None)
+        df['plower'] = df.c < df.nclp
+        df['bpsp'] = np.where(df['plower'], 'bp' , df['bpsp'])
+        df.to_csv('tmp.csv')
+        return self.runchl(df, zj=100000, f=0.02, zs=1)
+        #return self.runhl(df, zj=100000, f=0.02, zs=1)
+
 if __name__ == '__main__':
-    k = Kxian('jd') # ta rb c m a ma jd dy 999999
+    k = Kxian('rb') # ta rb c m a ma jd dy 999999
     #k.hl2(3,3)
     #k.hl2(4,4) #
     #k.hl2(5,5)
@@ -693,8 +738,9 @@ if __name__ == '__main__':
     #k.hl2(17,3)
     #k.foo(4)
     k.hl2(2,9)
+    #k.chl(2,9)
     #k.hl2(2,7)
-    
+    #k.ma_updown_run3(9)
     #k.hl2(2,11)
     #k.hl2(2,10)
     #k.hl2(2,9)
@@ -725,7 +771,7 @@ if __name__ == '__main__':
     #k.hl2(3,6)
     #k.hl2(2,9)
     #k.gtlt_ma(11,11)
-    #k.maupdown_gtltma(11,11)
+    #k.maupdown_gtltma(10,10)
     #k.ma_cross_run3_shift(5,20)
 #
     #k.hl(17)
@@ -740,7 +786,7 @@ if __name__ == '__main__':
     #print k.qian_n_ri2_run3_shift(11,11)
     # run3b   rb16  ta20  c16 m18 dy21  999999 20
     #k.gudingkaicang()
-    #k.ma_updown(20)
+
     #k.cross_ma()
     #k.tupo_hl(10)
 
