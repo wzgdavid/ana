@@ -630,6 +630,15 @@ class Kxian(GeneralIndex):
         return self.run3b(df, zj=100000, f=0.02, zs=1)
         #self.run4(df, zj=100000, f=0.02, zs=0.02, ydzs=0.06)
 
+    def foo(self, n=2):
+        self.get_nhh(n)
+        self.get_nll(n)
+        df = deepcopy(self.df) 
+        df['higher'] = df.h >= df.nhh
+        df['lower'] = df.l <= df.nll
+        df['bpsp'] = np.where(df['higher'] & df['lower'], 1 , None)
+        df['cumsum'] = df['bpsp'].cumsum()
+        df.to_csv('tmp.csv')
 
     @util.display_func_name
     def hl2(self, n=5, m=10):
@@ -651,13 +660,13 @@ class Kxian(GeneralIndex):
         df['bpsp'] = np.where(df['plower'], 'bp' , df['bpsp'])
         df.to_csv('tmp.csv')
         #return self.runhl(df, zj=100000, f=0.02, zs=1)
-        return self.runhl(df, zj=100000, f=0.02, zs=1)
+        return self.runhl2(df, zj=100000, f=0.01, zs=1)
         
         #self.run4(df, zj=100000, f=0.02, zs=0.02, ydzs=0.08, usehl=True)
         #self.run6(df, zj=100000, kclimit=2, f=0.02, zs=0.02, usehl=True)
 
 if __name__ == '__main__':
-    k = Kxian('rb') # ta rb c m a ma jd dy 999999
+    k = Kxian('jd') # ta rb c m a ma jd dy 999999
     #k.hl2(3,3)
     #k.hl2(4,4) #
     #k.hl2(5,5)
@@ -682,7 +691,7 @@ if __name__ == '__main__':
     #k.hl2(17,5)
     #k.hl2(17,4)
     #k.hl2(17,3)
-
+    #k.foo(4)
     k.hl2(2,9)
     #k.hl2(2,7)
     
