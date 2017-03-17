@@ -15,7 +15,7 @@ class GL(GeneralIndex):
     def tupohl(self, n, m, zs=2):
         print 'tupohl------%s------%s-----------'% (n, m)
 
-        df = self._init_data(n, m, zs=2)
+        df = self._init_data(n, m, zs)
 
         # duo tou
         df['higher'] = df.h > df.nhh
@@ -32,7 +32,7 @@ class GL(GeneralIndex):
 
     def tupohl2(self, n, m, zs=2):
         print 'tupohl2------%s------%s-----------'% (n, m)
-        df = self._init_data(n, m, zs=2)
+        df = self._init_data(n, m, zs)
 
         # duo tou
         df['higher'] = df.h > df.nhh
@@ -50,7 +50,7 @@ class GL(GeneralIndex):
 
     def chhll(self, n, m, zs=2):
         print 'chhll------%s------%s-----------'% (n, m)
-        df = self._init_data(n, m, zs=2)
+        df = self._init_data(n, m, zs)
 
         # duo tou
         df['higher'] = df.h > df.nhh
@@ -68,7 +68,7 @@ class GL(GeneralIndex):
 
     def all(self, n, m, zs=2):
         print 'all------%s------%s-----------'% (n, m)
-        df = self._init_data(n, m, zs=2)
+        df = self._init_data(n, m, zs)
 
         # duo tou
         df['higher'] = df.h > df.nhh
@@ -111,17 +111,18 @@ class GL(GeneralIndex):
 
 
 if __name__ == '__main__':
-    g = GL('ta') # ta rb c m a ma jd dy 999999
+    g = GL('999999') # ta rb c m a ma jd dy 999999
     #g.tupohl(2,2)
     #g.tupohl(2,3)
     #g.tupohl(2,4)
     #g.tupohl(2,5)
     #g.tupohl(2,6)
     #g.tupohl(2,7)
-    g.tupohl(2,3)
+    g.tupohl(2,3, 1)
     #g.chhll(2,3)
     #g.tupohl2(2,3)
-    g.all(2,3)
+    g.all(2,3,1)
+    g.all(2,3,2)
     #g.chhll(2,3)
     #g.tupohl(4,3)
     
