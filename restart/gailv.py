@@ -178,14 +178,47 @@ class GL(GeneralIndex):
 
     def yyy(self, n):
         '''前n天高低点作为移动止损
-        其实yyy(n) 等于 foo(n,1,n)
+        
 
         '''
+        print 'yyy---------------'
         df = self._init_data(n)
         df['hbz'] = np.where(1, df.l/df.nll , None) # df.l当天低点， df.nll前n天低点，df.l>df.nll则没止损
         df['lbz'] = np.where(1, df.h/df.nhh , None)
         self._to_result(df)
+    
+    def yyy_highlow(self, n):
+        '''前n天高低点作为移动止损
+    
+        '''
+        print 'yyy_highlow---------------'
+        df = self._init_data(n)
+        df['hh1'] = df.l.shift(1) > df.l.shift(2)
+        df['hh2'] = df.h.shift(1) > df.h.shift(2)
+        df['hbz'] = np.where(df.hh1 & df.hh2, df.l/df.nll , None) # df.l当天低点， df.nll前n天低点，df.l>df.nll则没止损
         
+        df['ll1'] = df.l.shift(1) < df.l.shift(2)
+        df['ll2'] = df.h.shift(1) < df.h.shift(2)
+        df['lbz'] = np.where(df.ll1 & df.ll2 , df.h/df.nhh , None)
+        self._to_result(df)    
+
+        
+
+    def yyy_ma(self, n, ma):
+        '''前n天高低点作为移动止损
+    
+        '''
+        print 'yyy_ma---------------'
+        self.get_ma(ma)
+        df = self._init_data(n)
+        ma1 = 'ma%s' % ma
+        df['hh1'] = df.l.shift(1) > df[ma1]
+        df['hbz'] = np.where(df.hh1, df.l/df.nll , None) # df.l当天低点， df.nll前n天低点，df.l>df.nll则没止损
+        
+        df['ll1'] = df.l.shift(1) < df[ma1]
+        
+        df['lbz'] = np.where(df.ll1, df.h/df.nhh , None)
+        self._to_result(df)    
 
     def _init_data(self, n=2, m=2, zs=2):
         self.get_nhh(n)
@@ -194,6 +227,7 @@ class GL(GeneralIndex):
         self.get_mll(m)
         self.get_zshh(zs)
         self.get_zsll(zs)
+        
         return deepcopy(self.df) 
 
     def _to_result(self, df):
@@ -214,9 +248,10 @@ class GL(GeneralIndex):
 
 
 if __name__ == '__main__':
-    g = GL('c') # ta rb c m a ma jd dy 999999
+    g = GL('ta') # ta rb c m a ma jd dy 999999
     #g.foo(2,2,2)
-    g.tupohl(2,1,2)
+    #g.tupohl(2,1,2)
+    #g.tupohl(4,1,2)
     #g.tupohl(2,3)
     #g.tupohl(2,4)
     #g.tupohl(2,5)
@@ -226,12 +261,16 @@ if __name__ == '__main__':
     #g.tupohl_close(2,3)
     #g.tupohl_high(2,3)
     #g.tupohl_lowclose(2,3)
-    g.tupohl_highclose(2,1,4)
-    #g.tupohl_lowhigh(2,3)
-    #g.tupohl_all(2,3)
-
-    g.yyy(4)
-    g.foo(4,1,4)
+    #g.tupohl_highclose(2,1,2)
+    #g.tupohl_highclose(4,1,2)
+    #g.tupohl_lowhigh(2,1,2)
+    #g.tupohl_lowhigh(4,1,2)
+    ##g.tupohl_all(2,3)
+#
+    g.yyy(7)
+    g.yyy_highlow(4)
+    g.yyy_ma(20, 4)
+    #g.foo(2,1,4)
 
 
     
