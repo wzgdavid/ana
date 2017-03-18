@@ -22,6 +22,7 @@ class GL(GeneralIndex):
         self._to_result(df)
 
     def tupohl(self, n, m, zs=2):
+        '''以多为例后m天（包含当天）低点与前n天低点比值，空反之'''
         print 'tupohl------%s------%s-----------'% (n, m)
 
         df = self._init_data(n, m, zs)
@@ -220,6 +221,48 @@ class GL(GeneralIndex):
         df['lbz'] = np.where(df.ll1, df.h/df.nhh , None)
         self._to_result(df)    
 
+    
+    def hhh(self, n, m):
+        '''后m天高点与开仓点比值范围'''
+        print 'hhh---------------'
+        df = self._init_data(n, m)
+        df['hbz'] = np.where(1, df.mhh/df.nhh , None) # df.l当天低点， df.nll前n天低点，df.l>df.nll则没止损
+        df['lbz'] = np.where(1, df.mll/df.nll , None)
+        hlist = [x for x in sorted(df.hbz) if x>0]
+        print df.hbz.mean(), #hlist
+        print df.lbz.mean()
+
+    def hhh_hl(self, n, m):
+        '''后m天高点与开仓点比值范围'''
+        print 'hhh---------------'
+        df = self._init_data(n, m)
+        df['higher'] = df.h > df.nhh
+        df['lower'] = df.l < df.nll
+        df['hbz'] = np.where(df.higher, df.mhh/df.nhh , None) # df.l当天低点， df.nll前n天低点，df.l>df.nll则没止损
+        df['lbz'] = np.where(df.lower, df.mll/df.nll , None)
+        hlist = [x for x in sorted(df.hbz) if x>0]
+        len1 = len(hlist)
+        print df.hbz.mean(),# hlist
+        print df.lbz.mean()
+
+    def hhh_hl_hl(self, n, m):
+        '''后m天高点与开仓点比值范围'''
+        print 'hhh---------------'
+        df = self._init_data(n, m)
+        df['higher'] = df.h > df.nhh
+        df['hh1'] = df.l.shift(1) > df.l.shift(2)
+        df['hh2'] = df.h.shift(1) > df.h.shift(2)
+        df['lower'] = df.l < df.nll
+        df['ll1'] = df.l.shift(1) < df.l.shift(2)
+        df['ll2'] = df.h.shift(1) < df.h.shift(2)
+        df['hbz'] = np.where(df.higher & df.hh1 & df.hh2, df.mhh/df.nhh , None) # df.l当天低点， df.nll前n天低点，df.l>df.nll则没止损
+        df['lbz'] = np.where(df.lower & df.ll1 & df.ll2, df.mll/df.nll , None)
+        hlist = [x for x in sorted(df.hbz) if x>0]
+        len1 = len(hlist)
+        print df.hbz.mean(),# hlist
+        print df.lbz.mean()
+
+
     def _init_data(self, n=2, m=2, zs=2):
         self.get_nhh(n)
         self.get_nll(n)
@@ -248,7 +291,7 @@ class GL(GeneralIndex):
 
 
 if __name__ == '__main__':
-    g = GL('ta') # ta rb c m a ma jd dy 999999
+    g = GL('a') # ta rb c m a ma jd dy 999999
     #g.foo(2,2,2)
     #g.tupohl(2,1,2)
     #g.tupohl(4,1,2)
@@ -267,10 +310,13 @@ if __name__ == '__main__':
     #g.tupohl_lowhigh(4,1,2)
     ##g.tupohl_all(2,3)
 #
-    g.yyy(7)
-    g.yyy_highlow(4)
-    g.yyy_ma(20, 4)
+    #g.yyy(7)
+    #g.yyy_highlow(4)
+    #g.yyy_ma(20, 4)
     #g.foo(2,1,4)
+    g.hhh(2,10)
+    g.hhh_hl(2,10)
+    g.hhh_hl_hl(2,10)
 
 
     
