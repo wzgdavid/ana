@@ -276,8 +276,8 @@ class GL(GeneralIndex):
         self._runev(df)
 
     def _runev(self, df):
-        bkpoints = list()
-        skpoints = list()
+        bkpoints = dict()
+        skpoints = dict()
         bbzs = list()
         sbzs = list()
         has = 1
@@ -286,24 +286,25 @@ class GL(GeneralIndex):
             bpsp = df.loc[idx, 'bpsp']
             #print idx, bpsp
             if bksk == 'bk':
-                bkpoints.append(df.loc[idx, 'nhh'])
+                #bkpoints.append([idx, df.loc[idx, 'nhh']])
+                bkpoints[str(idx)] = df.loc[idx, 'nhh']
 
             if bksk == 'sk':
-                skpoints.append(df.loc[idx, 'nll'])
+                skpoints[str(idx)] = df.loc[idx, 'nll']
                 
             if bpsp == 'bp' and bkpoints:
                 d = df.loc[idx, 'nllp']
-                bbz = [d/x for x in bkpoints]
+                bbz = [d/x for x in bkpoints.values()]
                 bbzs.extend(bbz)
                 #print bbz
-                bkpoints = list()
+                bkpoints = dict()
                 
             elif bpsp == 'sp' and skpoints:
                 dd = df.loc[idx, 'nhhp']
-                sbz = [dd/x for x in skpoints]
+                sbz = [dd/x for x in skpoints.values()]
                 sbzs.extend(sbz)
                 #print bbz
-                skpoints = list()
+                skpoints = dict()
        
         print sum(bbzs)/len(bbzs)#, bbzs
         print sum(sbzs)/len(sbzs)#, sbzs
@@ -311,7 +312,7 @@ class GL(GeneralIndex):
 if __name__ == '__main__':
     g = GL('jd') # ta rb c m a ma jd dy 999999
     g.ev_tupohl(2, 4)
-    g.ev_tupohl_highlow(2, 4)
+    #g.ev_tupohl_highlow(2, 4)
 
 
     #g.ev_tupohl_highlow(2, 4)
