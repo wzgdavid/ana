@@ -1047,7 +1047,7 @@ class General(object):
             if bpoint!=0 and kjs!=0 and bs=='b': # 多头止损平仓
                 if df.loc[idx, 'l'] <= bpoint: 
                     gain = (bpoint  - bkprice) * kjs* 10 # 平仓收益
-                    print i, '止损bp', gain
+                    #print i, '止损bp', gain
                     sxf = bkprice/sxfbl * kjs
                     hd = bkprice/huadianbl * kjs 
                     zj += gain - sxf - hd
@@ -1058,7 +1058,7 @@ class General(object):
             if spoint!=0 and kjs!=0 and bs=='s': # 空头止损平仓
                 if df.loc[idx, 'h'] >= spoint: 
                     gain = (skprice - spoint)  * kjs * 10
-                    print i, '止损sp', gain
+                    #print i, '止损sp', gain
                     sxf = skprice/sxfbl * kjs# 
                     hd = skprice/huadianbl * kjs  # 
                     zj += gain - sxf - hd
@@ -1075,7 +1075,7 @@ class General(object):
                 else:  
                     bpprice = df.loc[idx, 'sdjj']
                 gain = (bpprice  - bkprice) * kjs* 10 # 平仓收益
-                print i, '信号bp', bpprice, gain
+                #print i, '信号bp', bpprice, gain
                 sxf = bkprice/sxfbl * kjs# 
                 hd = bkprice/huadianbl * kjs  # 
                 zj += gain - sxf - hd
@@ -1091,7 +1091,7 @@ class General(object):
                 else:  
                     spprice = df.loc[idx, 'sdjj']
                 gain = (skprice - spprice) * kjs * 10 
-                print i, '信号sp', spprice, gain
+                #print i, '信号sp', spprice, gain
                 sxf = skprice/sxfbl * kjs# 
                 hd = skprice/huadianbl * kjs # 滑点
                 zj += gain - sxf - hd
@@ -1118,7 +1118,7 @@ class General(object):
 
                 kjs = min(int((zj*f)/bkczs), klimit)  # 这次可开几手
                 bs = 'b'
-                print i, 'bk  ', bkprice, bpoint,kjs, zj
+                #print i, 'bk  ', bkprice, bpoint,kjs, zj
                 kccnt += 1
 
             if bksk=='sk' and kjs==0:  # 开空
@@ -1137,14 +1137,14 @@ class General(object):
                     skczs = (spoint - skprice) * 10
                 kjs = min(int((zj*f)/skczs), klimit)  # 这次可开几手
                 bs = 's'
-                print i, 'sk  ', skprice,  spoint, kjs, zj
+                #print i, 'sk  ', skprice,  spoint, kjs, zj
                 kccnt += 1
 
             # 当天开仓的止损
             if bpoint!=0 and kjs!=0 and bs=='b': # 多头止损平仓
                 if df.loc[idx, 'l'] <= bpoint: 
                     gain = (bpoint  - bkprice) * kjs* 10 # 平仓收益
-                    print i, '止损bp', gain
+                    #print i, '止损bp', gain
                     sxf = bkprice/sxfbl * kjs# 
                     hd = bkprice/huadianbl * kjs  # 
                     zj += gain - sxf - hd
@@ -1155,7 +1155,7 @@ class General(object):
             if spoint!=0 and kjs!=0 and bs=='s': # 空头止损平仓
                 if df.loc[idx, 'h'] >= spoint: 
                     gain = (skprice - spoint)  * kjs * 10
-                    print i, '止损sp', gain
+                    #print i, '止损sp', gain
                     sxf = skprice/sxfbl * kjs# 
                     hd = skprice/huadianbl * kjs  # 
                     zj += gain - sxf - hd
@@ -1179,6 +1179,7 @@ class General(object):
     def runhl2(self, df, zj=50000, f=0.01, zs=0.02):
         print 'runhl2'
         '''
+        有开仓间隔
         参数 
         zj 总资金
         zs  开仓止损幅度， 小于1代表开仓价的百分比，等于1表示用开仓当时的较小参数的n天最高最低值
