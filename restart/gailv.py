@@ -287,14 +287,21 @@ class GL(GeneralIndex):
             #print idx, bpsp
             if bksk == 'bk':
                 #bkpoints.append([idx, df.loc[idx, 'nhh']])
-                bkpoints[str(idx)] = df.loc[idx, 'nhh']
+                bkpoints[idx] = df.loc[idx, 'nhh']
 
             if bksk == 'sk':
-                skpoints[str(idx)] = df.loc[idx, 'nll']
+                skpoints[idx] = df.loc[idx, 'nll']
                 
             if bpsp == 'bp' and bkpoints:
                 d = df.loc[idx, 'nllp']
-                bbz = [d/x for x in bkpoints.values()]
+                #bbz = [d/x for x in bkpoints.values()]
+                bbz = list()
+                for x in bkpoints.values():
+                    bz = d/x
+                    if bz > 0.98:
+                        bbz.append(bz)
+                    else:
+                        bbz.append(0.98)
                 bbzs.extend(bbz)
                 #print bbz
                 bkpoints = dict()
@@ -306,13 +313,15 @@ class GL(GeneralIndex):
                 #print bbz
                 skpoints = dict()
        
-        print sum(bbzs)/len(bbzs)#, bbzs
-        print sum(sbzs)/len(sbzs)#, sbzs
+        print sum(bbzs)/len(bbzs), len(bbzs)
+        print sorted(bbzs)
+        #print sum(sbzs)/len(sbzs)#, sbzs
+        #print sorted(sbzs)
 
 if __name__ == '__main__':
-    g = GL('jd') # ta rb c m a ma jd dy 999999
+    g = GL('999999') # ta rb c m a ma jd dy 999999
     g.ev_tupohl(2, 4)
-    #g.ev_tupohl_highlow(2, 4)
+    g.ev_tupohl_highlow(2, 4)
 
 
     #g.ev_tupohl_highlow(2, 4)
