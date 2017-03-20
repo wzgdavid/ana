@@ -226,10 +226,10 @@ class GL(GeneralIndex):
     ############################################################################################
     '''
 
-    def ev_tupohl(self, n, y):
+    def ev_tupohl(self, n, y, zs=0.01):
         '''所有平仓点与开仓点的比值
-        以多为例，突破前n天的高点，以这个高点开多，开仓止损前n天的低点，移动止损为前y天的低点
-        现在没开仓止损，再考虑
+        以多为例，突破前n天的高点，以这个高点开多，开仓止损zs，移动止损为前y天的低点
+       
         '''
         print 'ev_tupohl------%s------%s-----------'% (n, y)
         self.get_nhh(n)
@@ -242,16 +242,16 @@ class GL(GeneralIndex):
         df['bksk'] = np.where(df['higher'], 'bk' , None)
         df['bksk'] = np.where(df['lower'], 'sk' , df['bksk'])
 
-        df['higherp'] = df.h > df.nhhp
-        df['lowerp'] = df.l < df.nllp
+        df['higherp'] = df.h >= df.nhhp
+        df['lowerp'] = df.l <= df.nllp
         df['bpsp'] = np.where(df['higherp'], 'sp' , None)
         df['bpsp'] = np.where(df['lowerp'], 'bp' , df['bpsp'])
         df.to_csv('tmp.csv')
-        self._runev(df)
+        self._runev(df,zs)
 
-    def ev_tupohl_highlow(self, n, y):
+    def ev_tupohl_highlow(self, n, y, zs=0.01):
         '''所有平仓点与开仓点的比值
-        以多为例，突破前n天的高点，以这个高点开多，开仓止损前n天的低点，移动止损为前y天的低点
+        
         '''
         print 'ev_tupohl_highlow------%s------%s-----------'% (n, y)
         self.get_nhh(n)
@@ -268,14 +268,15 @@ class GL(GeneralIndex):
         df['bksk'] = np.where(df['higher'] & df.hh1 & df.hh2, 'bk' , None)
         df['bksk'] = np.where(df['lower'] & df.ll1 & df.ll2, 'sk' , df['bksk'])
 
-        df['higherp'] = df.h > df.nhhp
-        df['lowerp'] = df.l < df.nllp
+        df['higherp'] = df.h >= df.nhhp
+        df['lowerp'] = df.l <= df.nllp
         df['bpsp'] = np.where(df['higherp'], 'sp' , None)
         df['bpsp'] = np.where(df['lowerp'], 'bp' , df['bpsp'])
         df.to_csv('tmp.csv')
-        self._runev(df)
+        self._runev(df, zs)
 
-    def _runev(self, df):
+    def _runev(self, df, zs=0.01):
+        '''zs为开仓止损的百分比'''
         bkpoints = dict()
         skpoints = dict()
         bbzs = list()
@@ -298,30 +299,46 @@ class GL(GeneralIndex):
                 bbz = list()
                 for x in bkpoints.values():
                     bz = d/x
-                    if bz > 0.98:
+                    if bz > 1-zs:
                         bbz.append(bz)
                     else:
-                        bbz.append(0.98)
+                        bbz.append(1-zs)
+
                 bbzs.extend(bbz)
-                #print bbz
+           
                 bkpoints = dict()
                 
             elif bpsp == 'sp' and skpoints:
-                dd = df.loc[idx, 'nhhp']
-                sbz = [dd/x for x in skpoints.values()]
+                d = df.loc[idx, 'nhhp']
+                #sbz = [x/d for x in skpoints.values()] # 为了看起来方便，用x/d
+
+                sbz = list()
+                for x in skpoints.values():
+                    bz = x/d # 为了看起来方便，用x/d
+                    if bz > 1-zs:
+                        sbz.append(bz)
+                    else:
+                        sbz.append(1-zs)
                 sbzs.extend(sbz)
-                #print bbz
+
                 skpoints = dict()
        
-        print sum(bbzs)/len(bbzs), len(bbzs)
-        print sorted(bbzs)
-        #print sum(sbzs)/len(sbzs)#, sbzs
+        print str(sum(bbzs)/len(bbzs))[:6], len(bbzs)#, sum(bbzs)*len(bbzs)
+        #print sorted(bbzs)
+        print str(sum(sbzs)/len(sbzs))[:6], len(sbzs)
         #print sorted(sbzs)
 
 if __name__ == '__main__':
-    g = GL('999999') # ta rb c m a ma jd dy 999999
-    g.ev_tupohl(2, 4)
-    g.ev_tupohl_highlow(2, 4)
+    g = GL('dy') # ta rb c m a ma jd dy 999999
+    g.ev_tupohl(15, 3)
+    g.ev_tupohl(15, 5)
+    g.ev_tupohl(15, 7)
+    g.ev_tupohl(15, 9)
+    g.ev_tupohl(15, 11)
+    g.ev_tupohl(15, 13)
+    g.ev_tupohl(15, 17)
+    #g.ev_tupohl_highlow(4, 7)
+    #g.ev_tupohl_highlow(8, 7)
 
 
     #g.ev_tupohl_highlow(2, 4)
