@@ -228,8 +228,11 @@ class GL(GeneralIndex):
 
     def ev_tupohl(self, n, y, zs=0.01):
         '''所有平仓点与开仓点的比值
-        以多为例，突破前n天的高点，以这个高点开多，开仓止损zs，移动止损为前y天的低点
-       
+        以多为例，突破前n天的高点，以这个高点开多，
+        开仓止损zs，小数的话，为开仓点的百分比，整数的话，为开仓前n天的低点
+        移动止损为前y天的低点
+        信号开仓
+        开仓止损，移动止损（被动止盈）
         '''
         print 'ev_tupohl------%s------%s-----------'% (n, y)
         self.get_nhh(n)
@@ -248,6 +251,8 @@ class GL(GeneralIndex):
         df['bpsp'] = np.where(df['lowerp'], 'bp' , df['bpsp'])
         df.to_csv('tmp.csv')
         self._runev(df,zs)
+
+
 
     def ev_tupohl_highlow(self, n, y, zs=0.01):
         '''所有平仓点与开仓点的比值
@@ -299,10 +304,13 @@ class GL(GeneralIndex):
                 bbz = list()
                 for x in bkpoints.values():
                     bz = d/x
-                    if bz > 1-zs:
-                        bbz.append(bz)
+                    if zs<1:
+                        if bz > 1-zs:
+                            bbz.append(bz)
+                        else:
+                            bbz.append(1-zs)
                     else:
-                        bbz.append(1-zs)
+                        pass
 
                 bbzs.extend(bbz)
            
@@ -325,24 +333,29 @@ class GL(GeneralIndex):
        
         print str(sum(bbzs)/len(bbzs))[:6], len(bbzs)#, sum(bbzs)*len(bbzs)
         #print sorted(bbzs)
+        br = reduce(lambda x,y:x*y,bbzs)
+        print br , '----------------'
         print str(sum(sbzs)/len(sbzs))[:6], len(sbzs)
         #print sorted(sbzs)
 
 if __name__ == '__main__':
-    g = GL('dy') # ta rb c m a ma jd dy 999999
-    g.ev_tupohl(15, 3)
-    g.ev_tupohl(15, 5)
-    g.ev_tupohl(15, 7)
-    g.ev_tupohl(15, 9)
-    g.ev_tupohl(15, 11)
-    g.ev_tupohl(15, 13)
-    g.ev_tupohl(15, 17)
+    g = GL('a') # ta rb c m a ma jd dy 999999
+    g.ev_tupohl(3, 7)
+    g.ev_tupohl(3, 9)
+    g.ev_tupohl(3, 11)
+    #g.ev_tupohl(1, 50)
+    #g.ev_tupohl(1, 7)
+    #g.ev_tupohl(1, 9)
+    #g.ev_tupohl(1, 11)
+    #g.ev_tupohl(1, 13)
+    #g.ev_tupohl(15, 17)
     #g.ev_tupohl_highlow(4, 7)
     #g.ev_tupohl_highlow(8, 7)
 
 
     #g.ev_tupohl_highlow(2, 4)
     #g.tupohl(2,3)
+    
 
 
     
