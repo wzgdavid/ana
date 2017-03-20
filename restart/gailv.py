@@ -253,7 +253,6 @@ class GL(GeneralIndex):
         self._runev(df,zs)
 
 
-
     def ev_tupohl_highlow(self, n, y, zs=0.01):
         '''所有平仓点与开仓点的比值
         
@@ -278,7 +277,7 @@ class GL(GeneralIndex):
         df['bpsp'] = np.where(df['higherp'], 'sp' , None)
         df['bpsp'] = np.where(df['lowerp'], 'bp' , df['bpsp'])
         df.to_csv('tmp.csv')
-        self._runev(df, zs)
+        self._runev(df,zs)
 
     def _runev(self, df, zs=0.01):
         '''zs为开仓止损的百分比'''
@@ -331,32 +330,58 @@ class GL(GeneralIndex):
 
                 skpoints = dict()
        
-        print str(sum(bbzs)/len(bbzs))[:6], len(bbzs)#, sum(bbzs)*len(bbzs)
+        #print str(sum(bbzs)/len(bbzs))[:6], len(bbzs)#, sum(bbzs)*len(bbzs)
         #print sorted(bbzs)
         br = reduce(lambda x,y:x*y,bbzs)
-        print br , '----------------'
-        print str(sum(sbzs)/len(sbzs))[:6], len(sbzs)
+        print br , '--------br--------'
+        #print str(sum(sbzs)/len(sbzs))[:6], len(sbzs)
+        sr = reduce(lambda x,y:x*y,sbzs)
+        print sr , '--------sr--------'
         #print sorted(sbzs)
 
+        # 累计相乘，看曲线，看回撤
+        every = list()
+        cummulti=1
+        for n in bbzs:
+            cummulti = n*cummulti
+            every.append(cummulti)
+        #print every
+
+        s = pd.Series(every)
+        s.plot()
+        plt.show()
+        
+
+
+
+    '''
+    ############################################################################################
+    ############################################################################################
+    ########################分割线要明显########################################################
+    ############################################################################################
+    ############################################################################################
+    '''
+
+    def handl(self, n):
+        '''某天k线包含前n天'''
+        self.get_nhh(n)
+        self.get_nll(n)
+        df = deepcopy(self.df)
+        df['higher'] = df.h > df.nhh
+        df['lower'] = df.l < df.nll
+        df['rr'] = np.where(df['higher'] & df.lower, 1 , 0)
+        df['rrcumsum'] = df.rr.cumsum()
+
+        df.to_csv('tmp.csv')
+
+    
+
+
 if __name__ == '__main__':
-    g = GL('a') # ta rb c m a ma jd dy 999999
-    g.ev_tupohl(3, 7)
-    g.ev_tupohl(3, 9)
+    g = GL('dy') # ta rb c m a ma jd dy 999999
     g.ev_tupohl(3, 11)
-    #g.ev_tupohl(1, 50)
-    #g.ev_tupohl(1, 7)
-    #g.ev_tupohl(1, 9)
-    #g.ev_tupohl(1, 11)
-    #g.ev_tupohl(1, 13)
-    #g.ev_tupohl(15, 17)
-    #g.ev_tupohl_highlow(4, 7)
-    #g.ev_tupohl_highlow(8, 7)
+    g.ev_tupohl(3, 7)
 
+    #g.handl(5)
 
-    #g.ev_tupohl_highlow(2, 4)
-    #g.tupohl(2,3)
-    
-
-
-    
     
