@@ -285,6 +285,7 @@ class GL(GeneralIndex):
         skpoints = dict()
         bbzs = list()
         sbzs = list()
+        bsbzs = list()
         has = 1
         for i, bksk in enumerate(df.bksk):
             idx = df.index[i]
@@ -312,7 +313,7 @@ class GL(GeneralIndex):
                         pass
 
                 bbzs.extend(bbz)
-           
+                bsbzs.extend(bbz)
                 bkpoints = dict()
                 
             elif bpsp == 'sp' and skpoints:
@@ -327,7 +328,7 @@ class GL(GeneralIndex):
                     else:
                         sbz.append(1-zs)
                 sbzs.extend(sbz)
-
+                bsbzs.extend(sbz)
                 skpoints = dict()
        
         #print str(sum(bbzs)/len(bbzs))[:6], len(bbzs)#, sum(bbzs)*len(bbzs)
@@ -342,7 +343,9 @@ class GL(GeneralIndex):
         # 累计相乘，看曲线，看回撤
         every = list()
         cummulti=1
-        for n in bbzs:
+        
+        #for n in bbzs:
+        for n in bsbzs:
             cummulti = n*cummulti
             every.append(cummulti)
         #print every
@@ -378,9 +381,9 @@ class GL(GeneralIndex):
 
 
 if __name__ == '__main__':
-    g = GL('dy') # ta rb c m a ma jd dy 999999
+    g = GL('ma') # ta rb c m a ma jd dy 999999
     g.ev_tupohl(3, 11)
-    g.ev_tupohl(3, 7)
+    #g.ev_tupohl(2, 4)
 
     #g.handl(5)
 
