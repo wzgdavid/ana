@@ -228,17 +228,23 @@ class GL(GeneralIndex):
 
     def ev_tupohl(self, n, y, zs=0.01):
         '''所有平仓点与开仓点的比值
-        以多为例，突破前n天的高点，以这个高点开多，
-        开仓止损zs，小数的话，为开仓点的百分比，整数的话，为开仓前n天的低点
+        以多为例，
+        突破前n天的高点，以这个高点开多，
+        开仓止损zs，小数的话，为开仓点的百分比，整数的话，为开仓前zs天的低点
         移动止损为前y天的低点
         信号开仓
         开仓止损，移动止损（被动止盈）
+
+        不能只看跑出来的结果就，因为程序没有限制，而真实情况持仓总有个限制，不可能无限大的持仓
         '''
-        print 'ev_tupohl------%s------%s-----------'% (n, y)
+        print 'ev_tupohl------%s------%s------%s-----'% (n, y, zs)
         self.get_nhh(n)
         self.get_nll(n)
         self.get_nhhp(y)
         self.get_nllp(y)
+        if zs >= 1:
+            self.get_zshh(zs)
+            self.get_zsll(zs)
         df = deepcopy(self.df) 
         df['higher'] = df.h > df.nhh
         df['lower'] = df.l < df.nll
@@ -287,57 +293,79 @@ class GL(GeneralIndex):
         sbzs = list()
         bsbzs = list()
         has = 1
+        bzlen = list()
         for i, bksk in enumerate(df.bksk):
             idx = df.index[i]
             bpsp = df.loc[idx, 'bpsp']
             #print idx, bpsp
-            if bksk == 'bk':
-                #bkpoints.append([idx, df.loc[idx, 'nhh']])
-                bkpoints[idx] = df.loc[idx, 'nhh']
+            if zs < 1:
+                if bksk == 'bk':
+                    #bkpoints.append([idx, df.loc[idx, 'nhh']])
+                    bkpoints[idx] = df.loc[idx, 'nhh']
+    
+                if bksk == 'sk':
+                    skpoints[idx] = df.loc[idx, 'nll']
+                if bpsp == 'bp' and bkpoints:
+                    d = df.loc[idx, 'nllp']
+                    #bbz = [d/x for x in bkpoints.values()]
+                    bbz = list()
+                    for x in bkpoints.values():
+                        bbz.append(max(d/x, 1-zs))
+                    bbzs.extend(bbz)
+                    bsbzs.extend(bbz)
+                    bkpoints = dict()
+                elif bpsp == 'sp' and skpoints:
+                    d = df.loc[idx, 'nhhp']
+                    #sbz = [x/d for x in skpoints.values()] # 为了看起来方便，用x/d
+                    sbz = list()
+                    for x in skpoints.values():
+                        #bz = x/d # 为了看起来方便，用x/d
+                        sbz.append(max(x/d, 1-zs))
+                    sbzs.extend(sbz)
+                    bsbzs.extend(sbz)
+                    skpoints = dict()
+            elif zs>=1 and type(zs)==int:
 
-            if bksk == 'sk':
-                skpoints[idx] = df.loc[idx, 'nll']
+                if bksk == 'bk':
+                    #bkpoints.append([idx, df.loc[idx, 'nhh']])
+                    bkpoints[idx] = (df.loc[idx, 'nhh'], df.loc[idx, 'zsll']) # (开仓点，开仓止损点)
+    
+                if bksk == 'sk':
+                    skpoints[idx] = (df.loc[idx, 'nll'], df.loc[idx, 'zshh'])
+                    
+                if bpsp == 'bp' and bkpoints:
+                    pingcang = df.loc[idx, 'nllp']
+                    #bbz = [d/x for x in bkpoints.values()]
+                    bbz = list()
+                    for x in bkpoints.values():
+                        bbz.append(max(pingcang/x[0],x[1]/x[0]))
                 
-            if bpsp == 'bp' and bkpoints:
-                d = df.loc[idx, 'nllp']
-                #bbz = [d/x for x in bkpoints.values()]
-                bbz = list()
-                for x in bkpoints.values():
-                    bz = d/x
-                    if zs<1:
-                        if bz > 1-zs:
-                            bbz.append(bz)
-                        else:
-                            bbz.append(1-zs)
-                    else:
-                        pass
-
-                bbzs.extend(bbz)
-                bsbzs.extend(bbz)
-                bkpoints = dict()
-                
-            elif bpsp == 'sp' and skpoints:
-                d = df.loc[idx, 'nhhp']
-                #sbz = [x/d for x in skpoints.values()] # 为了看起来方便，用x/d
-
-                sbz = list()
-                for x in skpoints.values():
-                    bz = x/d # 为了看起来方便，用x/d
-                    if bz > 1-zs:
-                        sbz.append(bz)
-                    else:
-                        sbz.append(1-zs)
-                sbzs.extend(sbz)
-                bsbzs.extend(sbz)
-                skpoints = dict()
-       
+                    bbzs.extend(bbz)
+                    bzlen.append(len(bbz))
+                    bsbzs.extend(bbz)
+                    bkpoints = dict()
+                    
+                elif bpsp == 'sp' and skpoints:
+                    pingcang = df.loc[idx, 'nhhp']
+                    #sbz = [x/d for x in skpoints.values()] # 为了看起来方便，用x/d
+    
+                    sbz = list()
+                    for x in skpoints.values():
+                        #bz = x/d # 为了看起来方便，用x/d
+                        sbz.append(max(x[0]/pingcang,x[0]/x[1]))
+                    sbzs.extend(sbz)
+                    bsbzs.extend(sbz)
+                    skpoints = dict()
+        print sum(bzlen)/float(len(bzlen)), '一次bp前的平均开仓次数' # 这个值大，说明真实情况下这样做，可能的持仓会大，有可能超出资金能力
+        print bzlen[len(bzlen)/2],    '一次bp前的中位数开仓次数'     # 与上同样的道理，中位数
+        #print bbzs
         #print str(sum(bbzs)/len(bbzs))[:6], len(bbzs)#, sum(bbzs)*len(bbzs)
         #print sorted(bbzs)
         br = reduce(lambda x,y:x*y,bbzs)
-        print br , '--------br--------'
+        #print br , '--------br--------'
         #print str(sum(sbzs)/len(sbzs))[:6], len(sbzs)
         sr = reduce(lambda x,y:x*y,sbzs)
-        print sr , '--------sr--------'
+        #print sr , '--------sr--------'
         #print sorted(sbzs)
 
         # 累计相乘，看曲线，看回撤
@@ -352,7 +380,7 @@ class GL(GeneralIndex):
 
         s = pd.Series(every)
         s.plot()
-        plt.show()
+        #plt.show()
         
 
 
@@ -381,10 +409,15 @@ class GL(GeneralIndex):
 
 
 if __name__ == '__main__':
-    g = GL('ma') # ta rb c m a ma jd dy 999999
-    g.ev_tupohl(3, 11)
+    g = GL('c') # ta rb c m a ma jd dy 999999
+    g.ev_tupohl(3, 11,1)
+    g.ev_tupohl(3, 7, 1)
+    g.ev_tupohl(3, 4, 1)
+    #g.ev_tupohl_highlow(3, 7, 1)
+    #g.tupohl(3, 7,1)
+    #g.ev_tupohl(5, 11)
     #g.ev_tupohl(2, 4)
-
+    #g.tupohl(7,10,1)
     #g.handl(5)
 
     
