@@ -260,11 +260,8 @@ class GL(GeneralIndex):
 
     def ev_tupohl(self, n, y, zs=0.01):
         '''所有平仓点与开仓点的比值
-
         信号开仓
         开仓止损，主动止盈
-
-        
         '''
         print 'ev_tupohl------%s------%s------%s-----'% (n, y, zs)
         self.get_nhh(n)
@@ -285,18 +282,20 @@ class GL(GeneralIndex):
         df['bpsp'] = np.where(df['higherp'], 'sp' , None)
         df['bpsp'] = np.where(df['lowerp'], 'bp' , df['bpsp'])
         df.to_csv('tmp.csv')
-        self._runev(df,zs)
+        self._runev(df, zs)
 
 
     def ev_tupohl_highlow(self, n, y, zs=0.01):
         '''所有平仓点与开仓点的比值
-        
         '''
         print 'ev_tupohl_highlow------%s------%s-----------'% (n, y)
         self.get_nhh(n)
         self.get_nll(n)
         self.get_nhhp(y)
         self.get_nllp(y)
+        if zs >= 1:
+            self.get_zshh(zs)
+            self.get_zsll(zs)
         df = deepcopy(self.df) 
         df['higher'] = df.h > df.nhh
         df['hh1'] = df.h.shift(1) > df.h.shift(2)
@@ -312,7 +311,7 @@ class GL(GeneralIndex):
         df['bpsp'] = np.where(df['higherp'], 'sp' , None)
         df['bpsp'] = np.where(df['lowerp'], 'bp' , df['bpsp'])
         df.to_csv('tmp.csv')
-        self._runev(df,zs)
+        self._runev(df, zs)
 
     def _runev(self, df, zs=0.01):
         '''zs为开仓止损的百分比'''
@@ -340,21 +339,25 @@ class GL(GeneralIndex):
                     skpoints[idx] = o if o < nll else nll
                     
                 if bpsp == 'bp' and bkpoints:
-                    d = df.loc[idx, 'nllp']
+                    nllp = df.loc[idx, 'nllp']
+                    o = df.loc[idx, 'o']
+                    pingcang = o if o < nllp else nllp
                     #bbz = [d/x for x in bkpoints.values()]
                     bbz = list()
                     for x in bkpoints.values():
-                        bbz.append(max(d/x, 1-zs))
+                        bbz.append(max(pingcang/x, 1-zs))
                     bbzs.extend(bbz)
                     bsbzs.extend(bbz)
                     bkpoints = dict()
                 elif bpsp == 'sp' and skpoints:
-                    d = df.loc[idx, 'nhhp']
+                    nhhp = df.loc[idx, 'nhhp']
+                    o = df.loc[idx, 'o']
+                    pingcang = o if o > nhhp else nhhp
                     #sbz = [x/d for x in skpoints.values()] # 为了看起来方便，用x/d
                     sbz = list()
                     for x in skpoints.values():
                         #bz = x/d # 为了看起来方便，用x/d
-                        sbz.append(max(x/d, 1-zs))
+                        sbz.append(max(x/pingcang, 1-zs))
                     sbzs.extend(sbz)
                     bsbzs.extend(sbz)
                     skpoints = dict()
@@ -376,7 +379,9 @@ class GL(GeneralIndex):
                     
                     
                 if bpsp == 'bp' and bkpoints:
-                    pingcang = df.loc[idx, 'nllp']
+                    nllp = df.loc[idx, 'nllp']
+                    o = df.loc[idx, 'o']
+                    pingcang = o if o < nllp else nllp
                     #bbz = [d/x for x in bkpoints.values()]
                     bbz = list()
                     for x in bkpoints.values():
@@ -388,7 +393,9 @@ class GL(GeneralIndex):
                     bkpoints = dict()
                     
                 elif bpsp == 'sp' and skpoints:
-                    pingcang = df.loc[idx, 'nhhp']
+                    nhhp = df.loc[idx, 'nhhp']
+                    o = df.loc[idx, 'o']
+                    pingcang = o if o > nhhp else nhhp
                     #sbz = [x/d for x in skpoints.values()] # 为了看起来方便，用x/d
     
                     sbz = list()
@@ -451,11 +458,11 @@ class GL(GeneralIndex):
 
 
 if __name__ == '__main__':
-    g = GL('ta') # ta rb c m a ma jd dy 999999
-    g.ev_tupohl(3, 7, 1)
+    g = GL('dy') # ta rb c m a ma jd dy 999999
+    #g.ev_tupohl(3, 7, 1)
     #g.ev_tupohl(3, 7, 1)
     #g.ev_tupohl(3, 4, 1)
-    #g.ev_tupohl_highlow(3, 7, 1)
+    g.ev_tupohl_highlow(3, 7, 1)
     #g.tupohl(3, 7,1)
     #g.ev_tupohl(5, 11)
     #g.ev_tupohl(2, 4)
