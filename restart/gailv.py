@@ -258,6 +258,35 @@ class GL(GeneralIndex):
         df.to_csv('tmp.csv')
         self._runev(df,zs)
 
+    def ev_tupohl(self, n, y, zs=0.01):
+        '''所有平仓点与开仓点的比值
+
+        信号开仓
+        开仓止损，主动止盈
+
+        
+        '''
+        print 'ev_tupohl------%s------%s------%s-----'% (n, y, zs)
+        self.get_nhh(n)
+        self.get_nll(n)
+        self.get_nhhp(y)
+        self.get_nllp(y)
+        if zs >= 1:
+            self.get_zshh(zs)
+            self.get_zsll(zs)
+        df = deepcopy(self.df) 
+        df['higher'] = df.h > df.nhh
+        df['lower'] = df.l < df.nll
+        df['bksk'] = np.where(df['higher'], 'bk' , None)
+        df['bksk'] = np.where(df['lower'], 'sk' , df['bksk'])
+
+        df['higherp'] = df.h >= df.nhhp
+        df['lowerp'] = df.l <= df.nllp
+        df['bpsp'] = np.where(df['higherp'], 'sp' , None)
+        df['bpsp'] = np.where(df['lowerp'], 'bp' , df['bpsp'])
+        df.to_csv('tmp.csv')
+        self._runev(df,zs)
+
 
     def ev_tupohl_highlow(self, n, y, zs=0.01):
         '''所有平仓点与开仓点的比值
@@ -287,9 +316,9 @@ class GL(GeneralIndex):
 
     def _runev(self, df, zs=0.01):
         '''zs为开仓止损的百分比'''
-        bkpoints = dict()
-        skpoints = dict()
-        bbzs = list()
+        bkpoints = dict() # 每次开多的价格等一些数值
+        skpoints = dict() # 空
+        bbzs = list() # 每次多单平仓价与开仓价的比值
         sbzs = list()
         bsbzs = list()
         has = 1
@@ -301,10 +330,15 @@ class GL(GeneralIndex):
             if zs < 1:
                 if bksk == 'bk':
                     #bkpoints.append([idx, df.loc[idx, 'nhh']])
-                    bkpoints[idx] = df.loc[idx, 'nhh']
+                    nhh = df.loc[idx, 'nhh']
+                    o = df.loc[idx, 'o']
+                    bkpoints[idx] = o if o > nhh else nhh
     
                 if bksk == 'sk':
-                    skpoints[idx] = df.loc[idx, 'nll']
+                    nll = df.loc[idx, 'nll']
+                    o = df.loc[idx, 'o']
+                    skpoints[idx] = o if o < nll else nll
+                    
                 if bpsp == 'bp' and bkpoints:
                     d = df.loc[idx, 'nllp']
                     #bbz = [d/x for x in bkpoints.values()]
@@ -327,11 +361,19 @@ class GL(GeneralIndex):
             elif zs>=1 and type(zs)==int:
 
                 if bksk == 'bk':
-                    #bkpoints.append([idx, df.loc[idx, 'nhh']])
-                    bkpoints[idx] = (df.loc[idx, 'nhh'], df.loc[idx, 'zsll']) # (开仓点，开仓止损点)
-    
+                    nhh = df.loc[idx, 'nhh']
+                    o = df.loc[idx, 'o']
+                    bkp = o if o > nhh else nhh
+                    bkpoints[idx] = (bkp, df.loc[idx, 'zsll']) # (开仓点，开仓止损点)
+                    #bkpoints[idx] = (nhh, df.loc[idx, 'zsll'])
+                    
                 if bksk == 'sk':
-                    skpoints[idx] = (df.loc[idx, 'nll'], df.loc[idx, 'zshh'])
+                    nll = df.loc[idx, 'nll']
+                    o = df.loc[idx, 'o']
+                    skp = o if o < nll else nll
+                    skpoints[idx] = (skp, df.loc[idx, 'zshh'])
+                    #skpoints[idx] = (nll, df.loc[idx, 'zshh'])
+                    
                     
                 if bpsp == 'bp' and bkpoints:
                     pingcang = df.loc[idx, 'nllp']
@@ -341,7 +383,7 @@ class GL(GeneralIndex):
                         bbz.append(max(pingcang/x[0],x[1]/x[0]))
                 
                     bbzs.extend(bbz)
-                    bzlen.append(len(bbz))
+                    #bzlen.append(len(bbz))
                     bsbzs.extend(bbz)
                     bkpoints = dict()
                     
@@ -356,16 +398,16 @@ class GL(GeneralIndex):
                     sbzs.extend(sbz)
                     bsbzs.extend(sbz)
                     skpoints = dict()
-        print sum(bzlen)/float(len(bzlen)), '一次bp前的平均开仓次数' # 这个值大，说明真实情况下这样做，可能的持仓会大，有可能超出资金能力
-        print bzlen[len(bzlen)/2],    '一次bp前的中位数开仓次数'     # 与上同样的道理，中位数
+        #print sum(bzlen)/float(len(bzlen)), '一次bp前的平均开仓次数' # 这个值大，说明真实情况下这样做，可能的持仓会大，有可能超出资金能力
+        #print bzlen[len(bzlen)/2],    '一次bp前的中位数开仓次数'     # 与上同样的道理，中位数
         #print bbzs
         #print str(sum(bbzs)/len(bbzs))[:6], len(bbzs)#, sum(bbzs)*len(bbzs)
         #print sorted(bbzs)
         br = reduce(lambda x,y:x*y,bbzs)
-        #print br , '--------br--------'
+        print br , '--------br--------'
         #print str(sum(sbzs)/len(sbzs))[:6], len(sbzs)
         sr = reduce(lambda x,y:x*y,sbzs)
-        #print sr , '--------sr--------'
+        print sr , '--------sr--------'
         #print sorted(sbzs)
 
         # 累计相乘，看曲线，看回撤
@@ -380,7 +422,7 @@ class GL(GeneralIndex):
 
         s = pd.Series(every)
         s.plot()
-        #plt.show()
+        plt.show()
         
 
 
@@ -409,10 +451,10 @@ class GL(GeneralIndex):
 
 
 if __name__ == '__main__':
-    g = GL('c') # ta rb c m a ma jd dy 999999
-    g.ev_tupohl(3, 11,1)
+    g = GL('ta') # ta rb c m a ma jd dy 999999
     g.ev_tupohl(3, 7, 1)
-    g.ev_tupohl(3, 4, 1)
+    #g.ev_tupohl(3, 7, 1)
+    #g.ev_tupohl(3, 4, 1)
     #g.ev_tupohl_highlow(3, 7, 1)
     #g.tupohl(3, 7,1)
     #g.ev_tupohl(5, 11)
