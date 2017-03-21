@@ -258,32 +258,6 @@ class GL(GeneralIndex):
         df.to_csv('tmp.csv')
         self._runev(df,zs)
 
-    def ev_tupohl(self, n, y, zs=0.01):
-        '''所有平仓点与开仓点的比值
-        信号开仓
-        开仓止损，主动止盈
-        '''
-        print 'ev_tupohl------%s------%s------%s-----'% (n, y, zs)
-        self.get_nhh(n)
-        self.get_nll(n)
-        self.get_nhhp(y)
-        self.get_nllp(y)
-        if zs >= 1:
-            self.get_zshh(zs)
-            self.get_zsll(zs)
-        df = deepcopy(self.df) 
-        df['higher'] = df.h > df.nhh
-        df['lower'] = df.l < df.nll
-        df['bksk'] = np.where(df['higher'], 'bk' , None)
-        df['bksk'] = np.where(df['lower'], 'sk' , df['bksk'])
-
-        df['higherp'] = df.h >= df.nhhp
-        df['lowerp'] = df.l <= df.nllp
-        df['bpsp'] = np.where(df['higherp'], 'sp' , None)
-        df['bpsp'] = np.where(df['lowerp'], 'bp' , df['bpsp'])
-        df.to_csv('tmp.csv')
-        self._runev(df, zs)
-
 
     def ev_tupohl_highlow(self, n, y, zs=0.01):
         '''所有平仓点与开仓点的比值
@@ -458,11 +432,11 @@ class GL(GeneralIndex):
 
 
 if __name__ == '__main__':
-    g = GL('dy') # ta rb c m a ma jd dy 999999
+    g = GL('rb') # ta rb c m a ma jd dy 999999
     #g.ev_tupohl(3, 7, 1)
-    #g.ev_tupohl(3, 7, 1)
+    g.ev_tupohl(3, 7, 1)
     #g.ev_tupohl(3, 4, 1)
-    g.ev_tupohl_highlow(3, 7, 1)
+    #g.ev_tupohl_highlow(3, 7, 1)
     #g.tupohl(3, 7,1)
     #g.ev_tupohl(5, 11)
     #g.ev_tupohl(2, 4)
