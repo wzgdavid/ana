@@ -2060,6 +2060,4 @@ if __name__ == '__main__':
     #gi.get_nsdl(10)
     #print gi.df.loc[:, ['date','sdjj','nsdl']]
     #print gi.df.describe()
-    b = 11
-    a = 1 if b<10 else 2
-    print a
+
