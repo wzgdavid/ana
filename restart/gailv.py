@@ -1,6 +1,7 @@
 # encoding: utf-8
 import sys
 sys.path.append("..")
+import collections
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -297,10 +298,10 @@ class GL(GeneralIndex):
         skpoints = dict() # 空
         bbzs = list() # 每次多单平仓价与开仓价的比值
         sbzs = list()
-        bsbzs = list()
+        allbz = collections.OrderedDict() # 多空平仓的比值放在一起
         has = 1
         bzlen = list()
-        FEIYONG = 0.999
+        FEIYONG = 0.999 # 如果是分钟线的话，加上费用损失，预期马上变成负的，所以根据这个结果，做日内很难，而且日内涨跌有限，交易次数相对较多，不适合做趋势
         for i, bksk in enumerate(df.bksk):
             idx = df.index[i]
             bpsp = df.loc[idx, 'bpsp']
@@ -323,10 +324,13 @@ class GL(GeneralIndex):
                     pingcang = o if o < nllp else nllp
                     #bbz = [d/x for x in bkpoints.values()]
                     bbz = list()
-                    for x in bkpoints.values():
-                        bbz.append(max(pingcang/x, 1-zs))
+                    bbzdict = dict()
+                    for bkidx, bkpoint in bkpoints.items():
+                        bz = max(pingcang/bkpoint, 1-zs)
+                        bbz.append(bz)
+                        bbzdict[bkidx] = bz
                     bbzs.extend(bbz)
-                    bsbzs.extend(bbz)
+                    allbz.update(bbzdict)
                     bkpoints = dict()
                 elif bpsp == 'sp' and skpoints:
                     nhhp = df.loc[idx, 'nhhp']
@@ -334,11 +338,14 @@ class GL(GeneralIndex):
                     pingcang = o if o > nhhp else nhhp
                     #sbz = [x/d for x in skpoints.values()] # 为了看起来方便，用x/d
                     sbz = list()
-                    for x in skpoints.values():
+                    sbzdict = dict()
+                    for skidx, skpoint in skpoints.items():
                         #bz = x/d # 为了看起来方便，用x/d
-                        sbz.append(max(x/pingcang, 1-zs))
+                        bz = max(skpoint/pingcang, 1-zs)
+                        sbz.append(bz)
+                        sbzdict[skidx] = bz
                     sbzs.extend(sbz)
-                    bsbzs.extend(sbz)
+                    allbz.update(sbzdict)
                     skpoints = dict()
             elif zs>=1 and type(zs)==int:
 
@@ -363,12 +370,14 @@ class GL(GeneralIndex):
                     pingcang = o if o < nllp else nllp
                     #bbz = [d/x for x in bkpoints.values()]
                     bbz = list()
-                    for x in bkpoints.values():
-                        bbz.append(max(pingcang/x[0]*FEIYONG, x[1]/x[0]*FEIYONG ))
-                
+                    bbzdict = dict()
+                    for bkidx, x in bkpoints.items():
+                        bz = max(pingcang/x[0]*FEIYONG, x[1]/x[0]*FEIYONG)
+                        bbz.append(bz)
+                        bbzdict[bkidx] = bz
                     bbzs.extend(bbz)
                     #bzlen.append(len(bbz))
-                    bsbzs.extend(bbz)
+                    allbz.update(bbzdict)
                     bkpoints = dict()
                     
                 elif bpsp == 'sp' and skpoints:
@@ -376,13 +385,15 @@ class GL(GeneralIndex):
                     o = df.loc[idx, 'o']
                     pingcang = o if o > nhhp else nhhp
                     #sbz = [x/d for x in skpoints.values()] # 为了看起来方便，用x/d
-    
                     sbz = list()
-                    for x in skpoints.values():
+                    sbzdict = dict()
+                    for skidx, x in skpoints.items():
                         #bz = x/d # 为了看起来方便，用x/d
-                        sbz.append(max(x[0]/pingcang*FEIYONG, x[0]/x[1]*FEIYONG))
+                        bz = max(x[0]/pingcang*FEIYONG, x[0]/x[1]*FEIYONG)
+                        sbz.append(bz)
+                        sbzdict[skidx] = bz
                     sbzs.extend(sbz)
-                    bsbzs.extend(sbz)
+                    allbz.update(sbzdict)
                     skpoints = dict()
         #print sum(bzlen)/float(len(bzlen)), '一次bp前的平均开仓次数' # 这个值大，说明真实情况下这样做，可能的持仓会大，有可能超出资金能力
         #print bzlen[len(bzlen)/2],    '一次bp前的中位数开仓次数'     # 与上同样的道理，中位数
@@ -399,10 +410,10 @@ class GL(GeneralIndex):
         # 累计相乘，看曲线，看回撤
         every = list()
         cummulti=1
-        
         #for n in bbzs:
-        for n in bsbzs:
-            cummulti = n*cummulti
+        for k,v in allbz.items():
+            print k,v
+            cummulti = v*cummulti
             every.append(cummulti)
         #print every
 
@@ -466,16 +477,10 @@ class GL(GeneralIndex):
 
 
 if __name__ == '__main__':
-    g = GL('ta') # ta rb c m a ma jd dy 999999
-    #g.ev_tupohl(3, 7, 1)
+    g = GL('m') # ta rb c m a ma jd dy 999999
+
     g.ev_tupohl(3, 7, 1)
-    #g.ev_tupohl(2, 5, 1)
-    #g.ev_tupohl(3, 4, 1)
-    #g.ev_tupohl_highlow(3, 7, 1)
-    #g.tupohl(3, 7,1)
-    #g.ev_tupohl(5, 11)
-    #g.ev_tupohl(2, 4)
-    #g.tupohl(7,10,1)
-    #g.handl(5)
+
+    
 
     
