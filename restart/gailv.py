@@ -259,7 +259,7 @@ class GL(GeneralIndex):
         self._runev(df,zs)
 
 
-    def ev_tupohl_highlow(self, n, y, zs=0.01):
+    def ev_tupohl_highlow(self, n, m, y, zs=0.01):
         '''所有平仓点与开仓点的比值
         '''
         print 'ev_tupohl_highlow------%s------%s-----------'% (n, y)
@@ -267,13 +267,16 @@ class GL(GeneralIndex):
         self.get_nll(n)
         self.get_nhhp(y)
         self.get_nllp(y)
+        self.get_ma(m)
         if zs >= 1:
             self.get_zshh(zs)
             self.get_zsll(zs)
         df = deepcopy(self.df) 
         df['higher'] = df.h > df.nhh
-        df['hh1'] = df.h.shift(1) > df.h.shift(2)
-        df['hh2'] = df.l.shift(1) > df.l.shift(2)
+        df['hh1'] = df.l.shift(1) > df.l.shift(2)
+        df['hh2'] = df.h.shift(1) > df.h.shift(2)
+        df['hh3'] = df.c.shift(1) > df.c.shift(2)
+        df['hh4'] = df.c.shift(1) > df.o.shift(1)
         df['lower'] = df.l < df.nll
         df['ll1'] = df.h.shift(1) < df.h.shift(2)
         df['ll2'] = df.l.shift(1) < df.l.shift(2)
@@ -297,6 +300,7 @@ class GL(GeneralIndex):
         bsbzs = list()
         has = 1
         bzlen = list()
+        FEIYONG = 0.999
         for i, bksk in enumerate(df.bksk):
             idx = df.index[i]
             bpsp = df.loc[idx, 'bpsp']
@@ -360,7 +364,7 @@ class GL(GeneralIndex):
                     #bbz = [d/x for x in bkpoints.values()]
                     bbz = list()
                     for x in bkpoints.values():
-                        bbz.append(max(pingcang/x[0]*0.999, x[1]/x[0]*0.999 ))
+                        bbz.append(max(pingcang/x[0]*FEIYONG, x[1]/x[0]*FEIYONG ))
                 
                     bbzs.extend(bbz)
                     #bzlen.append(len(bbz))
@@ -376,7 +380,7 @@ class GL(GeneralIndex):
                     sbz = list()
                     for x in skpoints.values():
                         #bz = x/d # 为了看起来方便，用x/d
-                        sbz.append(max(x[0]/pingcang*0.999, x[0]/x[1]*0.999))
+                        sbz.append(max(x[0]/pingcang*FEIYONG, x[0]/x[1]*FEIYONG))
                     sbzs.extend(sbz)
                     bsbzs.extend(sbz)
                     skpoints = dict()
@@ -407,17 +411,20 @@ class GL(GeneralIndex):
         plt.show()
         
 
-    def ev_tupohl2(self, n, m, zy=0.1, zs=0.02):
+    def ev_tupohl2(self, n, m, y=1, zs=0.02):
         '''所有平仓点与开仓点的比值
         以多为例，
         突破前n天的高点，以这个高点开多，
         后m天高点超过zy，止盈，跌破zs，止损
+        还没做
         '''
-        print 'ev_tupohl------%s------%s------%s-----'% (n, zy, zs)
+        print 'ev_tupohl------%s------%s------%s-----'% (n, y, zs)
         self.get_nhh(n)
         self.get_nll(n)
         self.get_mhh(m)
         self.get_mll(m)
+        self.get_nhhp(y)
+        self.get_nllp(y)
         if zs >= 1:
             self.get_zshh(zs)
             self.get_zsll(zs)
@@ -427,14 +434,13 @@ class GL(GeneralIndex):
         df['bksk'] = np.where(df['higher'], 'bk', None)
         df['bksk'] = np.where(df['lower'], 'sk', df['bksk'])
 
-        #df['higherp'] = df.h >= df.nhhp
-        #df['lowerp'] = df.l <= df.nllp
-        #df['bpsp'] = np.where(df['higherp'], 'sp', None)
-        #df['bpsp'] = np.where(df['lowerp'], 'bp', df['bpsp'])
+        df['higherp'] = df.h >= df.nhhp
+        df['lowerp'] = df.l <= df.nllp
+        df['bpsp'] = np.where(df['higherp'], 'bp', None)
+        df['bpsp'] = np.where(df['lowerp'], 'sp', df['bpsp'])
         df.to_csv('tmp.csv')
-        #self._runev(df,zs)
-        for i, bksk in enumerate(df.bksk):
-            pass
+        self._runev(df,zs)
+
 
     '''
     ############################################################################################
@@ -460,7 +466,7 @@ class GL(GeneralIndex):
 
 
 if __name__ == '__main__':
-    g = GL('au') # ta rb c m a ma jd dy 999999
+    g = GL('ta') # ta rb c m a ma jd dy 999999
     #g.ev_tupohl(3, 7, 1)
     g.ev_tupohl(3, 7, 1)
     #g.ev_tupohl(2, 5, 1)
