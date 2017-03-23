@@ -227,7 +227,7 @@ class GL(GeneralIndex):
     '''
 
     def ev_tupohl(self, n, y, zs=0.01):
-        '''所有平仓点与开仓点的比值
+        '''所有符合条件的，平仓点与开仓点的比值
         以多为例，
         突破前n天的高点，以这个高点开多，
         开仓止损zs，小数的话，为开仓点的百分比，整数的话，为开仓前zs天的低点
@@ -259,36 +259,118 @@ class GL(GeneralIndex):
         self._runev(df,zs)
 
 
-    def ev_tupohl_highlow(self, n, m, y, zs=0.01):
-        '''所有平仓点与开仓点的比值
+    def ev_ma(self, n, zs=0.01):
+        '''所有符合条件的，平仓点与开仓点的比值
+        跑出来ma没用
         '''
-        print 'ev_tupohl_highlow------%s------%s-----------'% (n, y)
-        self.get_nhh(n)
-        self.get_nll(n)
-        self.get_nhhp(y)
-        self.get_nllp(y)
-        self.get_ma(m)
+        print 'ev_ma------%s-------------'% (n)
+        self.get_ma(n)
+        ma = 'ma%s' % n
         if zs >= 1:
             self.get_zshh(zs)
             self.get_zsll(zs)
         df = deepcopy(self.df) 
-        df['higher'] = df.h > df.nhh
-        df['hh1'] = df.l.shift(1) > df.l.shift(2)
-        df['hh2'] = df.h.shift(1) > df.h.shift(2)
-        df['hh3'] = df.c.shift(1) > df.c.shift(2)
-        df['hh4'] = df.c.shift(1) > df.o.shift(1)
-        df['lower'] = df.l < df.nll
-        df['ll1'] = df.h.shift(1) < df.h.shift(2)
-        df['ll2'] = df.l.shift(1) < df.l.shift(2)
-        df['bksk'] = np.where(df['higher'] & df.hh1 & df.hh2, 'bk', None)
-        df['bksk'] = np.where(df['lower'] & df.ll1 & df.ll2, 'sk', df['bksk'])
+        # K线在ma之上开多
+        #df['higher'] = df.l > df[ma]
+        #df['lower'] = df.h < df[ma]
+        # K线向上穿越ma开多 与上选其一跑
+        df['higher'] = (df.h.shift(1) < df[ma]) &  (df.h > df[ma]) 
+        df['lower'] = (df.l.shift(1) > df[ma]) &  (df.l < df[ma])
+        df['bksk'] = np.where(df['higher'], 'bk', None)
+        df['bksk'] = np.where(df['lower'], 'sk', df['bksk'])
 
-        df['higherp'] = df.h >= df.nhhp
-        df['lowerp'] = df.l <= df.nllp
+        df['higherp'] = (df.h.shift(1) < df[ma]) &  (df.h > df[ma])    # 空单平仓
+        df['lowerp'] = (df.l.shift(1) > df[ma]) &  (df.l < df[ma])
         df['bpsp'] = np.where(df['higherp'], 'sp', None)
         df['bpsp'] = np.where(df['lowerp'], 'bp', df['bpsp'])
         df.to_csv('tmp.csv')
-        self._runev(df, zs)
+        bkpoints = dict() # 每次开多的价格等一些数值
+        skpoints = dict() # 空
+        bbzs = list() # 每次多单平仓价与开仓价的比值
+        sbzs = list()
+        bsbzs = list()
+        has = 1
+        bzlen = list()
+        FEIYONG = 1
+        for i, bksk in enumerate(df.bksk):
+            idx = df.index[i]
+            bpsp = df.loc[idx, 'bpsp']
+            #print idx, bpsp
+            if zs < 1:
+                if bksk == 'bk':
+                    bkpoints[idx] = df.loc[idx, 'o']
+    
+                if bksk == 'sk':
+                    skpoints[idx] = df.loc[idx, 'o']
+                    
+                if bpsp == 'bp' and bkpoints:
+                    pingcang = df.loc[idx, 'o']
+                    
+                    bbz = list()
+                    for x in bkpoints.values():
+                        bbz.append(max(pingcang/x, 1-zs))
+                    bbzs.extend(bbz)
+                    bsbzs.extend(bbz)
+                    bkpoints = dict()
+                elif bpsp == 'sp' and skpoints:
+                    pingcang = df.loc[idx, 'o']
+                    #sbz = [x/d for x in skpoints.values()] # 为了看起来方便，用x/d
+                    sbz = list()
+                    for x in skpoints.values():
+                        #bz = x/d # 为了看起来方便，用x/d
+                        sbz.append(max(x/pingcang, 1-zs))
+                    sbzs.extend(sbz)
+                    bsbzs.extend(sbz)
+                    skpoints = dict()
+            elif zs>=1 and type(zs)==int:
+                if bksk == 'bk':
+                    bkpoints[idx] = (df.loc[idx, 'o'], df.loc[idx, 'zsll']) # (开仓点，开仓止损点)
+            
+                if bksk == 'sk':
+                    skpoints[idx] = (df.loc[idx, 'o'], df.loc[idx, 'zshh'])
+                    
+                if bpsp == 'bp' and bkpoints:
+                    pingcang = df.loc[idx, 'o']
+                    #bbz = [d/x for x in bkpoints.values()]
+                    bbz = list()
+                    for x in bkpoints.values():
+                        bbz.append(max(pingcang/x[0]*FEIYONG, x[1]/x[0]*FEIYONG ))
+                
+                    bbzs.extend(bbz)
+                    #bzlen.append(len(bbz))
+                    bsbzs.extend(bbz)
+                    bkpoints = dict()
+                    
+                elif bpsp == 'sp' and skpoints:
+                    pingcang = df.loc[idx, 'o']
+                    #sbz = [x/d for x in skpoints.values()] # 为了看起来方便，用x/d
+                    sbz = list()
+                    for x in skpoints.values():
+                        #bz = x/d # 为了看起来方便，用x/d
+                        sbz.append(max(x[0]/pingcang*FEIYONG, x[0]/x[1]*FEIYONG))
+                    sbzs.extend(sbz)
+                    bsbzs.extend(sbz)
+                    skpoints = dict()
+        br = reduce(lambda x,y:x*y,bbzs)
+        print br , '--------br--------'
+        #print str(sum(sbzs)/len(sbzs))[:6], len(sbzs)
+        sr = reduce(lambda x,y:x*y,sbzs)
+        print sr , '--------sr--------'
+        #print sorted(sbzs)
+
+        # 累计相乘，看曲线，看回撤
+        every = list()
+        cummulti=1
+        
+        #for n in bbzs:
+        for n in bsbzs:
+            cummulti = n*cummulti
+            every.append(cummulti)
+        #print every
+
+        s = pd.Series(every)
+        s.plot()
+        plt.show()        
 
 
     def _runev(self, df, zs=0.01):
@@ -399,7 +481,7 @@ class GL(GeneralIndex):
         # 累计相乘，看曲线，看回撤
         every = list()
         cummulti=1
-        
+        print sorted(bsbzs)
         #for n in bbzs:
         for n in bsbzs:
             cummulti = n*cummulti
@@ -466,9 +548,9 @@ class GL(GeneralIndex):
 
 
 if __name__ == '__main__':
-    g = GL('ta') # ta rb c m a ma jd dy 999999
-    #g.ev_tupohl(3, 7, 1)
-    g.ev_tupohl(3, 7, 1)
+    g = GL('m') # ta rb c m a ma jd dy 999999
+    #g.ev_tupohl(3, 7, 0.03)
+    g.ev_ma(20,0.03)
     #g.ev_tupohl(2, 5, 1)
     #g.ev_tupohl(3, 4, 1)
     #g.ev_tupohl_highlow(3, 7, 1)
