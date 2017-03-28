@@ -647,15 +647,15 @@ class GL(GeneralIndex):
         #print sorted(bratios)
         bigger = [x for x in bratios if x>r]
         print str(len(bigger) / float(len(bratios)))[:4]
-        
+        print sum(bigger)/len(bigger), sorted(bigger)
         #print sorted(sratios)
         bigger2 = [x for x in sratios if x>r]
         print str(len(bigger2) / float(len(sratios)))[:4]
-
-        print '全部   累乘', reduce(lambda x,y:x*y,bratios)
-        print '大于r的累乘', reduce(lambda x,y:x*y,bigger)
-        print '全部   累乘', reduce(lambda x,y:x*y,sratios)
-        print '大于r的累乘', reduce(lambda x,y:x*y,bigger2)
+        print sum(bigger2)/len(bigger2), sorted(bigger2)
+        #print '全部   累乘', reduce(lambda x,y:x*y,bratios)
+        #print '大于r的累乘', reduce(lambda x,y:x*y,bigger)
+        #print '全部   累乘', reduce(lambda x,y:x*y,sratios)
+        #print '大于r的累乘', reduce(lambda x,y:x*y,bigger2)
 
 if __name__ == '__main__':
     g = GL('m') # ta rb c m a ma jd dy 999999
@@ -671,19 +671,20 @@ if __name__ == '__main__':
     #g.handl(5)
     #g.close_ratio_ma(50, 10, 40)
     
-    g.close_ratio_ma(60, 10, 20)
-    g.close_ratio_ma(60, 20, 40)
-    g.close_ratio_ma(60, 30, 60)
-    g.close_ratio_ma(60, 40, 80)
-    g.close_ratio_ma(60, 50, 100)
-    g.close_ratio_ma(60, 60, 120)
+    #g.close_ratio_ma(60, 10, 20)
+    #g.close_ratio_ma(60, 20, 40)
+    #g.close_ratio_ma(60, 30, 60)
+    #g.close_ratio_ma(60, 40, 80)
+    #g.close_ratio_ma(60, 50, 100)
+    #g.close_ratio_ma(60, 40, 110)
+    #g.close_ratio_ma(60, 30, 120)
     
-    #g.close_ratio_hl(55, 10, 1.03)
-    #g.close_ratio_hl(65, 10, 1.03)
-    #g.close_ratio_hl(75, 10, 1.03)
-    #g.close_ratio_hl(85, 10, 1.03)
-    #g.close_ratio_hl(95, 10, 1.03)
-    #g.close_ratio_hl(100,10, 1.03)
+    g.close_ratio_hl(60, 10)
+    #g.close_ratio_hl(60, 20)
+    g.close_ratio_hl(75, 10)
+    #g.close_ratio_hl(85, 10)
+    #g.close_ratio_hl(95, 10)
+    #g.close_ratio_hl(100,10)
     #g.close_ratio_foo(30)
     
     #g.close_ratio_ma3(30, 10)
