@@ -544,13 +544,123 @@ class GL(GeneralIndex):
 
         df.to_csv('tmp.csv')
 
-    
+    def close_ratio_foo(self, n, r=1.03):
+        '''
+        '''
+        print 'close_ratio_foo------%s----%s---'% (n, r)
+        
+        df = deepcopy(self.df)
 
+        df['ratio'] = np.where(1, 'b' , None)
+        df['cshiftn'] = df.c.shift(-1*n)
+        df.to_csv('tmp.csv')
+        self._run_close_ratio(df,n,r)
+
+    def close_ratio_ma(self,n,a=10,b=20,r=1.03):
+        '''
+        不考虑开仓和平仓中间价格的波动，既不考虑中间止损的情况
+        较小的ma(a)大于较大的ma(b)时，
+        后n天close与当天close的比值
+        '''
+        print 'close_ratio_ma------%s------%s------%s----%s----'% (n, a, b, r)
+        self.get_ma(a, b)
+        df = deepcopy(self.df)
+        maa = 'ma%s' % a
+        mab = 'ma%s' % b
+        df['higher'] = df[maa] > df[mab]
+        df['ratio'] = np.where(df['higher'], 'b' , None)
+        df['lower'] = df[maa] < df[mab]
+        df['ratio'] = np.where(df['lower'], 's' , df['ratio'])
+        df['cshiftn'] = df.c.shift(-1*n)
+        df.to_csv('tmp.csv')
+        self._run_close_ratio(df,n,r)
+
+    def close_ratio_ma2(self, n, a=10, r=1.03):
+        '''
+        k线在ma之上时，
+        后n天close与当天close的比值
+        '''
+        print 'close_ratio_ma2------%s------%s-----%s---'% (n, a, r)
+        self.get_ma(a)
+        df = deepcopy(self.df)
+        maa = 'ma%s' % a
+        df['higher'] = df.l > df[maa]
+        df['ratio'] = np.where(df['higher'], 'b' , None)
+        df['lower'] = df.h < df[maa]
+        df['ratio'] = np.where(df['lower'], 's' , df['ratio'])
+        df['cshiftn'] = df.c.shift(-1*n)
+        df.to_csv('tmp.csv')
+        self._run_close_ratio(df, n, r)
+
+    def close_ratio_ma3(self, n, a=10, r=1.03):
+        '''
+        ma向上时，
+        后n天close与当天close的比值
+        '''
+        print 'close_ratio_ma3------%s------%s-----%s----'% (n, a, r)
+        self.get_ma(a)
+        df = deepcopy(self.df)
+        maa = 'ma%s' % a
+        df['higher'] = df[maa] > df[maa].shift(1)
+        df['ratio'] = np.where(df['higher'], 'b' , None)
+        df['lower'] = df[maa] < df[maa].shift(1)
+        df['ratio'] = np.where(df['lower'], 's' , df['ratio'])
+        df['cshiftn'] = df.c.shift(-1*n)
+        df.to_csv('tmp.csv')
+        self._run_close_ratio(df, n, r)
+
+    def close_ratio_hl(self, n, a=3, r=1.03):
+        '''
+        突破前a天高点，
+        后n天close与当天close的比值
+        '''
+        print 'close_ratio_hl------%s------%s-----%s----'% (n, a, r)
+        self.get_nhh(a)
+        self.get_nll(a)
+        df = deepcopy(self.df)
+        df['higher'] = df.h > df.nhh
+        df['ratio'] = np.where(df['higher'], 'b' , None)
+        df['lower'] = df.l < df.nll
+        df['ratio'] = np.where(df['lower'], 's' , df['ratio'])
+        df['cshiftn'] = df.c.shift(-1*n)
+        df.to_csv('tmp.csv')
+        self._run_close_ratio(df, n, r)
+
+    def _run_close_ratio(self, df, n, r):
+        dflen = len(df)
+        bratios = []
+        sratios = []
+        for i, bksk in enumerate(df.ratio):
+            if i >= dflen - n:
+                continue
+            idx = df.index[i]
+            ratio = df.loc[idx, 'ratio']
+            c = float(df.loc[idx, 'c'])
+            cshiftn = df.loc[idx, 'cshiftn']
+            if ratio == 'b':
+                bratios.append(cshiftn / c)
+            elif ratio == 's':
+                sratios.append(c / cshiftn )
+            else : pass
+
+        
+        #print sorted(bratios)
+        bigger = [x for x in bratios if x>r]
+        print str(len(bigger) / float(len(bratios)))[:4]
+        
+        #print sorted(sratios)
+        bigger2 = [x for x in sratios if x>r]
+        print str(len(bigger2) / float(len(sratios)))[:4]
+
+        print '全部   累乘', reduce(lambda x,y:x*y,bratios)
+        print '大于r的累乘', reduce(lambda x,y:x*y,bigger)
+        print '全部   累乘', reduce(lambda x,y:x*y,sratios)
+        print '大于r的累乘', reduce(lambda x,y:x*y,bigger2)
 
 if __name__ == '__main__':
     g = GL('m') # ta rb c m a ma jd dy 999999
     #g.ev_tupohl(3, 7, 0.03)
-    g.ev_ma(20,0.03)
+    #g.ev_ma(20,0.03)
     #g.ev_tupohl(2, 5, 1)
     #g.ev_tupohl(3, 4, 1)
     #g.ev_tupohl_highlow(3, 7, 1)
@@ -559,5 +669,26 @@ if __name__ == '__main__':
     #g.ev_tupohl(2, 4)
     #g.tupohl(7,10,1)
     #g.handl(5)
+    #g.close_ratio_ma(50, 10, 40)
+    
+    g.close_ratio_ma(60, 10, 20)
+    g.close_ratio_ma(60, 20, 40)
+    g.close_ratio_ma(60, 30, 60)
+    g.close_ratio_ma(60, 40, 80)
+    g.close_ratio_ma(60, 50, 100)
+    g.close_ratio_ma(60, 60, 120)
+    
+    #g.close_ratio_hl(55, 10, 1.03)
+    #g.close_ratio_hl(65, 10, 1.03)
+    #g.close_ratio_hl(75, 10, 1.03)
+    #g.close_ratio_hl(85, 10, 1.03)
+    #g.close_ratio_hl(95, 10, 1.03)
+    #g.close_ratio_hl(100,10, 1.03)
+    #g.close_ratio_foo(30)
+    
+    #g.close_ratio_ma3(30, 10)
+    #g.close_ratio_ma3(30, 20)
+    #g.close_ratio_ma3(30, 30)
+    #g.close_ratio_ma3(30, 40)
 
     
