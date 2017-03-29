@@ -551,7 +551,7 @@ class GL(GeneralIndex):
         
         df = deepcopy(self.df)
 
-        df['ratio'] = np.where(1, 's' , None)
+        df['ratio'] = np.where(1, 'b' , None)
         df['cshiftn'] = df.c.shift(-1*n)
         df.to_csv('tmp.csv')
         self._run_close_ratio(df,n,r)
@@ -649,8 +649,10 @@ class GL(GeneralIndex):
             biggerlen = len(bigger)
             biggersum = sum(bigger)
             bratioslen = len(bratios)
+            bratiosum = sum(bratios)
             ylbl = biggerlen / float(bratioslen)
             ylsy = biggersum / biggerlen - 1
+            print bratiosum / bratioslen
             print round(ylbl, 2),'盈利比例'
             print round(ylsy, 2), '盈利部分的平均收益'
             print '前两者相乘', round(ylbl * ylsy, 3)
@@ -669,7 +671,7 @@ class GL(GeneralIndex):
             #print sorted(sbigger)
 
 if __name__ == '__main__':
-    g = GL('c') # ta rb c m a ma jd dy 999999
+    g = GL('a') # ta rb c m a ma jd dy 999999
     #g.ev_tupohl(3, 7, 0.03)
     #g.ev_ma(20,0.03)
     #g.ev_tupohl(2, 5, 1)
@@ -682,9 +684,11 @@ if __name__ == '__main__':
   
     g.close_ratio_ma(60, 10, 20)
     g.close_ratio_ma2(60, 10)
+    g.close_ratio_foo(90, 1.02)
+    #g.close_ratio_hl(90, 20, 1.01)
+    #g.close_ratio_hl(90, 20, 1.02)
+    #g.close_ratio_hl(90, 20)
     
-    g.close_ratio_hl(60, 10)
-    g.close_ratio_foo(60)
     
    
     
