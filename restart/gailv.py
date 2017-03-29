@@ -670,8 +670,54 @@ class GL(GeneralIndex):
             print '前两者相乘', round(ylbl * ylsy, 4)
             #print sorted(sbigger)
 
+    '''
+    ############################################################################################
+    ############################################################################################
+    ########################分割线要明显########################################################
+    ############################################################################################
+    ############################################################################################
+    '''
+
+    def zdzy_hl(self, n, zy=0.04, zs=0.02):
+        print 'zdzy_hl------%s------%s------%s-----'% (n, zy, zs)
+        self.get_nhh(n)
+        self.get_nll(n)
+        df = deepcopy(self.df) 
+        df['higher'] = df.h > df.nhh
+        df['lower'] = df.l < df.nll
+        df['bksk'] = np.where(df['higher'], 'bk', None)
+        df['bksk'] = np.where(df['lower'], 'sk', df['bksk'])
+        df.to_csv('tmp.csv')
+        
+        move_len = 99
+        bzlist = []
+        for i, bksk in enumerate(df.bksk):
+            if i+move_len > len(df.bksk):
+                break
+            r = range(i+1, i+move_len)
+            idx = df.index[i]
+            #bpsp = df.loc[idx, 'bpsp']
+            if bksk == 'bk':
+                nhh = df.loc[idx, 'nhh']
+                bkpoint = nhh
+                zypoint = nhh * (1+zy)
+                zspoint = nhh * (1-zs)
+                for j in r:
+                    
+                    move_low = df.loc[df.index[j], 'l']
+                    move_high = df.loc[df.index[j], 'h']
+                    print i,j, bkpoint, zypoint, zspoint, move_low, move_high
+                    if move_low <= zspoint:
+                        bzlist.append(zspoint/bkpoint)
+                        break
+                    elif move_high >= zypoint:
+                        bzlist.append(zypoint/bkpoint)
+                        break
+        print bzlist
+
+
 if __name__ == '__main__':
-    g = GL('a') # ta rb c m a ma jd dy 999999
+    g = GL('jd') # ta rb c m a ma jd dy 999999
     #g.ev_tupohl(3, 7, 0.03)
     #g.ev_ma(20,0.03)
     #g.ev_tupohl(2, 5, 1)
@@ -682,12 +728,13 @@ if __name__ == '__main__':
     #g.ev_tupohl(2, 4)
     #g.tupohl(7,10,1)
   
-    g.close_ratio_ma(60, 10, 20)
-    g.close_ratio_ma2(60, 10)
-    g.close_ratio_foo(90, 1.02)
+    #g.close_ratio_ma(60, 10, 20)
+    #g.close_ratio_ma2(60, 10)
+    #g.close_ratio_foo(90, 1.02)
     #g.close_ratio_hl(90, 20, 1.01)
     #g.close_ratio_hl(90, 20, 1.02)
     #g.close_ratio_hl(90, 20)
+    g.zdzy_hl(3)
     
     
    
