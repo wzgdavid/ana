@@ -370,8 +370,23 @@ class GL(GeneralIndex):
 
         s = pd.Series(every)
         s.plot()
-        plt.show()        
+        plt.show() 
 
+
+    def _plot_cummulti(self, lst):
+        # 累计相乘，看曲线，看回撤
+        every = list()
+        cummulti=1
+        
+        #for n in bbzs:
+        for n in lst:
+            cummulti = n*cummulti
+            every.append(cummulti)
+        #print every
+
+        s = pd.Series(every)
+        s.plot()
+        plt.show()  
 
     def _runev(self, df, zs=0.01):
         '''zs为开仓止损的百分比'''
@@ -679,6 +694,7 @@ class GL(GeneralIndex):
     '''
 
     def zdzy_hl(self, n, zy=0.04, zs=0.02):
+        '''主动止损主动止盈'''
         print 'zdzy_hl------%s------%s------%s-----'% (n, zy, zs)
         self.get_nhh(n)
         self.get_nll(n)
@@ -688,15 +704,45 @@ class GL(GeneralIndex):
         df['bksk'] = np.where(df['higher'], 'bk', None)
         df['bksk'] = np.where(df['lower'], 'sk', df['bksk'])
         df.to_csv('tmp.csv')
-        
+        self._run_zdzy(df, zy, zs)
+  
+    def zdzy_maupdown(self, n, m, zy=0.04, zs=0.02):
+        '''主动止损主动止盈'''
+        print 'zdzy_maupdown------%s------%s------%s-----'% (n, zy, zs)
+        self.get_nhh(n)
+        self.get_nll(n)
+        self.get_ma(m)
+        df = deepcopy(self.df)
+        ma = 'ma%s' % m
+        df['higher'] = (df[ma] > df[ma].shift(1)) & (df.h > df.nhh)
+        df['lower'] = (df[ma] < df[ma].shift(1)) & (df.l < df.nll)
+        df['bksk'] = np.where(df['higher'], 'bk', None)
+        df['bksk'] = np.where(df['lower'], 'sk', df['bksk'])
+        df.to_csv('tmp.csv')
+        self._run_zdzy(df, zy, zs)
+
+    def zdzy_highlow(self, n, zy=0.04, zs=0.02):
+        '''主动止损主动止盈'''
+        print 'zdzy_highlow------%s------%s------%s-----'% (n, zy, zs)
+        self.get_nhh(n)
+        self.get_nll(n)
+        df = deepcopy(self.df)
+        df['higher'] = (df.l.shift(1) > df.l.shift(2)) & (df.h > df.nhh)
+        df['lower'] = (df.h.shift(1) < df.h.shift(2)) & (df.l < df.nll)
+        df['bksk'] = np.where(df['higher'], 'bk', None)
+        df['bksk'] = np.where(df['lower'], 'sk', df['bksk'])
+        df.to_csv('tmp.csv')
+        self._run_zdzy(df, zy, zs)
+
+    def _run_zdzy(self, df, zy, zs):
         move_len = 99
         bzlist = []
         for i, bksk in enumerate(df.bksk):
+
             if i+move_len > len(df.bksk):
                 break
             r = range(i+1, i+move_len)
             idx = df.index[i]
-            #bpsp = df.loc[idx, 'bpsp']
             if bksk == 'bk':
                 nhh = df.loc[idx, 'nhh']
                 bkpoint = nhh
@@ -706,21 +752,41 @@ class GL(GeneralIndex):
                     
                     move_low = df.loc[df.index[j], 'l']
                     move_high = df.loc[df.index[j], 'h']
-                    print i,j, bkpoint, zypoint, zspoint, move_low, move_high
+                    #print i,j, bkpoint, zypoint, zspoint, move_low, move_high
                     if move_low <= zspoint:
                         bzlist.append(zspoint/bkpoint)
                         break
-                    elif move_high >= zypoint:
+                    if move_high >= zypoint:
                         bzlist.append(zypoint/bkpoint)
                         break
-        print bzlist
+            if bksk == 'sk':
+                nll = df.loc[idx, 'nll']
+                skpoint = nll
+                zypoint = nll * (1-zy)
+                zspoint = nll * (1+zs)
+                for j in r:
+                    
+                    move_low = df.loc[df.index[j], 'l']
+                    move_high = df.loc[df.index[j], 'h']
+                    #print i,j, bkpoint, zypoint, zspoint, move_low, move_high
+                    if move_high >= zspoint:
+                        bzlist.append(skpoint/zspoint)
+                        break
+                    if move_low <= zypoint:
+                        bzlist.append(skpoint/zypoint)
+                        break
+        bzlistsum = sum(bzlist)
+        bzlistlen = len(bzlist)
+        #print bzlist
+        print bzlistsum/bzlistlen
+        self._plot_cummulti(bzlist)
 
 
 if __name__ == '__main__':
-    g = GL('jd') # ta rb c m a ma jd dy 999999
+    g = GL('dy') # ta rb c m a ma jd dy 999999
     #g.ev_tupohl(3, 7, 0.03)
     #g.ev_ma(20,0.03)
-    #g.ev_tupohl(2, 5, 1)
+    #g.ev_tupohl(3, 7, 1)
     #g.ev_tupohl(3, 4, 1)
     #g.ev_tupohl_highlow(3, 7, 1)
     #g.tupohl(3, 7,1)
@@ -734,7 +800,18 @@ if __name__ == '__main__':
     #g.close_ratio_hl(90, 20, 1.01)
     #g.close_ratio_hl(90, 20, 1.02)
     #g.close_ratio_hl(90, 20)
-    g.zdzy_hl(3)
+
+    #g.zdzy_hl(2)
+    #g.zdzy_hl(3)
+    #g.zdzy_hl(4)
+    #g.zdzy_maupdown(3,10)
+    g.zdzy_highlow(3)
+    #g.zdzy_hl(5)
+    #g.zdzy_hl(10)
+    #g.ev_tupohl(2, 7, 2)
+    #g.zdzy_hl(3, 0.06, 0.03)
+    #g.zdzy_hl(10, 0.03, 0.03)
+    #g.zdzy_hl(10, 0.04, 0.04)
     
     
    
