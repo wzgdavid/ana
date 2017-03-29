@@ -551,7 +551,7 @@ class GL(GeneralIndex):
         
         df = deepcopy(self.df)
 
-        df['ratio'] = np.where(1, 'b' , None)
+        df['ratio'] = np.where(1, 's' , None)
         df['cshiftn'] = df.c.shift(-1*n)
         df.to_csv('tmp.csv')
         self._run_close_ratio(df,n,r)
@@ -643,22 +643,33 @@ class GL(GeneralIndex):
                 sratios.append(c / cshiftn )
             else : pass
 
-        
-        #print sorted(bratios)
-        bigger = [x for x in bratios if x>r]
-        print str(len(bigger) / float(len(bratios)))[:4]
-        print sum(bigger)/len(bigger), sorted(bigger)
-        #print sorted(sratios)
-        bigger2 = [x for x in sratios if x>r]
-        print str(len(bigger2) / float(len(sratios)))[:4]
-        print sum(bigger2)/len(bigger2), sorted(bigger2)
-        #print '全部   累乘', reduce(lambda x,y:x*y,bratios)
-        #print '大于r的累乘', reduce(lambda x,y:x*y,bigger)
-        #print '全部   累乘', reduce(lambda x,y:x*y,sratios)
-        #print '大于r的累乘', reduce(lambda x,y:x*y,bigger2)
+        if bratios:
+            #print sorted(bratios)
+            bigger = [x for x in bratios if x>r]
+            biggerlen = len(bigger)
+            biggersum = sum(bigger)
+            bratioslen = len(bratios)
+            ylbl = biggerlen / float(bratioslen)
+            ylsy = biggersum / biggerlen - 1
+            print round(ylbl, 2),'盈利比例'
+            print round(ylsy, 2), '盈利部分的平均收益'
+            print '前两者相乘', round(ylbl * ylsy, 3)
+            #print sorted(bigger),
+        if sratios:
+            #print sorted(sratios)
+            sbigger = [x for x in sratios if x>r]
+            sbiggerlen = len(sbigger)
+            sbiggersum = sum(sbigger)
+            sratioslen = len(sratios)
+            ylbl = sbiggerlen / float(sratioslen)
+            ylsy = sbiggersum / sbiggerlen - 1
+            print round(ylbl, 2),'盈利比例'
+            print round(ylsy, 2), '盈利部分的平均收益' 
+            print '前两者相乘', round(ylbl * ylsy, 4)
+            #print sorted(sbigger)
 
 if __name__ == '__main__':
-    g = GL('m') # ta rb c m a ma jd dy 999999
+    g = GL('c') # ta rb c m a ma jd dy 999999
     #g.ev_tupohl(3, 7, 0.03)
     #g.ev_ma(20,0.03)
     #g.ev_tupohl(2, 5, 1)
@@ -668,28 +679,14 @@ if __name__ == '__main__':
     #g.ev_tupohl(5, 11)
     #g.ev_tupohl(2, 4)
     #g.tupohl(7,10,1)
-    #g.handl(5)
-    #g.close_ratio_ma(50, 10, 40)
-    
-    #g.close_ratio_ma(60, 10, 20)
-    #g.close_ratio_ma(60, 20, 40)
-    #g.close_ratio_ma(60, 30, 60)
-    #g.close_ratio_ma(60, 40, 80)
-    #g.close_ratio_ma(60, 50, 100)
-    #g.close_ratio_ma(60, 40, 110)
-    #g.close_ratio_ma(60, 30, 120)
+  
+    g.close_ratio_ma(60, 10, 20)
+    g.close_ratio_ma2(60, 10)
     
     g.close_ratio_hl(60, 10)
-    #g.close_ratio_hl(60, 20)
-    g.close_ratio_hl(75, 10)
-    #g.close_ratio_hl(85, 10)
-    #g.close_ratio_hl(95, 10)
-    #g.close_ratio_hl(100,10)
-    #g.close_ratio_foo(30)
+    g.close_ratio_foo(60)
     
-    #g.close_ratio_ma3(30, 10)
-    #g.close_ratio_ma3(30, 20)
-    #g.close_ratio_ma3(30, 30)
-    #g.close_ratio_ma3(30, 40)
+   
+    
 
     
