@@ -207,14 +207,14 @@ class GL(GeneralIndex):
         len1 = len(hlist)
         hlistbiggerthan1 = [x for x in hlist if x>1]
         hgl = len(hlistbiggerthan1)/float(len1) # 大于1 的概率(在m天里没止损de概率)
-        print str(hgl)[:4], len1, '肯定打开仓止损的单数', len1*(1-hgl)#, hgl*len1
+        print round(hgl, 3), len1, len1*(1-hgl)#'没打开仓止损的概率'，' 总单数'' 肯定打开仓止损的单数'
 
         #print df.lbz.mean() # 应该小于1
         llist = [x for x in sorted(df.lbz) if x>0]
         len2 = len(llist)
         llistsmallerthan1 = [x for x in llist if x<1]
         lgl = len(llistsmallerthan1)/float(len2) # 小于1 的概率(在m天里没止损de概率)
-        print str(lgl)[:4], len2, '肯定打开仓止损的单数', len2*(1-lgl)#, hgl*len1
+        print round(lgl, 3), len2,  len2*(1-lgl)#, hgl*len1
 
         df.to_csv('tmp.csv')
 
@@ -771,10 +771,6 @@ def run_ev_tupohl(daima):
     print Z
 
     plottttt(X,Y,Z)
-
-
-
-
     for x in range_x:
         for y in range_y:
             pass
@@ -824,9 +820,9 @@ def plottttt(X,Y,Z):
 
 if __name__ == '__main__':
     
-    test()
-    run_ev_tupohl('ta')
-    g = GL('ta') # ta rb c m a ma jd dy 999999
+    #test()
+    #run_ev_tupohl('ta')
+    g = GL('dy') # ta rb c m a ma jd dy 999999
     #g.ev_tupohl(3, 7, 0.03)
     #g.ev_ma(20,0.03)
     #g.ev_tupohl(3, 7, 1)
@@ -834,20 +830,26 @@ if __name__ == '__main__':
     #g.ev_tupohl(3, 17, 1)
     #g.ev_tupohl(3, 20, 1)
     #g.ev_tupohl(4, 20, 1)
-    #print g.ev_tupohl(7, 10, 1)
-    #print g.ev_tupohl(7, 20, 1)
-    #print g.ev_tupohl(7, 30, 1)
-    #print g.ev_tupohl(7, 40, 1)
-    #print g.ev_tupohl(7, 50, 1)
-    #print g.ev_tupohl(7, 60, 1)
-    #print g.ev_tupohl(7, 70, 1)
-    #print g.ev_tupohl(7, 80, 1)
-    #print g.ev_tupohl(7, 90, 1)
-    #print g.ev_tupohl(7, 100, 1)
-    #print g.ev_tupohl(7, 110, 1)
+
+
+    g.tupohl(7, 7, 1)
+    g.tupohl(7, 11, 1)
+    g.tupohl(7, 17, 1)
+    g.ev_tupohl(7, 7, 1)
+    g.ev_tupohl(7, 11, 1)
+    g.ev_tupohl(7, 17, 1)
+    #g.ev_tupohl(7, 30, 1)
+    #g.ev_tupohl(7, 40, 1)
+    #g.ev_tupohl(7, 50, 1)
+    #g.ev_tupohl(7, 60, 1)
+    #g.ev_tupohl(7, 70, 1)
+    #g.ev_tupohl(7, 80, 1)
+    #g.ev_tupohl(7, 90, 1)
+    #g.ev_tupohl(7, 100, 1)
+    #g.ev_tupohl(7, 110, 1)
 
     #g.ev_tupohl_highlow(3, 7, 1)
-    #g.tupohl(3, 7,1)
+
     #g.ev_tupohl(5, 11)
     #g.ev_tupohl(3, 7, 0.02)
     #g.tupohl(7,10,1)
