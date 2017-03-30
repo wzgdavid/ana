@@ -622,7 +622,7 @@ class GL(GeneralIndex):
             bratiosum = sum(bratios)
             ylbl = biggerlen / float(bratioslen)
             ylsy = biggersum / biggerlen - 1
-            print bratiosum / bratioslen
+            print np.mean(bratios)
             print round(ylbl, 2),'盈利比例'
             print round(ylsy, 2), '盈利部分的平均收益'
             print '前两者相乘', round(ylbl * ylsy, 3)
@@ -635,6 +635,7 @@ class GL(GeneralIndex):
             sratioslen = len(sratios)
             ylbl = sbiggerlen / float(sratioslen)
             ylsy = sbiggersum / sbiggerlen - 1
+            print np.mean(sratios)
             print round(ylbl, 2),'盈利比例'
             print round(ylsy, 2), '盈利部分的平均收益' 
             print '前两者相乘', round(ylbl * ylsy, 4)
@@ -701,6 +702,7 @@ class GL(GeneralIndex):
         return o if o < nll else nll
 
     def _tongjilist(self, lst):
+        print sorted([round(x,3) for x in lst])
         m = np.mean(lst)
         s = np.std(lst)
         y = s/m
@@ -753,7 +755,13 @@ class GL(GeneralIndex):
                         break
         return self._tongjilist(bzlist)
 
-
+    '''
+    ############################################################################################
+    ############################################################################################
+    ########################分割线要明显########################################################
+    ############################################################################################
+    ############################################################################################
+    '''
 def run_ev_tupohl(daima):
     g = GL(daima)
     range_x = range(3, 6)
@@ -822,7 +830,7 @@ if __name__ == '__main__':
     
     #test()
     #run_ev_tupohl('ta')
-    g = GL('dy') # ta rb c m a ma jd dy 999999
+    g = GL('jd') # ta rb c m a ma jd dy 999999
     #g.ev_tupohl(3, 7, 0.03)
     #g.ev_ma(20,0.03)
     #g.ev_tupohl(3, 7, 1)
@@ -832,16 +840,16 @@ if __name__ == '__main__':
     #g.ev_tupohl(4, 20, 1)
 
 
-    g.tupohl(7, 7, 1)
-    g.tupohl(7, 11, 1)
-    g.tupohl(7, 17, 1)
+    #g.tupohl(7, 7, 1)
+    #g.tupohl(7, 11, 1)
+    #g.tupohl(7, 17, 1)
     g.ev_tupohl(7, 7, 1)
     g.ev_tupohl(7, 11, 1)
     g.ev_tupohl(7, 17, 1)
-    #g.ev_tupohl(7, 30, 1)
-    #g.ev_tupohl(7, 40, 1)
-    #g.ev_tupohl(7, 50, 1)
-    #g.ev_tupohl(7, 60, 1)
+    g.ev_tupohl(7, 30, 1)
+    g.ev_tupohl(7, 40, 1)
+    g.ev_tupohl(7, 50, 1)
+    g.ev_tupohl(7, 60, 1)
     #g.ev_tupohl(7, 70, 1)
     #g.ev_tupohl(7, 80, 1)
     #g.ev_tupohl(7, 90, 1)
@@ -855,8 +863,8 @@ if __name__ == '__main__':
     #g.tupohl(7,10,1)
     #g.close_ratio_ma(60, 10, 20)
     #g.close_ratio_ma2(60, 10)
-    #g.close_ratio_foo(90, 1.02)
-    #g.close_ratio_hl(90, 20, 1.01)
+    #g.close_ratio_foo(60)
+    #g.close_ratio_hl(60, 10)
     #g.close_ratio_hl(90, 20, 1.02)
     #g.close_ratio_hl(90, 20)
 
@@ -870,7 +878,11 @@ if __name__ == '__main__':
     #g.ev_tupohl(2, 7, 2)
     #g.zdzy_hl(3, 0.06, 0.03)
     #g.zdzy_hl(10, 0.03, 0.03)
-    #g.zdzy_hl(10, 0.04, 0.04)
+    
+    #g.zdzy_hl(7, 0.07, 0.07)
+    #g.zdzy_hl(7, 0.1, 0.1)
+    #g.zdzy_hl(7, 0.15, 0.15)
+    #g.zdzy_hl(7, 0.2, 0.2)
     
 
    
