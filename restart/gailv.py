@@ -256,7 +256,7 @@ class GL(GeneralIndex):
         df['bpsp'] = np.where(df['higherp'], 'sp', None)
         df['bpsp'] = np.where(df['lowerp'], 'bp', df['bpsp'])
         df.to_csv('tmp.csv')
-        self._runev(df,zs)
+        return self._runev(df,zs)
 
 
     def ev_ma(self, n, zs=0.01):
@@ -397,22 +397,16 @@ class GL(GeneralIndex):
         bsbzs = list()
         has = 1
         bzlen = list()
-        FEIYONG = 0.999
+        FEIYONG = 1
         for i, bksk in enumerate(df.bksk):
             idx = df.index[i]
             bpsp = df.loc[idx, 'bpsp']
             #print idx, bpsp
             if zs < 1:
                 if bksk == 'bk':
-                    #bkpoints.append([idx, df.loc[idx, 'nhh']])
-                    nhh = df.loc[idx, 'nhh']
-                    o = df.loc[idx, 'o']
-                    bkpoints[idx] = o if o > nhh else nhh
-    
+                    bkpoints[idx] = self._get_hl_bkpoint(df, idx)
                 if bksk == 'sk':
-                    nll = df.loc[idx, 'nll']
-                    o = df.loc[idx, 'o']
-                    skpoints[idx] = o if o < nll else nll
+                    skpoints[idx] = self._get_hl_skpoint(df, idx)
                     
                 if bpsp == 'bp' and bkpoints:
                     nllp = df.loc[idx, 'nllp']
@@ -486,57 +480,18 @@ class GL(GeneralIndex):
         #print bbzs
         #print str(sum(bbzs)/len(bbzs))[:6], len(bbzs)#, sum(bbzs)*len(bbzs)
         #print sorted(bbzs)
-        br = reduce(lambda x,y:x*y,bbzs)
-        print br , '--------br--------'
+        #br = reduce(lambda x,y:x*y,bbzs)
+        #print br , '--------br--------'
         #print str(sum(sbzs)/len(sbzs))[:6], len(sbzs)
-        sr = reduce(lambda x,y:x*y,sbzs)
-        print sr , '--------sr--------'
+        #sr = reduce(lambda x,y:x*y,sbzs)
+        #print sr , '--------sr--------'
         #print sorted(sbzs)
+        #print sum(bsbzs)/len(bsbzs)
+        #self._plot_cummulti(bsbzs)
 
-        # 累计相乘，看曲线，看回撤
-        every = list()
-        cummulti=1
-        print sorted(bsbzs)
-        #for n in bbzs:
-        for n in bsbzs:
-            cummulti = n*cummulti
-            every.append(cummulti)
-        #print every
-
-        s = pd.Series(every)
-        s.plot()
-        plt.show()
+        return self._tongjilist(bsbzs)
         
 
-    def ev_tupohl2(self, n, m, y=1, zs=0.02):
-        '''所有平仓点与开仓点的比值
-        以多为例，
-        突破前n天的高点，以这个高点开多，
-        后m天高点超过zy，止盈，跌破zs，止损
-        还没做
-        '''
-        print 'ev_tupohl------%s------%s------%s-----'% (n, y, zs)
-        self.get_nhh(n)
-        self.get_nll(n)
-        self.get_mhh(m)
-        self.get_mll(m)
-        self.get_nhhp(y)
-        self.get_nllp(y)
-        if zs >= 1:
-            self.get_zshh(zs)
-            self.get_zsll(zs)
-        df = deepcopy(self.df) 
-        df['higher'] = df.h > df.nhh
-        df['lower'] = df.l < df.nll
-        df['bksk'] = np.where(df['higher'], 'bk', None)
-        df['bksk'] = np.where(df['lower'], 'sk', df['bksk'])
-
-        df['higherp'] = df.h >= df.nhhp
-        df['lowerp'] = df.l <= df.nllp
-        df['bpsp'] = np.where(df['higherp'], 'bp', None)
-        df['bpsp'] = np.where(df['lowerp'], 'sp', df['bpsp'])
-        df.to_csv('tmp.csv')
-        self._runev(df,zs)
 
 
     '''
@@ -734,6 +689,28 @@ class GL(GeneralIndex):
         df.to_csv('tmp.csv')
         self._run_zdzy(df, zy, zs)
 
+    def _get_hl_bkpoint(self, df, idx):
+        ''''''
+        nhh = df.loc[idx, 'nhh']
+        o = df.loc[idx, 'o']
+        return o if o > nhh else nhh
+
+    def _get_hl_skpoint(self, df, idx):
+        nll = df.loc[idx, 'nll']
+        o = df.loc[idx, 'o']
+        return o if o < nll else nll
+
+    def _tongjilist(self, lst):
+        m = np.mean(lst)
+        s = np.std(lst)
+        y = s/m
+        print '均值', round(m, 4)
+        print '标准差', round(s, 4)
+        print '标准差/均值', round(y, 4)
+        #self._plot_cummulti(lst)
+        return m, s, y
+        
+
     def _run_zdzy(self, df, zy, zs):
         move_len = 99
         bzlist = []
@@ -744,10 +721,9 @@ class GL(GeneralIndex):
             r = range(i+1, i+move_len)
             idx = df.index[i]
             if bksk == 'bk':
-                nhh = df.loc[idx, 'nhh']
-                bkpoint = nhh
-                zypoint = nhh * (1+zy)
-                zspoint = nhh * (1-zs)
+                bkpoint = self._get_hl_bkpoint(df, idx)
+                zypoint = bkpoint * (1+zy)
+                zspoint = bkpoint * (1-zs)
                 for j in r:
                     
                     move_low = df.loc[df.index[j], 'l']
@@ -760,10 +736,10 @@ class GL(GeneralIndex):
                         bzlist.append(zypoint/bkpoint)
                         break
             if bksk == 'sk':
-                nll = df.loc[idx, 'nll']
-                skpoint = nll
-                zypoint = nll * (1-zy)
-                zspoint = nll * (1+zs)
+                skpoint = self._get_hl_skpoint(df, idx)
+
+                zypoint = skpoint * (1-zy)
+                zspoint = skpoint * (1+zs)
                 for j in r:
                     
                     move_low = df.loc[df.index[j], 'l']
@@ -775,25 +751,106 @@ class GL(GeneralIndex):
                     if move_low <= zypoint:
                         bzlist.append(skpoint/zypoint)
                         break
-        bzlistsum = sum(bzlist)
-        bzlistlen = len(bzlist)
-        #print bzlist
-        print bzlistsum/bzlistlen
-        self._plot_cummulti(bzlist)
+        return self._tongjilist(bzlist)
 
+
+def run_ev_tupohl(daima):
+    g = GL(daima)
+    range_x = range(3, 6)
+    range_y = range(10, 40)[::10]
+    lenx = len(range_x)
+    leny = len(range_y)
+    X = np.array( [float(aa) for aa in range_x] * leny).reshape(leny, lenx)
+    print X
+    yshape = []
+    for n in range_y:
+        yshape.extend([float(n)] * lenx)
+    Y = np.array(yshape).reshape(leny, lenx)
+    Z = np.array([float(1)] * (lenx*leny)).reshape(leny, lenx)
+    print Y
+    print Z
+
+    plottttt(X,Y,Z)
+
+
+
+
+    for x in range_x:
+        for y in range_y:
+            pass
+            #g.ev_tupohl(x, y, 1)
+
+def test():
+    from mpl_toolkits.mplot3d import axes3d
+    from matplotlib import cm
+
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    X, Y, Z = axes3d.get_test_data(0.5)
+    ax.plot_surface(X, Y, Z, rstride=8, cstride=8, alpha=0.3)
+    cset = ax.contour(X, Y, Z, zdir='z', offset=-100, cmap=cm.coolwarm)
+    cset = ax.contour(X, Y, Z, zdir='x', offset=-40, cmap=cm.coolwarm)
+    cset = ax.contour(X, Y, Z, zdir='y', offset=40, cmap=cm.coolwarm)
+    print X
+    print Y
+    print Z
+    ax.set_xlabel('X')
+    ax.set_xlim(-40, 40)
+    ax.set_ylabel('Y')
+    ax.set_ylim(-40, 40)
+    ax.set_zlabel('Z')
+    ax.set_zlim(-100, 100)
+
+    plt.show()
+
+def plottttt(X,Y,Z):
+    from mpl_toolkits.mplot3d import axes3d
+    from matplotlib import cm
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    ax.plot_surface(X, Y, Z, rstride=8, cstride=8, alpha=0.3)
+    cset = ax.contour(X, Y, Z, zdir='z', offset=0, cmap=cm.coolwarm)
+    cset = ax.contour(X, Y, Z, zdir='x', offset=0, cmap=cm.coolwarm)
+    cset = ax.contour(X, Y, Z, zdir='y', offset=0, cmap=cm.coolwarm)
+
+    ax.set_xlabel('X')
+    ax.set_xlim(-1, 15)
+    ax.set_ylabel('Y')
+    ax.set_ylim(-10, 150)
+    ax.set_zlabel('Z')
+    ax.set_zlim(-2, 2)
+
+    plt.show()
 
 if __name__ == '__main__':
-    g = GL('dy') # ta rb c m a ma jd dy 999999
+    
+    test()
+    run_ev_tupohl('ta')
+    g = GL('ta') # ta rb c m a ma jd dy 999999
     #g.ev_tupohl(3, 7, 0.03)
     #g.ev_ma(20,0.03)
     #g.ev_tupohl(3, 7, 1)
-    #g.ev_tupohl(3, 4, 1)
+    #g.ev_tupohl(3, 11, 1)
+    #g.ev_tupohl(3, 17, 1)
+    #g.ev_tupohl(3, 20, 1)
+    #g.ev_tupohl(4, 20, 1)
+    #print g.ev_tupohl(7, 10, 1)
+    #print g.ev_tupohl(7, 20, 1)
+    #print g.ev_tupohl(7, 30, 1)
+    #print g.ev_tupohl(7, 40, 1)
+    #print g.ev_tupohl(7, 50, 1)
+    #print g.ev_tupohl(7, 60, 1)
+    #print g.ev_tupohl(7, 70, 1)
+    #print g.ev_tupohl(7, 80, 1)
+    #print g.ev_tupohl(7, 90, 1)
+    #print g.ev_tupohl(7, 100, 1)
+    #print g.ev_tupohl(7, 110, 1)
+
     #g.ev_tupohl_highlow(3, 7, 1)
     #g.tupohl(3, 7,1)
     #g.ev_tupohl(5, 11)
-    #g.ev_tupohl(2, 4)
+    #g.ev_tupohl(3, 7, 0.02)
     #g.tupohl(7,10,1)
-  
     #g.close_ratio_ma(60, 10, 20)
     #g.close_ratio_ma2(60, 10)
     #g.close_ratio_foo(90, 1.02)
@@ -801,11 +858,11 @@ if __name__ == '__main__':
     #g.close_ratio_hl(90, 20, 1.02)
     #g.close_ratio_hl(90, 20)
 
-    #g.zdzy_hl(2)
+    #g.zdzy_hl(3)
     #g.zdzy_hl(3)
     #g.zdzy_hl(4)
     #g.zdzy_maupdown(3,10)
-    g.zdzy_highlow(3)
+    #g.zdzy_highlow(3)
     #g.zdzy_hl(5)
     #g.zdzy_hl(10)
     #g.ev_tupohl(2, 7, 2)
@@ -813,7 +870,7 @@ if __name__ == '__main__':
     #g.zdzy_hl(10, 0.03, 0.03)
     #g.zdzy_hl(10, 0.04, 0.04)
     
-    
+
    
     
 
