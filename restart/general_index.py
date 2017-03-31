@@ -1035,8 +1035,8 @@ class General(object):
         bpoint = 0
         spoint = 0
         sscnt = 0 # 总交易手数计数
-        sxfbl = 200 # 手续费比例   
-        huadianbl = 200 # 滑点比例  越是短周期的操作，越是明显  
+        sxfbl = 1000 # 手续费比例   
+        huadianbl = 300 # 滑点比例  越是短周期的操作，越是明显  
 
         for i, bksk in enumerate(df.bksk):
             
@@ -1044,7 +1044,7 @@ class General(object):
             bpsp = df.loc[idx, 'bpsp']
 
 
-            if bpoint!=0 and kjs!=0 and bs=='b': # 多头止损平仓
+            if bpoint!=0 and kjs!=0 and bs=='b': # 多头开仓止损平仓
                 if df.loc[idx, 'l'] <= bpoint: 
                     gain = (bpoint  - bkprice) * kjs* 10 # 平仓收益
                     #print i, '止损bp', gain
@@ -1055,7 +1055,7 @@ class General(object):
                     bpoint = 0
                     kjs = 0
                     bs = ''
-            if spoint!=0 and kjs!=0 and bs=='s': # 空头止损平仓
+            if spoint!=0 and kjs!=0 and bs=='s': # 空头开仓止损平仓
                 if df.loc[idx, 'h'] >= spoint: 
                     gain = (skprice - spoint)  * kjs * 10
                     #print i, '止损sp', gain
@@ -1102,18 +1102,16 @@ class General(object):
 
 
             if bksk=='bk' and kjs==0: # 开多
-                #bkprice = df.loc[idx, 'sdjj']
-                # hl用这个开仓价
-                if df.loc[idx, 'l'] < df.loc[idx, 'nhh'] < df.loc[idx, 'h']: # 用前n天高价开多
-                    bkprice = df.loc[idx, 'nhh'] # 
+                if df.loc[idx, 'o'] > df.loc[idx, 'nhh']: # 用前n天高价开多
+                    bkprice = df.loc[idx, 'o'] # 
                 else:  
-                    bkprice = df.loc[idx, 'sdjj']
+                    bkprice = df.loc[idx, 'nhh']
 
                 if zs<1:
                     bkczs = bkprice * zs *10 # 开仓止损幅度
                     bpoint =bkprice - bkprice * zs # 开仓止损点位
-                elif zs == 1:
-                    bpoint = df.loc[df.index[i], 'nll']  
+                elif zs >= 1:
+                    bpoint = df.loc[df.index[i], 'zsll']  
                     bkczs = (bkprice - bpoint) * 10
 
                 kjs = min(int((zj*f)/bkczs), klimit)  # 这次可开几手
@@ -1124,16 +1122,16 @@ class General(object):
             if bksk=='sk' and kjs==0:  # 开空
                 #skprice = df.loc[idx, 'sdjj']
                 # hl用这个开仓价
-                if df.loc[idx, 'l'] < df.loc[idx, 'nll'] < df.loc[idx, 'h']: # 
-                    skprice = df.loc[idx, 'nll'] # 
+                if df.loc[idx, 'o'] < df.loc[idx, 'nll']: # 
+                    skprice = df.loc[idx, 'o'] # 
                 else:  
-                    skprice = df.loc[idx, 'sdjj']
+                    skprice = df.loc[idx, 'nll']
 
                 if zs<1:
                     skczs = skprice * zs * 10# 开仓止损
                     spoint =skprice + skprice * zs # 开仓止损点位
-                elif zs==1:
-                    spoint = df.loc[df.index[i], 'nhh'] 
+                elif zs>=1:
+                    spoint = df.loc[df.index[i], 'zshh'] 
                     skczs = (spoint - skprice) * 10
                 kjs = min(int((zj*f)/skczs), klimit)  # 这次可开几手
                 bs = 's'

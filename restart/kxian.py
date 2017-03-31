@@ -709,12 +709,21 @@ class Kxian(GeneralIndex):
         #return self.runhl2b(df, zj=100000, f=0.02, zs=1)
 
     @util.display_func_name
-    def hl2(self, n=5, m=10):
-        '''用runhl跑，runhl专为hl写的 '''
+    def hl2(self, n=5, m=10, zs=1, zj=100000, f=0.05):
+        '''用runhl跑，runhl专为hl写的 
+         突破n天高低点
+         移动止损m天高低点
+         zs 开仓止损
+         zj 总资金量
+         f 风险百分比
+        '''
         self.get_nhh(n)
         self.get_nll(n)
         self.get_nhhp(m)
         self.get_nllp(m)
+        if zs>=1 and type(zs) == int:
+            self.get_zshh(zs)
+            self.get_zsll(zs)
         df = deepcopy(self.df) 
 
         df['higher'] = df.h > df.nhh
@@ -722,21 +731,13 @@ class Kxian(GeneralIndex):
         df['lower'] = df.l < df.nll
         df['bksk'] = np.where(df['lower'], 'sk' , df['bksk'])
 
-        df['phigher'] = df.h > df.nhhp 
+        df['phigher'] = df.h >= df.nhhp 
         df['bpsp'] = np.where(df['phigher'], 'sp' , None)
-        df['plower'] = df.l < df.nllp
+        df['plower'] = df.l <= df.nllp
         df['bpsp'] = np.where(df['plower'], 'bp' , df['bpsp'])
 
-        #df['s'] = np.where(df['higher'] & df['lower'], 1 , None)
-        #df['cumsum'] = df['s'].cumsum()
         df.to_csv('tmp.csv')
-        #return self.run3b(df, zj=100000, f=0.02, zs=0.02, usehl=True)
-        #return self.run4(df, zj=100000, f=0.02, zs=0.02, ydzs=0.06)
-        return self.runhl(df, zj=100000, f=0.02, zs=1)
-        #return self.runhl2b(df, zj=100000, f=0.02, zs=1)
-        
-        #self.run4(df, zj=100000, f=0.02, zs=0.02, ydzs=0.08, usehl=True)
-        #self.run6(df, zj=100000, kclimit=2, f=0.02, zs=0.02, usehl=True)
+        return self.runhl(df, zj, f, zs)
 
 
     @util.display_func_name
@@ -770,7 +771,7 @@ class Kxian(GeneralIndex):
         return self.runhl(df, zj=100000, f=0.02, zs=1)
 
 if __name__ == '__main__':
-    k = Kxian('rb') # ta rb c m a ma jd dy 999999
+    k = Kxian('ahalf') # ta rb c m a ma jd dy 999999
     #k.hl2(3,3)
     #k.hl2(4,4) #
     #k.hl2(5,5)
@@ -795,8 +796,8 @@ if __name__ == '__main__':
     #k.hl2(17,4)
     #k.hl2(17,3)
     #k.foo(4)
-    k.hl2(2,7)
-    k.hl2_hl(2,7)
+    k.hl2(3,7,1)
+    #k.hl2_hl(2,7)
     #k.chl(2,9)
     #k.hl2(2,7)
     #k.ma_updown_run3(9)
