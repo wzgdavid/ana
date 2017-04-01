@@ -514,17 +514,29 @@ class GL(GeneralIndex):
 
         df.to_csv('tmp.csv')
 
-    def close_ratio_foo(self, n, r=1.03):
+    def close_ratio_foo(self, qlj, xqj, xj, n):
         '''
         '''
-        print 'close_ratio_foo------%s----%s---'% (n, r)
+        print 'close_ratio_foo------%s----%s---%s-----%s'% (qlj, xqj, xj, n)
         
         df = deepcopy(self.df)
 
         df['ratio'] = np.where(1, 'b' , None)
         df['cshiftn'] = df.c.shift(-1*n)
         df.to_csv('tmp.csv')
-        self._run_close_ratio(df,n,r)
+        self._run_close_ratio(df, qlj, xqj, xj, n)
+
+    def close_ratio_foo_s(self, qlj, xqj, xj, n):
+        '''
+        '''
+        print 'close_ratio_foo_s------%s----%s---%s-----%s'% (qlj, xqj, xj, n)
+        
+        df = deepcopy(self.df)
+
+        df['ratio'] = np.where(1, 's' , None)
+        df['cshiftn'] = df.c.shift(-1*n)
+        df.to_csv('tmp.csv')
+        self._run_close_ratio(df, qlj, xqj, xj, n)
 
     def close_ratio_ma(self,n,a=10,b=20,r=1.03):
         '''
@@ -545,12 +557,17 @@ class GL(GeneralIndex):
         df.to_csv('tmp.csv')
         self._run_close_ratio(df,n,r)
 
-    def close_ratio_ma2(self, n, a=10, r=1.03):
+    def close_ratio_ma2(self, qlj, xqj, xj, n, a=10):
         '''
         k线在ma之上时，
         后n天close与当天close的比值
+        r 行权价与现价的比值
+        xqj 行权价
+        qlj 权利金
+        xj 现价
+        权利金当亏损算， 实际情况可能平仓，不一定一笔权利金全亏
         '''
-        print 'close_ratio_ma2------%s------%s-----%s---'% (n, a, r)
+        print 'close_ratio_ma2------%s------%s------'% (n, a)
         self.get_ma(a)
         df = deepcopy(self.df)
         maa = 'ma%s' % a
@@ -560,7 +577,7 @@ class GL(GeneralIndex):
         df['ratio'] = np.where(df['lower'], 's' , df['ratio'])
         df['cshiftn'] = df.c.shift(-1*n)
         df.to_csv('tmp.csv')
-        self._run_close_ratio(df, n, r)
+        self._run_close_ratio(df, qlj, xqj, xj, n)
 
     def close_ratio_ma3(self, n, a=10, r=1.03):
         '''
@@ -596,21 +613,25 @@ class GL(GeneralIndex):
         df.to_csv('tmp.csv')
         self._run_close_ratio(df, n, r)
 
-    def _run_close_ratio(self, df, n, r):
+    def _run_close_ratio(self, df, qlj, xqj, xj, n):
         dflen = len(df)
         bratios = []
         sratios = []
+        r = xqj / float(xj)
+        q = qlj / float(xj)
+        bcnt = 0
+        scnt = 0
         for i, bksk in enumerate(df.ratio):
             if i >= dflen - n:
                 continue
             idx = df.index[i]
             ratio = df.loc[idx, 'ratio']
-            c = float(df.loc[idx, 'c'])
+            #c = float(df.loc[idx, 'c'])
             cshiftn = df.loc[idx, 'cshiftn']
             if ratio == 'b':
-                bratios.append(cshiftn / c)
+                bratios.append(cshiftn / xqj)
             elif ratio == 's':
-                sratios.append(c / cshiftn )
+                sratios.append(xqj / cshiftn)
             else : pass
 
         if bratios:
@@ -622,10 +643,11 @@ class GL(GeneralIndex):
             bratiosum = sum(bratios)
             ylbl = biggerlen / float(bratioslen)
             ylsy = biggersum / biggerlen - 1
-            print np.mean(bratios)
+            #print np.mean(bratios)
             print round(ylbl, 2),'盈利比例'
-            print round(ylsy, 2), '盈利部分的平均收益'
-            print '前两者相乘', round(ylbl * ylsy, 3)
+            #print round(ylsy, 2), '盈利部分的平均收益'
+            #print '前两者相乘------', round(ylbl * ylsy, 4)
+            print '收益预期=====', round(ylbl * ylsy - q, 3)
             #print sorted(bigger),
         if sratios:
             #print sorted(sratios)
@@ -635,10 +657,11 @@ class GL(GeneralIndex):
             sratioslen = len(sratios)
             ylbl = sbiggerlen / float(sratioslen)
             ylsy = sbiggersum / sbiggerlen - 1
-            print np.mean(sratios)
+            #print np.mean(sratios)
             print round(ylbl, 2),'盈利比例'
-            print round(ylsy, 2), '盈利部分的平均收益' 
-            print '前两者相乘', round(ylbl * ylsy, 4)
+            #print round(ylsy, 2), '盈利部分的平均收益' 
+            #print '前两者相乘------', round(ylbl * ylsy, 4)
+            print '收益预期=====', ylbl * ylsy - q
             #print sorted(sbigger)
 
     '''
@@ -830,7 +853,7 @@ if __name__ == '__main__':
     
     #test()
     #run_ev_tupohl('ta')
-    g = GL('jd') # ta rb c m a ma jd dy 999999
+    g = GL('m') # ta rb c m a ma jd dy 999999
     #g.ev_tupohl(3, 7, 0.03)
     #g.ev_ma(20,0.03)
     #g.ev_tupohl(3, 7, 1)
@@ -843,13 +866,13 @@ if __name__ == '__main__':
     #g.tupohl(7, 7, 1)
     #g.tupohl(7, 11, 1)
     #g.tupohl(7, 17, 1)
-    g.ev_tupohl(7, 7, 1)
-    g.ev_tupohl(7, 11, 1)
-    g.ev_tupohl(7, 17, 1)
-    g.ev_tupohl(7, 30, 1)
-    g.ev_tupohl(7, 40, 1)
-    g.ev_tupohl(7, 50, 1)
-    g.ev_tupohl(7, 60, 1)
+    #g.ev_tupohl(7, 7, 1)
+    #g.ev_tupohl(7, 11, 1)
+    #g.ev_tupohl(7, 17, 1)
+    #g.ev_tupohl(7, 30, 1)
+    #g.ev_tupohl(7, 40, 1)
+    #g.ev_tupohl(7, 50, 1)
+    #g.ev_tupohl(7, 60, 1)
     #g.ev_tupohl(7, 70, 1)
     #g.ev_tupohl(7, 80, 1)
     #g.ev_tupohl(7, 90, 1)
@@ -861,10 +884,22 @@ if __name__ == '__main__':
     #g.ev_tupohl(5, 11)
     #g.ev_tupohl(3, 7, 0.02)
     #g.tupohl(7,10,1)
-    #g.close_ratio_ma(60, 10, 20)
-    #g.close_ratio_ma2(60, 10)
-    #g.close_ratio_foo(60)
-    #g.close_ratio_hl(60, 10)
+    #g.close_ratio_ma(60, 5, 30, 1.02)
+    #(self, qlj, xqj, xj, n, a=10):
+    #g.close_ratio_ma2(255.5, 2550, 2780, 60, 30)
+    #g.close_ratio_foo(0.035, 2.5, 2.356, 60)
+    g.close_ratio_foo(255.5, 2550, 2780, 60)
+    g.close_ratio_foo(221, 2600, 2780, 60)
+    g.close_ratio_foo(185.5, 2650, 2780, 60)
+    g.close_ratio_foo(154.5, 2700, 2780, 60)
+    g.close_ratio_foo(128, 2750, 2780, 60)
+    g.close_ratio_foo(107, 2800, 2780, 60)
+    g.close_ratio_foo(84, 2850, 2780, 60)
+    g.close_ratio_foo(68, 2900, 2780, 60)
+    g.close_ratio_foo(53.5, 2950, 2780, 60)
+    g.close_ratio_foo(42, 3000, 2780, 60)
+    #g.close_ratio_foo_s(60)
+    #g.close_ratio_hl(60, 3)
     #g.close_ratio_hl(90, 20, 1.02)
     #g.close_ratio_hl(90, 20)
 
