@@ -619,6 +619,8 @@ class GL(GeneralIndex):
         sratios = []
         r = xqj / float(xj)
         q = qlj / float(xj)
+        #q = qlj / float(xqj)
+        #print 'r,q----  ', r,q
         bcnt = 0
         scnt = 0
         for i, bksk in enumerate(df.ratio):
@@ -626,12 +628,13 @@ class GL(GeneralIndex):
                 continue
             idx = df.index[i]
             ratio = df.loc[idx, 'ratio']
-            #c = float(df.loc[idx, 'c'])
+            xqjthattime = float(df.loc[idx, 'c']) * r #按照现在比例模拟当时行权价
             cshiftn = df.loc[idx, 'cshiftn']
             if ratio == 'b':
-                bratios.append(cshiftn / xqj)
+                #print cshiftn / xqjthattime
+                bratios.append(cshiftn / xqjthattime)
             elif ratio == 's':
-                sratios.append(xqj / cshiftn)
+                sratios.append(xqjthattime / cshiftn)
             else : pass
 
         if bratios:
@@ -647,7 +650,7 @@ class GL(GeneralIndex):
             print round(ylbl, 2),'盈利比例'
             #print round(ylsy, 2), '盈利部分的平均收益'
             #print '前两者相乘------', round(ylbl * ylsy, 4)
-            print '收益预期=====', round(ylbl * ylsy - q, 3)
+            print '收益预期=====', round(ylbl * ylsy - q, 4)
             #print sorted(bigger),
         if sratios:
             #print sorted(sratios)
@@ -661,7 +664,7 @@ class GL(GeneralIndex):
             print round(ylbl, 2),'盈利比例'
             #print round(ylsy, 2), '盈利部分的平均收益' 
             #print '前两者相乘------', round(ylbl * ylsy, 4)
-            print '收益预期=====', ylbl * ylsy - q
+            print '收益预期=====', round(ylbl * ylsy - q, 4)
             #print sorted(sbigger)
 
     '''
@@ -888,16 +891,30 @@ if __name__ == '__main__':
     #(self, qlj, xqj, xj, n, a=10):
     #g.close_ratio_ma2(255.5, 2550, 2780, 60, 30)
     #g.close_ratio_foo(0.035, 2.5, 2.356, 60)
-    g.close_ratio_foo(255.5, 2550, 2780, 60)
-    g.close_ratio_foo(221, 2600, 2780, 60)
-    g.close_ratio_foo(185.5, 2650, 2780, 60)
-    g.close_ratio_foo(154.5, 2700, 2780, 60)
-    g.close_ratio_foo(128, 2750, 2780, 60)
-    g.close_ratio_foo(107, 2800, 2780, 60)
-    g.close_ratio_foo(84, 2850, 2780, 60)
-    g.close_ratio_foo(68, 2900, 2780, 60)
-    g.close_ratio_foo(53.5, 2950, 2780, 60)
-    g.close_ratio_foo(42, 3000, 2780, 60)
+
+    
+    g.close_ratio_foo(290, 2600, 2820,   150)
+    g.close_ratio_foo(258, 2650, 2820,   150)
+    g.close_ratio_foo(225.5, 2700, 2820, 150)
+    g.close_ratio_foo(201, 2750, 2820,   150)
+    g.close_ratio_foo(175, 2800, 2820,   150)
+    g.close_ratio_foo(150, 2850, 2820,   150)
+    g.close_ratio_foo(131, 2900, 2820,   150)
+    g.close_ratio_foo(114.5, 2950, 2820, 150)
+    g.close_ratio_foo(98, 3000, 2820,    150)
+    g.close_ratio_foo(84, 3050, 2820,    150)
+
+    #g.close_ratio_foo_s(25, 2550, 2780,   80)
+    #g.close_ratio_foo_s(38.5, 2600, 2780, 80)
+    #g.close_ratio_foo_s(54.5, 2650, 2780, 80)
+    #g.close_ratio_foo_s(74.5, 2700, 2780, 80)
+    #g.close_ratio_foo_s(97.5, 2750, 2780, 80)
+    #g.close_ratio_foo_s(125.5, 2800, 2780,80)
+    #g.close_ratio_foo_s(154, 2850, 2780,  80)
+    #g.close_ratio_foo_s(184.5, 2900, 2780,80)
+    #g.close_ratio_foo_s(222, 2950, 2780,  80)
+    #g.close_ratio_foo_s(261, 3000, 2780,  80)
+
     #g.close_ratio_foo_s(60)
     #g.close_ratio_hl(60, 3)
     #g.close_ratio_hl(90, 20, 1.02)
