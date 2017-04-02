@@ -538,25 +538,28 @@ class GL(GeneralIndex):
         df.to_csv('tmp.csv')
         self._run_close_ratio(df, qlj, xqj, xj, n)
 
-    def close_ratio_ma(self,n,a=10,b=20,r=1.03):
-        '''
-        不考虑开仓和平仓中间价格的波动，既不考虑中间止损的情况
-        较小的ma(a)大于较大的ma(b)时，
-        后n天close与当天close的比值
-        '''
-        print 'close_ratio_ma------%s------%s------%s----%s----'% (n, a, b, r)
+    def close_ratio_ma(self,qlj, xqj, xj, n ,a=10, b=20):
+        print 'close_ratio_ma------%s------%s------%s----%s---a:%s---b:%s----'% (qlj, xqj, xj, n, a, b)
         self.get_ma(a, b)
         df = deepcopy(self.df)
         maa = 'ma%s' % a
         mab = 'ma%s' % b
         df['higher'] = df[maa] > df[mab]
         df['ratio'] = np.where(df['higher'], 'b' , None)
-        df['lower'] = df[maa] < df[mab]
-        df['ratio'] = np.where(df['lower'], 's' , df['ratio'])
         df['cshiftn'] = df.c.shift(-1*n)
         df.to_csv('tmp.csv')
-        self._run_close_ratio(df,n,r)
-
+        self._run_close_ratio(df, qlj, xqj, xj, n)
+    def close_ratio_ma_s(self,qlj, xqj, xj, n ,a=10, b=20):
+        print 'close_ratio_ma_s------%s------%s------%s----%s---a:%s---b:%s----'% (qlj, xqj, xj, n, a, b)
+        self.get_ma(a, b)
+        df = deepcopy(self.df)
+        maa = 'ma%s' % a
+        mab = 'ma%s' % b
+        df['lower'] = df[maa] < df[mab]
+        df['ratio'] = np.where(df['lower'], 's' , None)
+        df['cshiftn'] = df.c.shift(-1*n)
+        df.to_csv('tmp.csv')
+        self._run_close_ratio(df, qlj, xqj, xj, n)
     def close_ratio_ma2(self, qlj, xqj, xj, n, a=10):
         '''
         k线在ma之上时，
@@ -596,30 +599,34 @@ class GL(GeneralIndex):
         df.to_csv('tmp.csv')
         self._run_close_ratio(df, n, r)
 
-    def close_ratio_hl(self, n, a=3, r=1.03):
-        '''
-        突破前a天高点，
-        后n天close与当天close的比值
-        '''
-        print 'close_ratio_hl------%s------%s-----%s----'% (n, a, r)
+    def close_ratio_hl(self,qlj, xqj, xj, n ,a=10):
+        print 'close_ratio_hl------%s----%s---%s-----%s--a:%s'% (qlj, xqj, xj, n, a)
         self.get_nhh(a)
         self.get_nll(a)
         df = deepcopy(self.df)
         df['higher'] = df.h > df.nhh
         df['ratio'] = np.where(df['higher'], 'b' , None)
-        df['lower'] = df.l < df.nll
-        df['ratio'] = np.where(df['lower'], 's' , df['ratio'])
         df['cshiftn'] = df.c.shift(-1*n)
         df.to_csv('tmp.csv')
-        self._run_close_ratio(df, n, r)
+        self._run_close_ratio(df, qlj, xqj, xj, n)
+
+    def close_ratio_hl_s(self,qlj, xqj, xj, n ,a=10):
+        print 'close_ratio_hl_s------%s----%s---%s-----%s--a:%s'% (qlj, xqj, xj, n, a)
+        self.get_nhh(a)
+        self.get_nll(a)
+        df = deepcopy(self.df)
+        df['lower'] = df.l < df.nll
+        df['ratio'] = np.where(df['lower'], 's' , None)
+        df['cshiftn'] = df.c.shift(-1*n)
+        df.to_csv('tmp.csv')
+        self._run_close_ratio(df, qlj, xqj, xj, n)
 
     def _run_close_ratio(self, df, qlj, xqj, xj, n):
         dflen = len(df)
         bratios = []
         sratios = []
         r = xqj / float(xj)
-        q = qlj / float(xj)
-        #q = qlj / float(xqj)
+        q = qlj / float(xqj)
         #print 'r,q----  ', r,q
         bcnt = 0
         scnt = 0
@@ -628,7 +635,8 @@ class GL(GeneralIndex):
                 continue
             idx = df.index[i]
             ratio = df.loc[idx, 'ratio']
-            xqjthattime = float(df.loc[idx, 'c']) * r #按照现在比例模拟当时行权价
+            xjthantime = df.loc[idx, 'c']  # 用c代替当时的现价
+            xqjthattime = xjthantime * r #按照现在比例模拟当时行权价
             cshiftn = df.loc[idx, 'cshiftn']
             if ratio == 'b':
                 #print cshiftn / xqjthattime
@@ -893,16 +901,27 @@ if __name__ == '__main__':
     #g.close_ratio_foo(0.035, 2.5, 2.356, 60)
 
     
-    g.close_ratio_foo(290, 2600, 2820,   150)
-    g.close_ratio_foo(258, 2650, 2820,   150)
-    g.close_ratio_foo(225.5, 2700, 2820, 150)
-    g.close_ratio_foo(201, 2750, 2820,   150)
-    g.close_ratio_foo(175, 2800, 2820,   150)
-    g.close_ratio_foo(150, 2850, 2820,   150)
-    g.close_ratio_foo(131, 2900, 2820,   150)
-    g.close_ratio_foo(114.5, 2950, 2820, 150)
-    g.close_ratio_foo(98, 3000, 2820,    150)
-    g.close_ratio_foo(84, 3050, 2820,    150)
+    #g.close_ratio_foo(290, 2600, 2820,   150)
+    #g.close_ratio_foo(258, 2650, 2820,   150)
+    #g.close_ratio_foo(225.5, 2700, 2820, 150)
+    #g.close_ratio_foo(201, 2750, 2820,   150)
+    #g.close_ratio_foo(175, 2800, 2820,   150)
+    #g.close_ratio_foo(150, 2850, 2820,   150)
+    #g.close_ratio_foo(131, 2900, 2820,   150)
+    #g.close_ratio_foo(114.5, 2950, 2820, 150)
+    #g.close_ratio_foo(98, 3000, 2820,    150)
+    #g.close_ratio_foo(84, 3050, 2820,    150)
+
+    #g.close_ratio_hl(290, 2600, 2820,   80, 3)
+    #g.close_ratio_hl(258, 2650, 2820,   80, 3)
+    #g.close_ratio_hl(225.5, 2700, 2820, 80, 3)
+    #g.close_ratio_hl(201, 2750, 2820,   80, 3)
+    #g.close_ratio_hl(175, 2800, 2820,   80, 3)
+    #g.close_ratio_hl(150, 2850, 2820,   80, 3)
+    #g.close_ratio_hl(131, 2900, 2820,   80, 3)
+    #g.close_ratio_hl(114.5, 2950, 2820, 80, 3)
+    #g.close_ratio_hl(98, 3000, 2820,    80, 3)
+    #g.close_ratio_hl(84, 3050, 2820,    80, 3)
 
     #g.close_ratio_foo_s(25, 2550, 2780,   80)
     #g.close_ratio_foo_s(38.5, 2600, 2780, 80)
@@ -914,6 +933,17 @@ if __name__ == '__main__':
     #g.close_ratio_foo_s(184.5, 2900, 2780,80)
     #g.close_ratio_foo_s(222, 2950, 2780,  80)
     #g.close_ratio_foo_s(261, 3000, 2780,  80)
+
+    g.close_ratio_hl_s(25, 2550, 2780,   150, 3)
+    g.close_ratio_hl_s(38.5, 2600, 2780, 150, 3)
+    g.close_ratio_hl_s(54.5, 2650, 2780, 150, 3)
+    g.close_ratio_hl_s(74.5, 2700, 2780, 150, 3)
+    g.close_ratio_hl_s(97.5, 2750, 2780, 150, 3)
+    g.close_ratio_hl_s(125.5, 2800, 2780,150, 3)
+    g.close_ratio_hl_s(154, 2850, 2780,  150, 3)
+    g.close_ratio_hl_s(184.5, 2900, 2780,150, 3)
+    g.close_ratio_hl_s(222, 2950, 2780,  150, 3)
+    g.close_ratio_hl_s(261, 3000, 2780,  150, 3)
 
     #g.close_ratio_foo_s(60)
     #g.close_ratio_hl(60, 3)
