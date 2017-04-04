@@ -517,7 +517,7 @@ class GL(GeneralIndex):
     def close_ratio_foo(self, qlj, xqj, xj, n):
         '''
         '''
-        print 'close_ratio_foo------%s----%s---%s-----%s'% (qlj, xqj, xj, n)
+        print '权利金：%s， 行权价：%s， 现价：%s， n天：%s'% (qlj, xqj, xj, n)
         
         df = deepcopy(self.df)
 
@@ -901,16 +901,16 @@ if __name__ == '__main__':
     #g.close_ratio_foo(0.035, 2.5, 2.356, 60)
 
     
-    #g.close_ratio_foo(290, 2600, 2820,   150)
-    #g.close_ratio_foo(258, 2650, 2820,   150)
-    #g.close_ratio_foo(225.5, 2700, 2820, 150)
-    #g.close_ratio_foo(201, 2750, 2820,   150)
-    #g.close_ratio_foo(175, 2800, 2820,   150)
-    #g.close_ratio_foo(150, 2850, 2820,   150)
-    #g.close_ratio_foo(131, 2900, 2820,   150)
-    #g.close_ratio_foo(114.5, 2950, 2820, 150)
-    #g.close_ratio_foo(98, 3000, 2820,    150)
-    #g.close_ratio_foo(84, 3050, 2820,    150)
+    g.close_ratio_foo(290, 2600, 2820,   80)
+    #g.close_ratio_foo(258, 2650, 2820,   80)
+    #g.close_ratio_foo(225.5, 2700, 2820, 80)
+    #g.close_ratio_foo(201, 2750, 2820,   80)
+    #g.close_ratio_foo(175, 2800, 2820,   80)
+    #g.close_ratio_foo(150, 2850, 2820,   80)
+    #g.close_ratio_foo(131, 2900, 2820,   80)
+    #g.close_ratio_foo(114.5, 2950, 2820, 80)
+    #g.close_ratio_foo(98, 3000, 2820,    80)
+    #g.close_ratio_foo(84, 3050, 2820,    80)
 
     #g.close_ratio_hl(290, 2600, 2820,   80, 3)
     #g.close_ratio_hl(258, 2650, 2820,   80, 3)
@@ -934,16 +934,16 @@ if __name__ == '__main__':
     #g.close_ratio_foo_s(222, 2950, 2780,  80)
     #g.close_ratio_foo_s(261, 3000, 2780,  80)
 
-    g.close_ratio_hl_s(25, 2550, 2780,   150, 3)
-    g.close_ratio_hl_s(38.5, 2600, 2780, 150, 3)
-    g.close_ratio_hl_s(54.5, 2650, 2780, 150, 3)
-    g.close_ratio_hl_s(74.5, 2700, 2780, 150, 3)
-    g.close_ratio_hl_s(97.5, 2750, 2780, 150, 3)
-    g.close_ratio_hl_s(125.5, 2800, 2780,150, 3)
-    g.close_ratio_hl_s(154, 2850, 2780,  150, 3)
-    g.close_ratio_hl_s(184.5, 2900, 2780,150, 3)
-    g.close_ratio_hl_s(222, 2950, 2780,  150, 3)
-    g.close_ratio_hl_s(261, 3000, 2780,  150, 3)
+    #g.close_ratio_hl_s(25, 2550, 2780,   150, 3)
+    #g.close_ratio_hl_s(38.5, 2600, 2780, 150, 3)
+    #g.close_ratio_hl_s(54.5, 2650, 2780, 150, 3)
+    #g.close_ratio_hl_s(74.5, 2700, 2780, 150, 3)
+    #g.close_ratio_hl_s(97.5, 2750, 2780, 150, 3)
+    #g.close_ratio_hl_s(125.5, 2800, 2780,150, 3)
+    #g.close_ratio_hl_s(154, 2850, 2780,  150, 3)
+    #g.close_ratio_hl_s(184.5, 2900, 2780,150, 3)
+    #g.close_ratio_hl_s(222, 2950, 2780,  150, 3)
+    #g.close_ratio_hl_s(261, 3000, 2780,  150, 3)
 
     #g.close_ratio_foo_s(60)
     #g.close_ratio_hl(60, 3)

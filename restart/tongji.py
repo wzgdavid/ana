@@ -12,26 +12,44 @@ class Tongji(GeneralIndex):
         
         self.get_sdjj()
 
-
-    def ma_updown_yinyangxian(self, n):
-        self.get_ma(n)
+    def ratio(self, x):
+        '''
+        后x天平均价格与当天平均价格的比值
+        '''
+        print 'ratio------%s-----'% (x)
         df = deepcopy(self.df)
-        ma = 'ma%s' % n
-        #df['maup'] = df[ma].shift(1) > df[ma].shift(2) # 看昨天和前天，然后统计今天
-        #上面的只能写true false， 下面这句能自己制定
-        df['maup'] = np.where(df[ma].shift(1) > df[ma].shift(2), 1 , None)
-        df['maupsum'] = df.maup.sum()
-        df['madown'] = np.where(df[ma].shift(1) < df[ma].shift(2), 1 , None)
-        df['madownsum'] = df.madown.sum()
-        df['yang'] = np.where(df.c > df.o, 1 , None)                   # 统计今天
-        df['yin'] = np.where(df.c < df.o, 1 , None) 
-        df['maup_yang'] = np.where(df.maup & df.yang, 1 , None)
-        df['maup_yang_sum'] = df.maup_yang.sum()
-        df['madown_yin'] = np.where(df.madown & df.yin,1 ,None)
-        df['madown_yin_sum'] = df.madown_yin.sum()
+        df['shiftx'] = df.sdjj.shift(-1*x)
+        df['ratio'] = df.shiftx / df.sdjj
+        self._to_result(df)
+        
+    def close_ratio_tupoh(self, x, n):
+        print 'close_ratio_tupoh------%s-----%s---'% (x, n)
+        self.get_nhh(n)
+        df = deepcopy(self.df)
+        df['shiftx'] = df.sdjj.shift(-1*x)
+        df['higher'] = df.h > df.nhh
+        df['ratio'] = np.where(df['higher'], df.shiftx / df.sdjj, None)
+        self._to_result(df)
 
+    def close_ratio_tupol(self, x, n):
+        print 'close_ratio_tupol------%s-----%s---'% (x, n)
+        self.get_nll(n)
+        df = deepcopy(self.df)
+        df['shiftx'] = df.sdjj.shift(-1*x)
+        df['lower'] = df.l < df.nll
+        df['ratio'] = np.where(df['lower'], df.sdjj / df.shiftx, None)
+        self._to_result(df)
+    
+    def _to_result(self, df):
+        mean = df.ratio.mean()
+        median =  df.ratio.median()
+        print '均值：%s，中位数：%s' % (round(mean, 5), round(median, 5))
         df.to_csv('tmp.csv')
 
+
 if __name__ == '__main__':
-    t = Tongji('rb')
-    t.ma_updown_yinyangxian(5)
+    t = Tongji('999999')
+    t.ratio(20)
+    t.close_ratio_tupol(20, 7)
+    t.close_ratio_tupol(20, 10)
+    t.close_ratio_tupol(20, 20)
