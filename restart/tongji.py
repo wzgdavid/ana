@@ -288,6 +288,7 @@ class Tongji(GeneralIndex):
 
 
     def _run_close_ratio2(self, df, qlj, xqj, xj, n):
+        '''买方  参照那个头寸损益图中的思路'''
         dflen = len(df)
         bratios = [] # n天后行权的价格 和 假设当时设置的行权价 的比例
         sratios = []
