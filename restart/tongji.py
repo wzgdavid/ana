@@ -32,7 +32,25 @@ class Tongji(GeneralIndex):
         df['ratio'] = df.mhh / df.sdjj
         self._to_result(df)
 
-
+    def ratio_high_bl(self, x, bl):
+        '''
+        后x天最高价到一定比例(bl)后平仓， 与持仓到期的比值
+        '''
+        print 'ratio_high_bl------%s-----'% (x)
+        self.get_mhh(x)
+        df = deepcopy(self.df)
+        df['ratioh'] = df.mhh / df.sdjj
+        #df['daobili'] = np.where(df['ratioh'] > bl, df.ratioh ,None)
+        df['daobili'] = np.where(df['ratioh'] > bl, 1 ,None)
+        df['shiftx'] = df.sdjj.shift(-1*x)
+        df['ratiox'] = df.shiftx / df.sdjj
+        df['daobili_ratioh'] = np.where(df['daobili'], df.ratioh ,None)
+        df['daobili_ratiox'] = np.where(df['daobili'], df.ratiox ,None)
+        df['bl'] = np.where(df['daobili'], bl ,None)
+        df['bz'] = df.bl / df.daobili_ratiox
+        print df.daobili_ratiox.mean() # 这个比例和bl比较，bl大，则价格达到bl后平仓，否则，持仓
+        
+        df.to_csv('tmp.csv')
 
     def ratio_low(self, x):
         '''
@@ -114,7 +132,7 @@ class Tongji(GeneralIndex):
         df['ratio'] = np.where(1, 'b' , None)
         df['cshiftn'] = df.c.shift(-1*n)
         df.to_csv('tmp.csv')
-        self._run_close_ratio(df, qlj, xqj, xj, n)
+        self._run_close_ratio2(df, qlj, xqj, xj, n)
 
     def close_ratio_foo_s(self, qlj, xqj, xj, n):
         '''
@@ -126,7 +144,7 @@ class Tongji(GeneralIndex):
         df['ratio'] = np.where(1, 's' , None)
         df['cshiftn'] = df.c.shift(-1*n)
         df.to_csv('tmp.csv')
-        self._run_close_ratio(df, qlj, xqj, xj, n)
+        self._run_close_ratio2(df, qlj, xqj, xj, n)
 
     def close_ratio_ma(self,qlj, xqj, xj, n ,a=10, b=20):
         print 'close_ratio_ma------%s------%s------%s----%s---a:%s---b:%s----'% (qlj, xqj, xj, n, a, b)
@@ -214,6 +232,7 @@ class Tongji(GeneralIndex):
         self._run_close_ratio(df, qlj, xqj, xj, n)
 
     def _run_close_ratio(self, df, qlj, xqj, xj, n):
+        '''买方'''
         dflen = len(df)
         bratios = [] # n天后行权的价格 和 假设当时设置的行权价 的比例
         sratios = []
@@ -267,6 +286,53 @@ class Tongji(GeneralIndex):
             print '收益预期=====', round(ylbl * ylsy - q, 4)
             #print sorted(sbigger)
 
+
+    def _run_close_ratio2(self, df, qlj, xqj, xj, n):
+        dflen = len(df)
+        bratios = [] # n天后行权的价格 和 假设当时设置的行权价 的比例
+        sratios = []
+        r = xqj / float(xj)
+        q = qlj / float(xqj)
+        #print 'r,q----  ', r,q
+        bcnt = 0
+        scnt = 0
+        for i, bksk in enumerate(df.ratio):
+            if i >= dflen - n:
+                continue
+            idx = df.index[i]
+            ratio = df.loc[idx, 'ratio']
+            xjthantime = df.loc[idx, 'c']  # 用c代替当时的现价
+            xqjthattime = xjthantime * r #按照现在比例模拟当时行权价
+            cshiftn = df.loc[idx, 'cshiftn']
+            if ratio == 'b':
+                #print cshiftn / xqjthattime
+                bratios.append(cshiftn / (xqjthattime * (1 + q)))
+            elif ratio == 's':
+                sratios.append(cshiftn / (xqjthattime * (1 - q)))
+            else : pass
+
+        if bratios:
+            zzd = 1/(1+q) # q平衡点到行权价，多头损益图中1+q是损益平衡点，1是行权价点，
+            bl = []
+            for x in bratios:
+                if x > zzd:
+                    bl.append(x)
+                else:
+                    bl.append(zzd)
+            #print bl
+            print '收益预期==ratio2===', round(sum(bl)/len(bl), 4)
+
+
+        if sratios:
+            zzd = 1/(1-q) # 空头损益图中1-q是损益平衡点，1是行权价点，
+            bl = []
+            for x in sratios:
+                if x > zzd:
+                    bl.append(zzd)
+                else:
+                    bl.append(x)
+            #print bl
+            print '收益预期==ratio2===', round(sum(bl)/len(bl), 4)
 
     '''
     ############################################################################################
@@ -364,17 +430,31 @@ def m80():
 
 def runcloseratio():
     t = Tongji('m')
-    t.close_ratio_ma(290, 2600, 2820,   80,5,40)
-    t.close_ratio_foo(290, 2600, 2820,   80)
-    #t.close_ratio_foo(258, 2650, 2820,   80)
-    #t.close_ratio_foo(225.5, 2700, 2820, 80)
-    #t.close_ratio_foo(201, 2750, 2820,   80)
-    #t.close_ratio_foo(175, 2800, 2820,   80)
-    #t.close_ratio_foo(150, 2850, 2820,   80)
-    #t.close_ratio_foo(131, 2900, 2820,   80)
-    #t.close_ratio_foo(114.5, 2950, 2820, 80)
-    #t.close_ratio_foo(98, 3000, 2820,    80)
-    #t.close_ratio_foo(84, 3050, 2820,    80)
+    xianjia, n = 2747, 80
+    #t.close_ratio_ma(290, 2600, 2820,   80,5,40)
+    # m1709
+    t.close_ratio_foo(226,  2550, xianjia, n)
+    t.close_ratio_foo(188,  2600, xianjia, n)
+    t.close_ratio_foo(156,  2650, xianjia, n)
+    t.close_ratio_foo(128,  2700, xianjia, n)
+    t.close_ratio_foo(102.5,  2750, xianjia, n)
+    t.close_ratio_foo(82,   2800, xianjia, n)
+    t.close_ratio_foo(64.5,   2850, xianjia, n)
+    t.close_ratio_foo(50,   2900, xianjia, n)
+    t.close_ratio_foo(38.5,   2950, xianjia, n)
+    t.close_ratio_foo(29,   3000, xianjia, n)
+    
+    #t.close_ratio_foo_s(27.5, 2550, xianjia, n)
+    #t.close_ratio_foo_s(41, 2600, xianjia, n)
+    #t.close_ratio_foo_s(58.5, 2650, xianjia, n)
+    #t.close_ratio_foo_s(80, 2700, xianjia, n)
+    #t.close_ratio_foo_s(105, 2750, xianjia, n)
+    #t.close_ratio_foo_s(134, 2800, xianjia, n)
+    #t.close_ratio_foo_s(167, 2850, xianjia, n)
+    #t.close_ratio_foo_s(203.5, 2900, xianjia, n)
+    #t.close_ratio_foo_s(241.5, 2950, xianjia, n)
+    #t.close_ratio_foo_s(282, 3000, xianjia, n)
+
     #t.close_ratio_hl(290, 2600, 2820,   80, 11)
     #t.close_ratio_hl(258, 2650, 2820,   80, 11)
     #t.close_ratio_hl(225.5, 2700, 2820, 80, 11)
@@ -385,16 +465,7 @@ def runcloseratio():
     #t.close_ratio_hl(114.5, 2950, 2820, 80, 11)
     #t.close_ratio_hl(98, 3000, 2820,    80, 11)
     #t.close_ratio_hl(84, 3050, 2820,    80, 11)
-    #t.close_ratio_foo_s(25, 2550, 2780,   80)
-    #t.close_ratio_foo_s(38.5, 2600, 2780, 80)
-    #t.close_ratio_foo_s(54.5, 2650, 2780, 80)
-    #t.close_ratio_foo_s(74.5, 2700, 2780, 80)
-    #t.close_ratio_foo_s(97.5, 2750, 2780, 80)
-    #t.close_ratio_foo_s(125.5, 2800, 2780,80)
-    #t.close_ratio_foo_s(154, 2850, 2780,  80)
-    #t.close_ratio_foo_s(184.5, 2900, 2780,80)
-    #t.close_ratio_foo_s(222, 2950, 2780,  80)
-    #t.close_ratio_foo_s(261, 3000, 2780,  80)
+
     #t.close_ratio_hl_s(25, 2550, 2780,   150, 3)
     #t.close_ratio_hl_s(38.5, 2600, 2780, 150, 3)
     #t.close_ratio_hl_s(54.5, 2650, 2780, 150, 3)
@@ -411,10 +482,10 @@ def runcloseratio():
 
 if __name__ == '__main__':
     #m80()
-    #runcloseratio()
+    runcloseratio()
     t = Tongji('m')
-    t.ratio(     60)
-    
+    #t.ratio(     60)
+    #t.ratio_high_bl(80, 1.4)
     #t.ratio_high(60)
     #t.ratio_low( 30)
     #foo()
