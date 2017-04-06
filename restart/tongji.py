@@ -16,21 +16,23 @@ class Tongji(GeneralIndex):
         '''
         后x天平均价格与当天平均价格的比值
         '''
-        print 'ratio------%s-----'% (x)
+        title = 'ratio------%s-----'% (x)
+        print title
         df = deepcopy(self.df)
         df['shiftx'] = df.sdjj.shift(-1*x)
         df['ratio'] = df.shiftx / df.sdjj
-        self._to_result(df)
+        self._to_result(df, title)
 
     def ratio_high(self, x):
         '''
-        后x天最高价与当天平均价格的比值
+        后x天最高价与当天价格的比值
         '''
-        print 'ratio_high------%s-----'% (x)
+        title = 'ratio_high------%s-----'% (x)
+        print title
         self.get_mhh(x)
         df = deepcopy(self.df)
         df['ratio'] = df.mhh / df.sdjj
-        self._to_result(df)
+        self._to_result(df, title)
 
     def ratio_high_bl(self, x, bl):
         '''
@@ -48,7 +50,7 @@ class Tongji(GeneralIndex):
         df['daobili_ratiox'] = np.where(df['daobili'], df.ratiox ,None)
         df['bl'] = np.where(df['daobili'], bl ,None)
         df['bz'] = df.bl / df.daobili_ratiox
-        print df.daobili_ratiox.mean() # 这个比例和bl比较，bl大，则价格达到bl后平仓，否则，持仓
+        print df.daobili_ratiox.mean() # 这个比例和参数bl比较，bl大，则价格达到bl后平仓有利，否则，持仓
         
         df.to_csv('tmp.csv')
 
@@ -56,12 +58,41 @@ class Tongji(GeneralIndex):
         '''
         后x天最低价与当天平均价格的比值
         '''
-        print 'ratio_low------%s-----'% (x)
+        title = 'ratio_low------%s-----'% (x)
+        print title
         self.get_mll(x)
         df = deepcopy(self.df)
-        df['ratio'] = df.sdjj / df.mll 
-        self._to_result(df)
+        df['ratio'] = df.mll/df.sdjj 
+        self._to_result(df,title)
+
+    def ratio_low_tupohigh(self, x, n):
+        '''
+        突破高点后x天最低价与当天平均价格的比值
+        '''
+        title = 'ratio_low_tupohigh------%s----%s----'% (x, n)
+        print title
+        self.get_nhh(n)
         
+        self.get_mll(x)
+        df = deepcopy(self.df)
+        df['higher'] = df.h > df.nhh
+        df['ratio'] = np.where(df['higher'], df.mll/df.sdjj  ,None)
+        self._to_result(df,title)
+
+    def ratio_high_tupohigh(self, x, n):
+        '''
+        突破高点后x天最高价与当天价格的比值
+        '''
+        title = 'ratio_high_tupohigh------%s----%s----'% (x, n)
+        print title
+        self.get_nhh(n)
+        
+        self.get_mhh(x)
+        df = deepcopy(self.df)
+        df['higher'] = df.h > df.nhh
+        df['ratio'] = np.where(df['higher'], df.mhh/df.sdjj  ,None)
+        self._to_result(df,title)
+
     def close_ratio_tupoh(self, x, n):
         print 'close_ratio_tupoh------%s-----%s---'% (x, n)
         self.get_nhh(n)
@@ -72,7 +103,8 @@ class Tongji(GeneralIndex):
         self._to_result(df)
 
     def close_ratio_tupol(self, x, n):
-        print 'close_ratio_tupol------%s-----%s---'% (x, n)
+        title = 'close_ratio_tupol------%s-----%s---'% (x, n)
+        print title
         self.get_nll(n)
         df = deepcopy(self.df)
         df['shiftx'] = df.sdjj.shift(-1*x)
@@ -80,24 +112,25 @@ class Tongji(GeneralIndex):
         df['ratio'] = np.where(df['lower'], df.sdjj / df.shiftx, None)
         self._to_result(df)
     
-    def _to_result(self, df):
+    def _to_result(self, df, title):
         mean = df.ratio.mean()
         median =  df.ratio.median()
         std = df.ratio.std()
         print '均值：%s，中位数：%s' % (round(mean, 5), round(median, 5))
         df.to_csv('tmp.csv')
-        self._plot_histogram(mean, std)
+        self._plot_histogram(mean, std, title)
 
-    def _plot_histogram(self, mean, std):
+    def _plot_histogram(self, mean, std, title):
         import matplotlib.mlab as mlab
         np.random.seed(0)
         
         # example data
         mu = mean  # mean of distribution
         sigma = std  # standard deviation of distribution
-        x = mu + sigma * np.random.randn(9999)
-        
-        num_bins = 50
+        x = mu + sigma * np.random.randn(99999)
+        #big = [a for a in x if a > 1.0879]
+        #print len(big)/float(len(x))
+        num_bins = 99
         
         fig, ax = plt.subplots()
         # the histogram of the data
@@ -108,6 +141,7 @@ class Tongji(GeneralIndex):
         ax.set_xlabel('Smarts')
         ax.set_ylabel('Probability density')
         #ax.set_title(r'Histogram of IQ: $\mu=100$, $\sigma=15$')
+        ax.set_title(title)
         # Tweak spacing to prevent clipping of ylabel
         fig.tight_layout()
         plt.show()
@@ -322,6 +356,16 @@ class Tongji(GeneralIndex):
                     bl.append(zzd)
             #print bl
             print '收益预期==ratio2===', round(sum(bl)/len(bl), 4)
+            #big = [x for x in bratios if x>1]
+            #small = [x for x in bratios if x<1]
+            #blen = float(len(bratios))
+            #big_bl = len(big)/blen
+            #small_bl = len(small)/blen
+            #big_avg = sum(big)/len(big)
+            #small_avg = sum(small)/len(small)
+            #print '盈利比例', round(big_bl, 2), small_bl
+            #print '收益预期==ratio2===', round(big_bl*big_avg+small_bl*small_avg, 4)
+
 
 
         if sratios:
@@ -342,72 +386,7 @@ class Tongji(GeneralIndex):
     ############################################################################################
     ############################################################################################
     '''
-    def get_qlj(self, xqj, xj, x):
-        '''
-        '''
-        print '行权价：%s， 现价：%s， x天：%s'% (xqj, xj, x)
-        
-        df = deepcopy(self.df)
 
-        df['ratio'] = np.where(1, 'b' , None)
-        df['shiftx'] = df.sdjj.shift(-1*x)
-        self._run_get_qlj(xqj, xj, x)
-
-
-    def _run_get_qlj(self, df, qlj, xqj, xj, n):
-        df.to_csv('tmp.csv')
-        dflen = len(df)
-        bratios = []
-        sratios = []
-        r = xqj / float(xj)
-        q = qlj / float(xqj)
-        #print 'r,q----  ', r,q
-        bcnt = 0
-        scnt = 0
-        for i, bksk in enumerate(df.ratio):
-            if i >= dflen - n:
-                continue
-            idx = df.index[i]
-            ratio = df.loc[idx, 'ratio']
-            xjthantime = df.loc[idx, 'c']  # 用c代替当时的现价
-            xqjthattime = xjthantime * r #按照现在比例模拟当时行权价
-            cshiftn = df.loc[idx, 'cshiftn']
-            if ratio == 'b':
-                #print cshiftn / xqjthattime
-                bratios.append(cshiftn / xqjthattime)
-            elif ratio == 's':
-                sratios.append(xqjthattime / cshiftn)
-            else : pass
-
-        if bratios:
-            #print sorted(bratios)
-            bigger = [x for x in bratios if x>r]
-            biggerlen = len(bigger)
-            biggersum = sum(bigger)
-            bratioslen = len(bratios)
-            bratiosum = sum(bratios)
-            ylbl = biggerlen / float(bratioslen)
-            ylsy = biggersum / biggerlen - 1
-            #print np.mean(bratios)
-            print round(ylbl, 2),'盈利比例'
-            #print round(ylsy, 2), '盈利部分的平均收益'
-            #print '前两者相乘------', round(ylbl * ylsy, 4)
-            print '收益预期=====', round(ylbl * ylsy - q, 4)
-            #print sorted(bigger),
-        if sratios:
-            #print sorted(sratios)
-            sbigger = [x for x in sratios if x>r]
-            sbiggerlen = len(sbigger)
-            sbiggersum = sum(sbigger)
-            sratioslen = len(sratios)
-            ylbl = sbiggerlen / float(sratioslen)
-            ylsy = sbiggersum / sbiggerlen - 1
-            #print np.mean(sratios)
-            print round(ylbl, 2),'盈利比例'
-            #print round(ylsy, 2), '盈利部分的平均收益' 
-            #print '前两者相乘------', round(ylbl * ylsy, 4)
-            print '收益预期=====', round(ylbl * ylsy - q, 4)
-            #print sorted(sbigger)
 
 
     '''
@@ -431,30 +410,30 @@ def m80():
 
 def runcloseratio():
     t = Tongji('m')
-    xianjia, n = 2747, 80
+    xianjia, n = 2745, 60
     #t.close_ratio_ma(290, 2600, 2820,   80,5,40)
     # m1709
-    t.close_ratio_foo(226,  2550, xianjia, n)
-    t.close_ratio_foo(188,  2600, xianjia, n)
-    t.close_ratio_foo(156,  2650, xianjia, n)
-    t.close_ratio_foo(128,  2700, xianjia, n)
-    t.close_ratio_foo(102.5,  2750, xianjia, n)
-    t.close_ratio_foo(82,   2800, xianjia, n)
-    t.close_ratio_foo(64.5,   2850, xianjia, n)
-    t.close_ratio_foo(50,   2900, xianjia, n)
-    t.close_ratio_foo(38.5,   2950, xianjia, n)
-    t.close_ratio_foo(29,   3000, xianjia, n)
+    t.close_ratio_foo(213,  2550, xianjia, n)
+    t.close_ratio_foo(173.5,  2600, xianjia, n)
+    t.close_ratio_foo(140.5,  2650, xianjia, n)
+    t.close_ratio_foo(111.5,  2700, xianjia, n)
+    t.close_ratio_foo(87.5,  2750, xianjia, n)
+    t.close_ratio_foo(68,   2800, xianjia, n)
+    t.close_ratio_foo(52.5,   2850, xianjia, n)
+    t.close_ratio_foo(40,   2900, xianjia, n)
+    t.close_ratio_foo(30,   2950, xianjia, n)
+    t.close_ratio_foo(21.5,   3000, xianjia, n)
     
-    #t.close_ratio_foo_s(27.5, 2550, xianjia, n)
-    #t.close_ratio_foo_s(41, 2600, xianjia, n)
-    #t.close_ratio_foo_s(58.5, 2650, xianjia, n)
-    #t.close_ratio_foo_s(80, 2700, xianjia, n)
-    #t.close_ratio_foo_s(105, 2750, xianjia, n)
-    #t.close_ratio_foo_s(134, 2800, xianjia, n)
-    #t.close_ratio_foo_s(167, 2850, xianjia, n)
-    #t.close_ratio_foo_s(203.5, 2900, xianjia, n)
-    #t.close_ratio_foo_s(241.5, 2950, xianjia, n)
-    #t.close_ratio_foo_s(282, 3000, xianjia, n)
+    #t.close_ratio_foo_s(16, 2550, xianjia, n)
+    #t.close_ratio_foo_s(26.5, 2600, xianjia, n)
+    #t.close_ratio_foo_s(43, 2650, xianjia, n)
+    #t.close_ratio_foo_s(65, 2700, xianjia, n)
+    #t.close_ratio_foo_s(90.5, 2750, xianjia, n)
+    #t.close_ratio_foo_s(120.5, 2800, xianjia, n)
+    #t.close_ratio_foo_s(154.5, 2850, xianjia, n)
+    #t.close_ratio_foo_s(192.5, 2900, xianjia, n)
+    #t.close_ratio_foo_s(231.5, 2950, xianjia, n)
+    #t.close_ratio_foo_s(274.5, 3000, xianjia, n)
 
     #t.close_ratio_hl(290, 2600, 2820,   80, 11)
     #t.close_ratio_hl(258, 2650, 2820,   80, 11)
@@ -483,10 +462,12 @@ def runcloseratio():
 
 if __name__ == '__main__':
     #m80()
-    runcloseratio()
-    t = Tongji('m')
-    #t.ratio(     60)
-    #t.ratio_high_bl(80, 1.4)
-    #t.ratio_high(60)
-    #t.ratio_low( 30)
+    #runcloseratio()
+    t = Tongji('a')
+    #t.ratio(5)
+    #t.ratio_high_bl(90, 1.4)
+    #t.ratio_high(5)
+    t.ratio_low(7)
+    #t.ratio_low_tupohigh(7, 13)
+    #t.ratio_high_tupohigh(5, 5)
     #foo()

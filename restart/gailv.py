@@ -432,33 +432,22 @@ class GL(GeneralIndex):
                     bsbzs.extend(sbz)
                     skpoints = dict()
             elif zs>=1 and type(zs)==int:
-
                 if bksk == 'bk':
-                    nhh = df.loc[idx, 'nhh']
-                    o = df.loc[idx, 'o']
-                    bkp = o if o > nhh else nhh
+                    bkp = self._get_hl_bkpoint(df, idx)
                     bkpoints[idx] = (bkp, df.loc[idx, 'zsll']) # (开仓点，开仓止损点)
-                    #bkpoints[idx] = (nhh, df.loc[idx, 'zsll'])
                     
                 if bksk == 'sk':
-                    nll = df.loc[idx, 'nll']
-                    o = df.loc[idx, 'o']
-                    skp = o if o < nll else nll
+                    skp = self._get_hl_skpoint(df, idx)
                     skpoints[idx] = (skp, df.loc[idx, 'zshh'])
-                    #skpoints[idx] = (nll, df.loc[idx, 'zshh'])
-                    
                     
                 if bpsp == 'bp' and bkpoints:
                     nllp = df.loc[idx, 'nllp']
                     o = df.loc[idx, 'o']
                     pingcang = o if o < nllp else nllp
-                    #bbz = [d/x for x in bkpoints.values()]
                     bbz = list()
                     for x in bkpoints.values():
                         bbz.append(max(pingcang/x[0]*FEIYONG, x[1]/x[0]*FEIYONG ))
-                
                     bbzs.extend(bbz)
-                    #bzlen.append(len(bbz))
                     bsbzs.extend(bbz)
                     bkpoints = dict()
                     
@@ -466,8 +455,6 @@ class GL(GeneralIndex):
                     nhhp = df.loc[idx, 'nhhp']
                     o = df.loc[idx, 'o']
                     pingcang = o if o > nhhp else nhhp
-                    #sbz = [x/d for x in skpoints.values()] # 为了看起来方便，用x/d
-    
                     sbz = list()
                     for x in skpoints.values():
                         #bz = x/d # 为了看起来方便，用x/d
@@ -475,25 +462,8 @@ class GL(GeneralIndex):
                     sbzs.extend(sbz)
                     bsbzs.extend(sbz)
                     skpoints = dict()
-        #print sum(bzlen)/float(len(bzlen)), '一次bp前的平均开仓次数' # 这个值大，说明真实情况下这样做，可能的持仓会大，有可能超出资金能力
-        #print bzlen[len(bzlen)/2],    '一次bp前的中位数开仓次数'     # 与上同样的道理，中位数
-        #print bbzs
-        #print str(sum(bbzs)/len(bbzs))[:6], len(bbzs)#, sum(bbzs)*len(bbzs)
-        #print sorted(bbzs)
-        #br = reduce(lambda x,y:x*y,bbzs)
-        #print br , '--------br--------'
-        #print str(sum(sbzs)/len(sbzs))[:6], len(sbzs)
-        #sr = reduce(lambda x,y:x*y,sbzs)
-        #print sr , '--------sr--------'
-        #print sorted(sbzs)
-        #print sum(bsbzs)/len(bsbzs)
-        #self._plot_cummulti(bsbzs)
-
         return self._tongjilist(bsbzs)
         
-
-
-
     '''
     ############################################################################################
     ############################################################################################
@@ -513,7 +483,6 @@ class GL(GeneralIndex):
         df['rrcumsum'] = df.rr.cumsum()
 
         df.to_csv('tmp.csv')
-
 
 
     '''
@@ -718,8 +687,11 @@ if __name__ == '__main__':
     #g.tupohl(7, 7, 1)
     #g.tupohl(7, 11, 1)
     #g.tupohl(7, 17, 1)
+    g.ev_tupohl(7,17, 0.02)
+    g.ev_tupohl(7,17, 1)
+    #g.ev_tupohl(7,30, 1)
+    #g.ev_tupohl(11,11, 0.02)
     #g.ev_tupohl(7, 7, 1)
-    #g.ev_tupohl(7, 11, 1)
     #g.ev_tupohl(7, 17, 1)
     #g.ev_tupohl(7, 30, 1)
     #g.ev_tupohl(7, 40, 1)
@@ -733,80 +705,6 @@ if __name__ == '__main__':
 
     #g.ev_tupohl_highlow(3, 7, 1)
 
-    #g.ev_tupohl(5, 11)
-    #g.ev_tupohl(3, 7, 0.02)
-    #g.tupohl(7,10,1)
-    #g.close_ratio_ma(60, 5, 30, 1.02)
-    #(self, qlj, xqj, xj, n, a=10):
-    #g.close_ratio_ma2(255.5, 2550, 2780, 60, 30)
-    #g.close_ratio_foo(0.035, 2.5, 2.356, 60)
-
-    
-    g.close_ratio_foo(290, 2600, 2820,   80)
-    #g.close_ratio_foo(258, 2650, 2820,   80)
-    #g.close_ratio_foo(225.5, 2700, 2820, 80)
-    #g.close_ratio_foo(201, 2750, 2820,   80)
-    #g.close_ratio_foo(175, 2800, 2820,   80)
-    #g.close_ratio_foo(150, 2850, 2820,   80)
-    #g.close_ratio_foo(131, 2900, 2820,   80)
-    #g.close_ratio_foo(114.5, 2950, 2820, 80)
-    #g.close_ratio_foo(98, 3000, 2820,    80)
-    #g.close_ratio_foo(84, 3050, 2820,    80)
-
-    #g.close_ratio_hl(290, 2600, 2820,   80, 3)
-    #g.close_ratio_hl(258, 2650, 2820,   80, 3)
-    #g.close_ratio_hl(225.5, 2700, 2820, 80, 3)
-    #g.close_ratio_hl(201, 2750, 2820,   80, 3)
-    #g.close_ratio_hl(175, 2800, 2820,   80, 3)
-    #g.close_ratio_hl(150, 2850, 2820,   80, 3)
-    #g.close_ratio_hl(131, 2900, 2820,   80, 3)
-    #g.close_ratio_hl(114.5, 2950, 2820, 80, 3)
-    #g.close_ratio_hl(98, 3000, 2820,    80, 3)
-    #g.close_ratio_hl(84, 3050, 2820,    80, 3)
-
-    #g.close_ratio_foo_s(25, 2550, 2780,   80)
-    #g.close_ratio_foo_s(38.5, 2600, 2780, 80)
-    #g.close_ratio_foo_s(54.5, 2650, 2780, 80)
-    #g.close_ratio_foo_s(74.5, 2700, 2780, 80)
-    #g.close_ratio_foo_s(97.5, 2750, 2780, 80)
-    #g.close_ratio_foo_s(125.5, 2800, 2780,80)
-    #g.close_ratio_foo_s(154, 2850, 2780,  80)
-    #g.close_ratio_foo_s(184.5, 2900, 2780,80)
-    #g.close_ratio_foo_s(222, 2950, 2780,  80)
-    #g.close_ratio_foo_s(261, 3000, 2780,  80)
-
-    #g.close_ratio_hl_s(25, 2550, 2780,   150, 3)
-    #g.close_ratio_hl_s(38.5, 2600, 2780, 150, 3)
-    #g.close_ratio_hl_s(54.5, 2650, 2780, 150, 3)
-    #g.close_ratio_hl_s(74.5, 2700, 2780, 150, 3)
-    #g.close_ratio_hl_s(97.5, 2750, 2780, 150, 3)
-    #g.close_ratio_hl_s(125.5, 2800, 2780,150, 3)
-    #g.close_ratio_hl_s(154, 2850, 2780,  150, 3)
-    #g.close_ratio_hl_s(184.5, 2900, 2780,150, 3)
-    #g.close_ratio_hl_s(222, 2950, 2780,  150, 3)
-    #g.close_ratio_hl_s(261, 3000, 2780,  150, 3)
-
-    #g.close_ratio_foo_s(60)
-    #g.close_ratio_hl(60, 3)
-    #g.close_ratio_hl(90, 20, 1.02)
-    #g.close_ratio_hl(90, 20)
-
-    #g.zdzy_hl(3)
-    #g.zdzy_hl(3)
-    #g.zdzy_hl(4)
-    #g.zdzy_maupdown(3,10)
-    #g.zdzy_highlow(3)
-    #g.zdzy_hl(5)
-    #g.zdzy_hl(10)
-    #g.ev_tupohl(2, 7, 2)
-    #g.zdzy_hl(3, 0.06, 0.03)
-    #g.zdzy_hl(10, 0.03, 0.03)
-    
-    #g.zdzy_hl(7, 0.07, 0.07)
-    #g.zdzy_hl(7, 0.1, 0.1)
-    #g.zdzy_hl(7, 0.15, 0.15)
-    #g.zdzy_hl(7, 0.2, 0.2)
-    
 
    
     
