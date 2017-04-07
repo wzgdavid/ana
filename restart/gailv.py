@@ -242,12 +242,26 @@ class GL(GeneralIndex):
         self.get_nll(n)
         self.get_nhhp(y)
         self.get_nllp(y)
+        ma = 20
+        ma_name = 'ma'+str(ma)
+        self.get_ma(ma)
         if zs >= 1:
             self.get_zshh(zs)
             self.get_zsll(zs)
         df = deepcopy(self.df) 
-        df['higher'] = df.h > df.nhh
-        df['lower'] = df.l < df.nll
+        
+        option = {
+            'tupo_high': df.h > df.nhh,
+            'tuo_low': df.l < df.nll,
+            'higher_than_ma': df.l.shift(1) > df[ma_name].shift(1),
+            'lower_than_ma': df.h.shift(1) < df[ma_name].shift(1),
+            'maup': df[ma_name].shift(1) > df[ma_name].shift(2),
+            'madown': df[ma_name].shift(1) < df[ma_name].shift(2),
+                  }
+
+
+        df['higher'] = option['tupo_high'] & option['higher_than_ma'] & option['maup']
+        df['lower'] = option['tuo_low']    & option['lower_than_ma']  & option['madown']
         df['bksk'] = np.where(df['higher'], 'bk', None)
         df['bksk'] = np.where(df['lower'], 'sk', df['bksk'])
 
@@ -568,6 +582,7 @@ class GL(GeneralIndex):
             idx = df.index[i]
             if bksk == 'bk':
                 bkpoint = self._get_hl_bkpoint(df, idx)
+                bkpoint = df.loc[idx, 'o']
                 zypoint = bkpoint * (1+zy)
                 zspoint = bkpoint * (1-zs)
                 for j in r:
@@ -583,7 +598,7 @@ class GL(GeneralIndex):
                         break
             if bksk == 'sk':
                 skpoint = self._get_hl_skpoint(df, idx)
-
+                skpoint = df.loc[idx, 'o']
                 zypoint = skpoint * (1-zy)
                 zspoint = skpoint * (1+zs)
                 for j in r:
@@ -606,89 +621,26 @@ class GL(GeneralIndex):
     ############################################################################################
     ############################################################################################
     '''
-def run_ev_tupohl(daima):
-    g = GL(daima)
-    range_x = range(3, 6)
-    range_y = range(10, 40)[::10]
-    lenx = len(range_x)
-    leny = len(range_y)
-    X = np.array( [float(aa) for aa in range_x] * leny).reshape(leny, lenx)
-    print X
-    yshape = []
-    for n in range_y:
-        yshape.extend([float(n)] * lenx)
-    Y = np.array(yshape).reshape(leny, lenx)
-    Z = np.array([float(1)] * (lenx*leny)).reshape(leny, lenx)
-    print Y
-    print Z
 
-    plottttt(X,Y,Z)
-    for x in range_x:
-        for y in range_y:
-            pass
-            #g.ev_tupohl(x, y, 1)
-
-def test():
-    from mpl_toolkits.mplot3d import axes3d
-    from matplotlib import cm
-
-    fig = plt.figure()
-    ax = fig.gca(projection='3d')
-    X, Y, Z = axes3d.get_test_data(0.5)
-    ax.plot_surface(X, Y, Z, rstride=8, cstride=8, alpha=0.3)
-    cset = ax.contour(X, Y, Z, zdir='z', offset=-100, cmap=cm.coolwarm)
-    cset = ax.contour(X, Y, Z, zdir='x', offset=-40, cmap=cm.coolwarm)
-    cset = ax.contour(X, Y, Z, zdir='y', offset=40, cmap=cm.coolwarm)
-    print X
-    print Y
-    print Z
-    ax.set_xlabel('X')
-    ax.set_xlim(-40, 40)
-    ax.set_ylabel('Y')
-    ax.set_ylim(-40, 40)
-    ax.set_zlabel('Z')
-    ax.set_zlim(-100, 100)
-
-    plt.show()
-
-def plottttt(X,Y,Z):
-    from mpl_toolkits.mplot3d import axes3d
-    from matplotlib import cm
-    fig = plt.figure()
-    ax = fig.gca(projection='3d')
-    ax.plot_surface(X, Y, Z, rstride=8, cstride=8, alpha=0.3)
-    cset = ax.contour(X, Y, Z, zdir='z', offset=0, cmap=cm.coolwarm)
-    cset = ax.contour(X, Y, Z, zdir='x', offset=0, cmap=cm.coolwarm)
-    cset = ax.contour(X, Y, Z, zdir='y', offset=0, cmap=cm.coolwarm)
-
-    ax.set_xlabel('X')
-    ax.set_xlim(-1, 15)
-    ax.set_ylabel('Y')
-    ax.set_ylim(-10, 150)
-    ax.set_zlabel('Z')
-    ax.set_zlim(-2, 2)
-
-    plt.show()
 
 if __name__ == '__main__':
     
     #test()
     #run_ev_tupohl('ta')
-    g = GL('m') # ta rb c m a ma jd dy 999999
-    #g.ev_tupohl(3, 7, 0.03)
+    g = GL('jd') # ta rb c m a ma jd dy 999999
+    #g.tupohl(3, 7, 1)
     #g.ev_ma(20,0.03)
     #g.ev_tupohl(3, 7, 1)
-    #g.ev_tupohl(3, 11, 1)
+    g.ev_tupohl(3, 11, 1)
     #g.ev_tupohl(3, 17, 1)
     #g.ev_tupohl(3, 20, 1)
     #g.ev_tupohl(4, 20, 1)
 
-
     #g.tupohl(7, 7, 1)
     #g.tupohl(7, 11, 1)
     #g.tupohl(7, 17, 1)
-    g.ev_tupohl(7,17, 0.02)
-    g.ev_tupohl(7,17, 1)
+    #g.ev_tupohl(7,17, 0.02)
+    #g.ev_tupohl(7,17, 1)
     #g.ev_tupohl(7,30, 1)
     #g.ev_tupohl(11,11, 0.02)
     #g.ev_tupohl(7, 7, 1)
@@ -704,7 +656,7 @@ if __name__ == '__main__':
     #g.ev_tupohl(7, 110, 1)
 
     #g.ev_tupohl_highlow(3, 7, 1)
-
+    #g.zdzy_hl(7,0.02,0.02)
 
    
     

@@ -275,11 +275,10 @@ class Tongji(GeneralIndex):
         #print 'r,q----  ', r,q
         bcnt = 0
         scnt = 0
-        for i, bksk in enumerate(df.ratio):
+        for i, ratio in enumerate(df.ratio):
             if i >= dflen - n:
                 continue
             idx = df.index[i]
-            ratio = df.loc[idx, 'ratio']
             xjthantime = df.loc[idx, 'c']  # 用c代替当时的现价
             xqjthattime = xjthantime * r #按照现在比例模拟当时行权价
             cshiftn = df.loc[idx, 'cshiftn']
@@ -331,11 +330,10 @@ class Tongji(GeneralIndex):
         #print 'r,q----  ', r,q
         bcnt = 0
         scnt = 0
-        for i, bksk in enumerate(df.ratio):
+        for i, ratio in enumerate(df.ratio):
             if i >= dflen - n:
                 continue
             idx = df.index[i]
-            ratio = df.loc[idx, 'ratio']
             xjthantime = df.loc[idx, 'c']  # 用c代替当时的现价
             xqjthattime = xjthantime * r #按照现在比例模拟当时行权价
             cshiftn = df.loc[idx, 'cshiftn']
@@ -386,7 +384,111 @@ class Tongji(GeneralIndex):
     ############################################################################################
     ############################################################################################
     '''
+    def _get_hl_bkpoint(self, df, idx):
+        ''''''
+        nhh = df.loc[idx, 'nhh']
+        o = df.loc[idx, 'o']
+        return o if o > nhh else nhh
 
+    def _get_hl_skpoint(self, df, idx):
+        nll = df.loc[idx, 'nll']
+        o = df.loc[idx, 'o']
+        return o if o < nll else nll
+    def runevery_hl(self, n=3, zs0=0.02, zs=0.08, zy=0.4):
+        '''用for循环逐个跑,开仓止损zs0，比例移动止损zs，比例主动止盈zy'''
+        print 'runevery_hl-----n:%s---zs0:%s-----zs:%s--zy:%s'% (n,zs0,zs,zy) 
+        self.get_nhh(n)
+        self.get_nll(n)
+        ma = 20
+        ma_name = 'ma'+str(ma)
+        self.get_ma(ma)
+        df = deepcopy(self.df)
+        # 以下higher lower 选其一
+        #df['higher'] = df.h.shift(1) > df.nhh.shift(1)
+        #df['lower'] = df.l.shift(1) < df.nll.shift(1)
+
+        #df['higher'] = df.l.shift(1) > df[ma_name].shift(1)
+        #df['lower'] = df.h.shift(1) < df[ma_name].shift(1)
+
+        #df['higher'] = df[ma_name].shift(1) > df[ma_name].shift(2)
+        #df['lower'] = df[ma_name].shift(1) < df[ma_name].shift(2)
+
+        #df['higher'] = (df[ma_name].shift(1) > df[ma_name].shift(2)) & (df.l.shift(1) > df[ma_name].shift(1))
+        #df['lower'] = (df[ma_name].shift(1) < df[ma_name].shift(2)) & (df.h.shift(1) < df[ma_name].shift(1))
+
+        df['higher'] = (df.l.shift(1) > df[ma_name].shift(1)) & (df.h.shift(1) > df.nhh.shift(1))
+        df['lower'] = (df.h.shift(1) < df[ma_name].shift(1)) & (df.l.shift(1) < df.nll.shift(1))
+
+        df['bksk'] = np.where(df.higher, 'bk' , None)
+        df['bksk'] = np.where(df.lower, 'sk' , df.bksk)
+        dflen = len(df)
+        df.to_csv('tmp.csv')
+        blist = []
+        slist = []
+        for i, bksk in enumerate(df.bksk):
+            idx = df.index[i]
+            r = range(i+1, dflen)
+            if bksk=='bk':
+                
+                bkprice = df.loc[idx, 'o']
+                #bkprice = self._get_hl_bkpoint(df,idx)
+                newhigh = df.loc[idx, 'h']
+                #newlow = df.loc[idx, 'l']
+                point_zs0 = bkprice*(1-zs0)
+                point_zs = bkprice*(1-zs)
+                point_zy = bkprice*(1+zy)
+                #print i, bkprice, point_zs0,point_zs,point_zy
+                for j in r:
+                    idxj = df.index[j]
+                    high = df.loc[idxj, 'h']
+                    low = df.loc[idxj, 'l']
+                    newhigh = max(high, newhigh)
+                    #newlow = min(df.loc[idxj, 'l'], newlow)
+                    point_zs = max(newhigh*(1-zs), point_zs, point_zs0)
+                    if high >= point_zy:
+                        #print j, '止盈', newhigh,point_zs
+                        blist.append(point_zy/bkprice)
+                        break
+                    if low <= point_zs:
+                        #print j, '止损', newhigh,point_zs
+                        blist.append(point_zs/bkprice)
+                        break
+
+            if bksk=='sk':
+                skprice = df.loc[idx, 'o']
+                #skprice = self._get_hl_skpoint(df,idx)
+                newlow = df.loc[idx, 'l']
+                point_zs0 = skprice*(1+zs0)
+                point_zs = skprice*(1+zs)
+                point_zy = skprice*(1-zy)
+                for j in r:
+                    idxj = df.index[j]
+                    high = df.loc[idxj, 'h']
+                    low = df.loc[idxj, 'l']
+                    
+                    newlow = min(low, newlow)
+                    point_zs = min(newlow*(1+zs), point_zs, point_zs0)
+                    if low <= point_zy:
+                        #print j, '止盈', newhigh,point_zs
+                        slist.append(skprice/point_zy)
+                        break
+                    if high >= point_zs:
+                        #print j, '止损', newhigh,point_zs
+                        slist.append(skprice/point_zs)
+                        break
+        
+        if blist:
+            avg = round(np.average(blist), 5)
+            std = round(np.std(blist), 5)
+            print 'b均值：%s   标准差：%s  交易次数：%s' % (avg, std, len(blist))
+        if slist:
+            avg = round(np.average(slist), 5)
+            std = round(np.std(slist), 5)
+            print 's均值：%s   标准差：%s  交易次数：%s' % (avg, std, len(slist))
+        #self._plot_histogram(mean, std, 'runevery_hl')
+
+
+                    
 
 
     '''
@@ -416,13 +518,13 @@ def runcloseratio():
     t.close_ratio_foo(213,  2550, xianjia, n)
     t.close_ratio_foo(173.5,  2600, xianjia, n)
     t.close_ratio_foo(140.5,  2650, xianjia, n)
-    t.close_ratio_foo(111.5,  2700, xianjia, n)
-    t.close_ratio_foo(87.5,  2750, xianjia, n)
-    t.close_ratio_foo(68,   2800, xianjia, n)
-    t.close_ratio_foo(52.5,   2850, xianjia, n)
-    t.close_ratio_foo(40,   2900, xianjia, n)
-    t.close_ratio_foo(30,   2950, xianjia, n)
-    t.close_ratio_foo(21.5,   3000, xianjia, n)
+    #t.close_ratio_foo(111.5,  2700, xianjia, n)
+    #t.close_ratio_foo(87.5,  2750, xianjia, n)
+    #t.close_ratio_foo(68,   2800, xianjia, n)
+    #t.close_ratio_foo(52.5,   2850, xianjia, n)
+    #t.close_ratio_foo(40,   2900, xianjia, n)
+    #t.close_ratio_foo(30,   2950, xianjia, n)
+    #t.close_ratio_foo(21.5,   3000, xianjia, n)
     
     #t.close_ratio_foo_s(16, 2550, xianjia, n)
     #t.close_ratio_foo_s(26.5, 2600, xianjia, n)
@@ -463,11 +565,17 @@ def runcloseratio():
 if __name__ == '__main__':
     #m80()
     #runcloseratio()
-    t = Tongji('a')
+    t = Tongji('m')
     #t.ratio(5)
     #t.ratio_high_bl(90, 1.4)
     #t.ratio_high(5)
-    t.ratio_low(7)
+    #t.ratio_low(7)
     #t.ratio_low_tupohigh(7, 13)
     #t.ratio_high_tupohigh(5, 5)
-    #foo()
+    t.runevery_hl(3, 0.03, 0.08, 0.99)
+    t.runevery_hl(3, 0.02, 0.08, 0.99)
+    t.runevery_hl(3, 0.03, 0.07, 0.99)
+    t.runevery_hl(3, 0.02, 0.07, 0.99)
+    t.runevery_hl(3, 0.03, 0.06, 0.99)
+    t.runevery_hl(3, 0.02, 0.06, 0.99)
+    
