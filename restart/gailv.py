@@ -257,11 +257,16 @@ class GL(GeneralIndex):
             'lower_than_ma': df.h.shift(1) < df[ma_name].shift(1),
             'maup': df[ma_name].shift(1) > df[ma_name].shift(2),
             'madown': df[ma_name].shift(1) < df[ma_name].shift(2),
+            'hl_bothhigh': (df.h.shift(1) > df.h.shift(2)) & (df.h.shift(1) > df.h.shift(2)),
+            'hl_bothlow': (df.l.shift(1) < df.l.shift(2)) & (df.l.shift(1) < df.l.shift(2)),
+
                   }
 
+        df['higher'] = option['tupo_high'] & option['higher_than_ma'] #& option['maup']
+        df['lower'] = option['tuo_low']    & option['lower_than_ma']  #& option['madown']
+        #df['higher'] = option['tupo_high'] & option['hl_bothhigh'] #& option['higher_than_ma']
+        #df['lower'] = option['tuo_low']    & option['hl_bothlow']  #& option['lower_than_ma']
 
-        df['higher'] = option['tupo_high'] & option['higher_than_ma'] & option['maup']
-        df['lower'] = option['tuo_low']    & option['lower_than_ma']  & option['madown']
         df['bksk'] = np.where(df['higher'], 'bk', None)
         df['bksk'] = np.where(df['lower'], 'sk', df['bksk'])
 
@@ -560,7 +565,7 @@ class GL(GeneralIndex):
         return o if o < nll else nll
 
     def _tongjilist(self, lst):
-        print sorted([round(x,3) for x in lst])
+        #print sorted([round(x,3) for x in lst])
         m = np.mean(lst)
         s = np.std(lst)
         y = s/m
@@ -627,10 +632,10 @@ if __name__ == '__main__':
     
     #test()
     #run_ev_tupohl('ta')
-    g = GL('jd') # ta rb c m a ma jd dy 999999
+    g = GL('m') # ta rb c m a ma jd dy 999999
     #g.tupohl(3, 7, 1)
     #g.ev_ma(20,0.03)
-    #g.ev_tupohl(3, 7, 1)
+    g.ev_tupohl(3, 7, 1)
     g.ev_tupohl(3, 11, 1)
     #g.ev_tupohl(3, 17, 1)
     #g.ev_tupohl(3, 20, 1)

@@ -751,16 +751,31 @@ class Kxian(GeneralIndex):
         if zs>=1 and type(zs) == int:
             self.get_zshh(zs)
             self.get_zsll(zs)
+        ma = 20
+        ma_name = 'ma'+str(ma)
+        self.get_ma(ma)
+        if zs >= 1:
+            self.get_zshh(zs)
+            self.get_zsll(zs)
         df = deepcopy(self.df) 
+        
+        option = {
+            'tupo_high': df.h > df.nhh,
+            'tuo_low': df.l < df.nll,
+            'higher_than_ma': df.l.shift(1) > df[ma_name].shift(1),
+            'lower_than_ma': df.h.shift(1) < df[ma_name].shift(1),
+            'maup': df[ma_name].shift(1) > df[ma_name].shift(2),
+            'madown': df[ma_name].shift(1) < df[ma_name].shift(2),
+            'hl_bothhigh': (df.h.shift(1) > df.h.shift(2)) & (df.h.shift(1) > df.h.shift(2)),
+            'hl_bothlow': (df.l.shift(1) < df.l.shift(2)) & (df.l.shift(1) < df.l.shift(2)),
 
-        df['higher'] = df.h > df.nhh
-        df['hh1'] = df.l.shift(1) < df.l.shift(2)
-        df['hh2'] = df.h.shift(1) < df.h.shift(2)
-        df['bksk'] = np.where(df['higher'] & df.hh1 & df.hh2, 'bk' , None)
-        df['lower'] = df.l < df.nll
-        df['ll1'] = df.l.shift(1) > df.l.shift(2)
-        df['ll2'] = df.h.shift(1) > df.h.shift(2)
-        df['bksk'] = np.where(df['lower'] & df.ll1 & df.ll2, 'sk' , df['bksk'])
+                  }
+
+        df['higher'] = option['tupo_high'] & option['higher_than_ma'] #& option['maup']
+        df['lower'] = option['tuo_low']    & option['lower_than_ma']  #& option['madown']
+
+        df['bksk'] = np.where(df['higher'], 'bk', None)
+        df['bksk'] = np.where(df['lower'], 'sk', df['bksk'])
 
         df['phigher'] = df.h >= df.nhhp 
         df['bpsp'] = np.where(df['phigher'], 'sp' , None)
@@ -771,7 +786,7 @@ class Kxian(GeneralIndex):
         return self.runhl(df, zj, f, zs)
 
 if __name__ == '__main__':
-    k = Kxian('c') # ta rb c m a ma jd dy 999999
+    k = Kxian('m') # ta rb c m a ma jd dy 999999
     #k.hl2(3,3)
     #k.hl2(4,4) #
     #k.hl2(5,5)
@@ -797,7 +812,7 @@ if __name__ == '__main__':
     #k.hl2(17,3)
     #k.foo(4)
     #k.hl2(3,7,1)
-    k.hl2_hl(3,7,1)
+    k.hl2_hl(2,17,1)
     #k.chl(2,9)
     #k.hl2(2,7)
     #k.ma_updown_run3(9)
