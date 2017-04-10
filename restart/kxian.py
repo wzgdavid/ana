@@ -663,53 +663,7 @@ class Kxian(GeneralIndex):
 
 
     @util.display_func_name
-    def chl(self, n=5, m=10):
-        self.get_nch(n)
-        self.get_ncl(n)
-        self.get_nchp(m)
-        self.get_nclp(m)
-        df = deepcopy(self.df) 
-
-        df['higher'] = df.c > df.nch
-        df['bksk'] = np.where(df['higher'], 'bk' , None)
-        df['lower'] = df.c < df.ncl
-        df['bksk'] = np.where(df['lower'], 'sk' , df['bksk'])
-
-        df['phigher'] = df.c > df.nchp 
-        df['bpsp'] = np.where(df['phigher'], 'sp' , None)
-        df['plower'] = df.c < df.nclp
-        df['bpsp'] = np.where(df['plower'], 'bp' , df['bpsp'])
-        df.to_csv('tmp.csv')
-        return self.runchl(df, zj=100000, f=0.02, zs=0.02)
-        #return self.runhl(df, zj=100000, f=0.02, zs=1)
-
-    @util.display_func_name
-    def hld(self, n=5, m=10):
-        '''连续出现两次hl信号，开仓'''
-        self.get_nhh(n)
-        self.get_nll(n)
-        self.get_nhhp(m)
-        self.get_nllp(m)
-        df = deepcopy(self.df) 
-        df['higher1'] = df.h.shift(1) > df.nhh.shift(1)
-        df['higher'] = df.h > df.nhh
-        df['bksk'] = np.where(df['higher'] & df['higher1'], 'bk' , None)
-        df['lower'] = df.l < df.nll
-        df['lower1'] = df.l.shift(1) < df.nll.shift(1)
-        df['bksk'] = np.where(df['lower'] & df['lower1'], 'sk' , df['bksk'])
-
-        df['phigher'] = df.h > df.nhhp 
-        df['bpsp'] = np.where(df['phigher'], 'sp' , None)
-        df['plower'] = df.l < df.nllp
-        df['bpsp'] = np.where(df['plower'], 'bp' , df['bpsp'])
-        df.to_csv('tmp.csv')
-        #return self.run3b(df, zj=100000, f=0.02, zs=0.02, usehl=True)
-        #return self.run4(df, zj=100000, f=0.02, zs=0.02, ydzs=0.06)
-        return self.runhl(df, zj=100000, f=0.02, zs=1)
-        #return self.runhl2b(df, zj=100000, f=0.02, zs=1)
-
-    @util.display_func_name
-    def hl2(self, n=5, m=10, zs=1, zj=100000, f=0.05):
+    def hl2(self, n=5, m=10, zs=1, zj=100000, f=0.02):
         '''用runhl跑，runhl专为hl写的 
          突破n天高低点
          移动止损m天高低点
@@ -719,16 +673,39 @@ class Kxian(GeneralIndex):
         '''
         self.get_nhh(n)
         self.get_nll(n)
+        self.get_nch(n)
+        self.get_ncl(n)
         self.get_nhhp(m)
         self.get_nllp(m)
+        ma = 20
+        ma_name = 'ma'+str(ma)
+        self.get_ma(ma)
         if zs>=1 and type(zs) == int:
             self.get_zshh(zs)
             self.get_zsll(zs)
         df = deepcopy(self.df) 
 
-        df['higher'] = df.h > df.nhh
+        option = {
+            'tupo_high': df.h > df.nhh,
+            'tupo_low': df.l < df.nll,
+            'tupo_high_c': df.c > df.nch, # 是不是用这个效果好
+            'tupo_low_c': df.c < df.ncl,
+            'higher_than_ma': df.l.shift(1) > df[ma_name].shift(1),
+            'lower_than_ma': df.h.shift(1) < df[ma_name].shift(1),
+            'maup': df[ma_name].shift(1) > df[ma_name].shift(2),
+            'madown': df[ma_name].shift(1) < df[ma_name].shift(2),
+            'hl_bothhigh': (df.h.shift(1) > df.h.shift(2)) & (df.h.shift(1) > df.h.shift(2)),
+            'hl_bothlow': (df.l.shift(1) < df.l.shift(2)) & (df.l.shift(1) < df.l.shift(2)),
+
+                  }
+
+        df['higher'] = option['tupo_high_c'] 
+        df['lower'] = option['tupo_low_c']   
+
+        #df['higher'] = option['tupo_high'] 
+        #df['lower'] = option['tupo_low']   
+        
         df['bksk'] = np.where(df['higher'], 'bk' , None)
-        df['lower'] = df.l < df.nll
         df['bksk'] = np.where(df['lower'], 'sk' , df['bksk'])
 
         df['phigher'] = df.h >= df.nhhp 
@@ -740,53 +717,8 @@ class Kxian(GeneralIndex):
         return self.runhl(df, zj, f, zs)
 
 
-    @util.display_func_name
-    def hl2_hl(self, n=5, m=10, zs=1, zj=100000, f=0.05):
-        '''用runhl跑，runhl专为hl写的 
-        这个没hl2 好， 看来条件多，不一定好'''
-        self.get_nhh(n)
-        self.get_nll(n)
-        self.get_nhhp(m)
-        self.get_nllp(m)
-        if zs>=1 and type(zs) == int:
-            self.get_zshh(zs)
-            self.get_zsll(zs)
-        ma = 20
-        ma_name = 'ma'+str(ma)
-        self.get_ma(ma)
-        if zs >= 1:
-            self.get_zshh(zs)
-            self.get_zsll(zs)
-        df = deepcopy(self.df) 
-        
-        option = {
-            'tupo_high': df.h > df.nhh,
-            'tuo_low': df.l < df.nll,
-            'higher_than_ma': df.l.shift(1) > df[ma_name].shift(1),
-            'lower_than_ma': df.h.shift(1) < df[ma_name].shift(1),
-            'maup': df[ma_name].shift(1) > df[ma_name].shift(2),
-            'madown': df[ma_name].shift(1) < df[ma_name].shift(2),
-            'hl_bothhigh': (df.h.shift(1) > df.h.shift(2)) & (df.h.shift(1) > df.h.shift(2)),
-            'hl_bothlow': (df.l.shift(1) < df.l.shift(2)) & (df.l.shift(1) < df.l.shift(2)),
-
-                  }
-
-        df['higher'] = option['tupo_high'] & option['higher_than_ma'] #& option['maup']
-        df['lower'] = option['tuo_low']    & option['lower_than_ma']  #& option['madown']
-
-        df['bksk'] = np.where(df['higher'], 'bk', None)
-        df['bksk'] = np.where(df['lower'], 'sk', df['bksk'])
-
-        df['phigher'] = df.h >= df.nhhp 
-        df['bpsp'] = np.where(df['phigher'], 'sp' , None)
-        df['plower'] = df.l <= df.nllp
-        df['bpsp'] = np.where(df['plower'], 'bp' , df['bpsp'])
-
-        df.to_csv('tmp.csv')
-        return self.runhl(df, zj, f, zs)
-
 if __name__ == '__main__':
-    k = Kxian('m') # ta rb c m a ma jd dy 999999
+    k = Kxian('a') # ta rb c m a ma jd dy 999999
     #k.hl2(3,3)
     #k.hl2(4,4) #
     #k.hl2(5,5)
@@ -809,10 +741,10 @@ if __name__ == '__main__':
     #k.hl2(17,7)
     #k.hl2(17,5)
     #k.hl2(17,4)
-    #k.hl2(17,3)
+    #k.hl2(2,17,1)
     #k.foo(4)
-    #k.hl2(3,7,1)
-    k.hl2_hl(2,17,1)
+    k.hl2(2,7,1)
+    #k.hl2_hl(2,17,1)
     #k.chl(2,9)
     #k.hl2(2,7)
     #k.ma_updown_run3(9)

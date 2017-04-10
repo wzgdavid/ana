@@ -395,9 +395,21 @@ class Tongji(GeneralIndex):
         nll = df.loc[idx, 'nll']
         o = df.loc[idx, 'o']
         return o if o < nll else nll
-    def runevery_hl(self, n=3, zs0=0.02, zs=0.08, zy=9):
-        '''用for循环逐个跑,开仓止损zs0，比例移动止损zs，比例主动止盈zy'''
-        print 'runevery_hl-----n:%s---zs0:%s-----zs:%s--zy:%s'% (n,zs0,zs,zy) 
+
+    def _get_hl_bkpoint2(self, df, idx):
+        ''''''
+        lnhh = df.loc[idx, 'lnhh']
+        o = df.loc[idx, 'o']
+        return o if o > lnhh else lnhh
+
+    def _get_hl_skpoint2(self, df, idx):
+        hnll = df.loc[idx, 'hnll']
+        o = df.loc[idx, 'o']
+        return o if o < hnll else hnll
+
+    def runevery_percent(self, n=3, kczs=0.02, zs=0.08, zy=9):
+        '''用for循环逐个跑,开仓止损kczs，比例移动止损zs，比例主动止盈zy'''
+        print 'runevery_percent-----n:%s---kczs:%s-----zs:%s--zy:%s'% (n,kczs,zs,zy) 
         self.get_nhh(n)
         self.get_nll(n)
         self.get_lnhh(n)
@@ -425,8 +437,8 @@ class Tongji(GeneralIndex):
         }
 
 
-        #df['higher'] = option['tupo_high'] #& option['higher_than_ma'] 
-        #df['lower'] = option['tupo_low']   #& option['lower_than_ma']
+        df['higher'] = option['tupo_high'] & option['higher_than_ma'] 
+        df['lower'] = option['tupo_low']   & option['lower_than_ma']
         #df['higher'] = option['tupo_high']  & option['maup'] 
         #df['lower'] = option['tupo_low']    & option['madown']
         #df['higher'] =  option['low_tupo_high'] #& option['higher_than_ma'] 
@@ -437,8 +449,8 @@ class Tongji(GeneralIndex):
         #df['lower'] = option['tupo_low']   & option['high_tupo_low']
         #df['higher'] = option['higher_than_ma'] 
         #df['lower'] = option['lower_than_ma']
-        df['higher'] = option['maup']  #& option['higher_than_ma'] 
-        df['lower'] = option['madown'] #& option['lower_than_ma'] 
+        #df['higher'] = option['maup']  & option['higher_than_ma'] 
+        #df['lower'] = option['madown'] & option['lower_than_ma'] 
         df['bksk'] = np.where(df.higher, 'bk' , None)
         df['bksk'] = np.where(df.lower, 'sk' , df.bksk)   
         dflen = len(df)
@@ -452,36 +464,24 @@ class Tongji(GeneralIndex):
             if bksk=='bk':
                 bkprice = df.loc[idx, 'o']
                 #bkprice = self._get_hl_bkpoint(df,idx)
+                #bkprice = self._get_hl_bkpoint2(df,idx)
                 newhigh = df.loc[idx, 'h']
                 #newlow = df.loc[idx, 'l']
-                if zs0<1 and zs<1 and type(zs0)==float and type(zs)==float:
-                    point_zs0 = bkprice*(1-zs0)
-                    point_zs = bkprice*(1-zs)
+                point_kczs = bkprice*(1-kczs)
+                point_zs = bkprice*(1-zs)
 
-                elif zs0>=1 and zs>=1 and type(zs0)==int and type(zs)==int:
-                    atr = df.loc[idx, 'atr']
-                    if not np.isnan(atr):
-                        point_zs0 = bkprice - (atr * zs0)
-                        point_zs = bkprice - (atr * zs)
-                        #print i, bkprice, point_zs0, point_zs
-                    else: continue
-                else:
-                    print '止损输入错误'
-                    break
 
                 point_zy = bkprice*(1+zy)
-                #print i, bkprice, point_zs0,point_zs,point_zy
+                #print i, bkprice, point_kczs,point_zs,point_zy
                 for j in r:
                     idxj = df.index[j]
                     high = df.loc[idxj, 'h']
                     low = df.loc[idxj, 'l']
+                    atr = df.loc[idxj, 'atr']
                     newhigh = max(high, newhigh)
                     #newlow = min(df.loc[idxj, 'l'], newlow)
-                    if zs0<1 and zs<1 and type(zs0)==float and type(zs)==float:
-                        point_zs = max(newhigh*(1-zs), point_zs, point_zs0)
-                    elif zs0>=1 and zs>=1 and type(zs0)==int and type(zs)==int:
-                        point_zs = max(newhigh-(atr * zs), point_zs, point_zs0)
 
+                    point_zs = max(newhigh*(1-zs), point_zs, point_kczs)
                     if high >= point_zy:
                         #print j, '止盈', newhigh,point_zs
                         blist.append(point_zy/bkprice)
@@ -494,31 +494,21 @@ class Tongji(GeneralIndex):
             if bksk=='sk':
                 skprice = df.loc[idx, 'o']
                 #skprice = self._get_hl_skpoint(df,idx)
+                #skprice = self._get_hl_skpoint2(df,idx)
                 newlow = df.loc[idx, 'l']
-                if zs0<1 and zs<1 and type(zs0)==float and type(zs)==float:
-                    point_zs0 = skprice*(1+zs0)
-                    point_zs = skprice*(1+zs)
-                elif zs0>=1 and zs>=1 and type(zs0)==int and type(zs)==int:
-                    atr = df.loc[idx, 'atr']
-                    if not np.isnan(atr):
-                        
-                        point_zs0 = skprice + (atr * zs0)
-                        point_zs = skprice + (atr * zs)
-                    else: continue
-                else:
-                    print '止损输入错误'
-                    break
+                point_kczs = skprice*(1+kczs)
+                point_zs = skprice*(1+zs)
+
 
                 point_zy = skprice*(1-zy)
                 for j in r:
                     idxj = df.index[j]
                     high = df.loc[idxj, 'h']
                     low = df.loc[idxj, 'l']  
+                    atr = df.loc[idxj, 'atr']
                     newlow = min(low, newlow)
-                    if zs0<1 and zs<1 and type(zs0)==float and type(zs)==float:
-                        point_zs = min(newlow*(1+zs), point_zs, point_zs0)
-                    elif zs0>=1 and zs>=1 and type(zs0)==int and type(zs)==int:
-                        point_zs = min(newlow+ (atr * zs), point_zs, point_zs0)
+                    point_zs = min(newlow*(1+zs), point_zs, point_kczs)
+                    point_zs = min(newlow+ (atr * zs), point_zs, point_kczs)
                     if low <= point_zy:
                         #print j, '止盈', newhigh,point_zs
                         slist.append(skprice/point_zy)
@@ -536,10 +526,147 @@ class Tongji(GeneralIndex):
             avg = round(np.average(slist), 3)
             std = round(np.std(slist), 3)
             print 's均值：%s   标准差：%s  交易次数：%s' % (avg, std, len(slist))
-        #self._plot_histogram(mean, std, 'runevery_hl')
+        #self._plot_histogram(mean, std, 'runevery_percent')
 
 
+    def runevery_atr(self, n=3, kczs=1, zs=3, zy=1):
+        '''用for循环逐个跑,开仓止损kczs，移动止损zs，主动止盈zy'''
+        print 'runevery_atr-----n:%s---kczs:%s-----zs:%s--zy:%s'% (n,kczs,zs,zy) 
+        self.get_nhh(n)
+        self.get_nll(n)
+        self.get_lnhh(n)
+        self.get_hnll(n)
+        ma = 20
+        ma_small = 2
+        ma_name = 'ma'+str(ma)
+        ma_small_name = 'ma'+str(ma_small)
+        self.get_ma(ma, ma_small)
+        df = deepcopy(self.df)
+
+        # 以下higher lower 选其一
+        option = {
+            'tupo_high': df.h > df.nhh,
+            'tupo_low': df.l < df.nll,
+            #'tupo_high': df.h.shift(1) > df.nhh.shift(1),
+            #'tupo_low': df.l.shift(1) < df.nll.shift(1),
+            'low_tupo_high': df.l > df.lnhh,
+            'high_tupo_low': df.h < df.hnll,
+            'low_tupo_high': df.l.shift(1) > df.lnhh.shift(1),
+            'high_tupo_low': df.h.shift(1) < df.hnll.shift(1),
+            'higher_than_ma': df.l.shift(1) > df[ma_name].shift(1),
+            'lower_than_ma': df.h.shift(1) < df[ma_name].shift(1),
+            'maup': df[ma_name].shift(1) > df[ma_name].shift(2),
+            'madown': df[ma_name].shift(1) < df[ma_name].shift(2),
+            'hl_bothhigh': (df.h.shift(1) > df.h.shift(2)) & (df.h.shift(1) > df.h.shift(2)),
+            'hl_bothlow': (df.l.shift(1) < df.l.shift(2)) & (df.l.shift(1) < df.l.shift(2)),
+            'small_maup': df[ma_small_name].shift(1) > df[ma_small_name].shift(2),
+            'small_madown': df[ma_small_name].shift(1) < df[ma_small_name].shift(2),
+        }
+
+
+        #df['higher'] = option['tupo_high'] & option['higher_than_ma'] 
+        #df['lower'] = option['tupo_low']   & option['lower_than_ma']
+        #df['higher'] = option['tupo_high']  & option['maup'] 
+        #df['lower'] = option['tupo_low']    & option['madown']
+        df['higher'] =  option['low_tupo_high'] & option['higher_than_ma'] & option['maup'] 
+        df['lower'] =  option['high_tupo_low']  & option['lower_than_ma']  & option['madown']
+        #df['higher'] = option['low_tupo_high'] & option['maup'] 
+        #df['lower'] = option['high_tupo_low']  & option['madown']
+        #df['higher'] = option['tupo_high'] & option['low_tupo_high']
+        #df['lower'] = option['tupo_low']   & option['high_tupo_low']
+        #df['higher'] = option['higher_than_ma'] 
+        #df['lower'] = option['lower_than_ma']
+        #df['higher'] = option['maup']  & option['higher_than_ma'] 
+        #df['lower'] = option['madown'] & option['lower_than_ma'] 
+        df['bksk'] = np.where(df.higher, 'bk' , None)
+        df['bksk'] = np.where(df.lower, 'sk' , df.bksk)   
+        dflen = len(df)
+        df.to_csv('tmp.csv')
+        blist = []
+        slist = []
+        for i, bksk in enumerate(df.bksk):
+            idx = df.index[i]
+            r = range(i+1, dflen)
+
+            if bksk=='bk':
+                #bkprice = df.loc[idx, 'o']
+                bkprice = self._get_hl_bkpoint(df,idx)
+                bkprice = self._get_hl_bkpoint2(df,idx)
+                newhigh = df.loc[idx, 'h']
+                #newlow = df.loc[idx, 'l']
+
+                atr = df.loc[idx, 'atr']
+                if not np.isnan(atr):
+                    point_kczs = bkprice - (atr * kczs)
+                    #point_kczs = df.loc[idx, 'ma20']
+                    point_zs = bkprice - (atr * zs)
+                    #print i, bkprice, point_kczs, point_zs
+                else: continue
+
+                point_zy = bkprice*(1+zy)
+                #print i, bkprice, point_kczs,point_zs,point_zy
+                for j in r:
+                    idxj = df.index[j]
+                    high = df.loc[idxj, 'h']
+                    low = df.loc[idxj, 'l']
+                    atr = df.loc[idxj, 'atr']
+                    newhigh = max(high, newhigh)
+                    #newlow = min(df.loc[idxj, 'l'], newlow)
+
+                    point_zs = max(newhigh-(atr * zs), point_zs, point_kczs)
+
+                    if high >= point_zy:
+                        #print j, '止盈', newhigh,point_zs
+                        blist.append(point_zy/bkprice)
+                        break
+                    if low <= point_zs:
+                        #print j, '止损', newhigh,point_zs
+                        blist.append(point_zs/bkprice)
+                        break
+
+            if bksk=='sk':
+                #skprice = df.loc[idx, 'o']
+                skprice = self._get_hl_skpoint(df,idx)
+                skprice = self._get_hl_skpoint2(df,idx)
+                newlow = df.loc[idx, 'l']
+
+                atr = df.loc[idx, 'atr']
+                if not np.isnan(atr):
                     
+                    point_kczs = skprice + (atr * kczs)
+                    #point_kczs = df.loc[idx, 'ma20']
+                    #print skprice, point_kczs
+                    point_zs = skprice + (atr * zs)
+                else: continue
+
+
+                point_zy = skprice*(1-zy)
+                for j in r:
+                    idxj = df.index[j]
+                    high = df.loc[idxj, 'h']
+                    low = df.loc[idxj, 'l']  
+                    atr = df.loc[idxj, 'atr']
+                    newlow = min(low, newlow)
+
+                    point_zs = min(newlow+ (atr * zs), point_zs, point_kczs)
+                    if low <= point_zy:
+                        #print j, '止盈', newhigh,point_zs
+                        slist.append(skprice/point_zy)
+                        break
+                    if high >= point_zs:
+                        #print j, '止损', newhigh,point_zs
+                        slist.append(skprice/point_zs)
+                        break
+        self._plot_cummulti(blist)
+        if blist:
+            avg = round(np.average(blist), 3)
+            std = round(np.std(blist), 3)
+            print 'b均值：%s   标准差：%s  交易次数：%s' % (avg, std, len(blist))
+        if slist:
+            avg = round(np.average(slist), 3)
+            std = round(np.std(slist), 3)
+            print 's均值：%s   标准差：%s  交易次数：%s' % (avg, std, len(slist))
+        #self._plot_histogram(mean, std, 'runevery_percent')                    
 
 
     '''
@@ -549,6 +676,21 @@ class Tongji(GeneralIndex):
     ############################################################################################
     ############################################################################################
     '''
+    def _plot_cummulti(self, lst):
+        # 累计相乘，看曲线，看回撤
+        every = list()
+        cummulti=1
+        
+        #for n in bbzs:
+        for n in lst:
+            cummulti = n*cummulti
+            every.append(cummulti)
+        #print every
+
+        s = pd.Series(every)
+        s.plot()
+        plt.show() 
+
 
 def m80():
     # m跑下来，一到两个月的持仓期最好，实际操作是，固定一个持仓间隔，一个月
@@ -577,38 +719,6 @@ def runcloseratio():
     t.close_ratio_foo(27,   2950, xianjia, n)
     t.close_ratio_foo(20.5,   3000, xianjia, n)
     
-    #t.close_ratio_foo_s(16, 2550, xianjia, n)
-    #t.close_ratio_foo_s(26.5, 2600, xianjia, n)
-    #t.close_ratio_foo_s(43, 2650, xianjia, n)
-    #t.close_ratio_foo_s(65, 2700, xianjia, n)
-    #t.close_ratio_foo_s(90.5, 2750, xianjia, n)
-    #t.close_ratio_foo_s(120.5, 2800, xianjia, n)
-    #t.close_ratio_foo_s(154.5, 2850, xianjia, n)
-    #t.close_ratio_foo_s(192.5, 2900, xianjia, n)
-    #t.close_ratio_foo_s(231.5, 2950, xianjia, n)
-    #t.close_ratio_foo_s(274.5, 3000, xianjia, n)
-
-    #t.close_ratio_hl(290, 2600, 2820,   80, 11)
-    #t.close_ratio_hl(258, 2650, 2820,   80, 11)
-    #t.close_ratio_hl(225.5, 2700, 2820, 80, 11)
-    #t.close_ratio_hl(201, 2750, 2820,   80, 11)
-    #t.close_ratio_hl(175, 2800, 2820,   80, 11)
-    #t.close_ratio_hl(150, 2850, 2820,   80, 11)
-    #t.close_ratio_hl(131, 2900, 2820,   80, 11)
-    #t.close_ratio_hl(114.5, 2950, 2820, 80, 11)
-    #t.close_ratio_hl(98, 3000, 2820,    80, 11)
-    #t.close_ratio_hl(84, 3050, 2820,    80, 11)
-
-    #t.close_ratio_hl_s(25, 2550, 2780,   150, 3)
-    #t.close_ratio_hl_s(38.5, 2600, 2780, 150, 3)
-    #t.close_ratio_hl_s(54.5, 2650, 2780, 150, 3)
-    #t.close_ratio_hl_s(74.5, 2700, 2780, 150, 3)
-    #t.close_ratio_hl_s(97.5, 2750, 2780, 150, 3)
-    #t.close_ratio_hl_s(125.5, 2800, 2780,150, 3)
-    #t.close_ratio_hl_s(154, 2850, 2780,  150, 3)
-    #t.close_ratio_hl_s(184.5, 2900, 2780,150, 3)
-    #t.close_ratio_hl_s(222, 2950, 2780,  150, 3)
-    #t.close_ratio_hl_s(261, 3000, 2780,  150, 3)
 
 
 
@@ -616,7 +726,7 @@ def runcloseratio():
 if __name__ == '__main__':
     #m80()
     #runcloseratio()
-    t = Tongji('ma')
+    t = Tongji('ta')
     #t.ratio(5)
     #t.ratio_high_bl(90, 1.4)
     #t.ratio_high(5)
@@ -624,18 +734,24 @@ if __name__ == '__main__':
     #t.ratio_low_tupohigh(7, 13)
     #t.ratio_high_tupohigh(5, 5)
 
-    #t.runevery_hl(2, 0.03, 0.08, 0.99)
-    #t.runevery_hl(2, 0.03, 0.07, 0.99)
-    #t.runevery_hl(2, 0.02, 0.07, 0.99)
-    #t.runevery_hl(3, 0.03, 0.08, 0.99)
-    t.runevery_hl(3, 1, 4,0.99)
-    t.runevery_hl(3, 1, 3,0.99)
-    t.runevery_hl(3, 2, 4,0.99)
-    t.runevery_hl(3, 2, 3,0.99)
+    #t.runevery_percent(2, 0.03, 0.08, 0.99)
+    #t.runevery_percent(3, 0.03, 0.07, 0.99)
+    #t.runevery_percent(3, 0.02, 0.07, 0.99)
+    #t.runevery_percent(3, 0.03, 0.08, 0.99)
+    #t.runevery_atr(3, 2, 6,0.99)
+    #t.runevery_atr(3, 2, 5,0.99)
+    #t.runevery_atr(3, 1, 6,0.99)
+    #t.runevery_atr(3, 1, 5,0.99)
+    t.runevery_atr(3, 1, 4,0.99)
+    t.runevery_atr(3, 1, 3,0.99)
+    t.runevery_atr(3, 2, 4,0.99)
+    t.runevery_atr(3, 2, 3,0.99)
+    
+    
 
-    #t.runevery_hl(2, 0.02, 0.07, 0.99)
-    #t.runevery_hl(2, 0.03, 0.07, 0.99)
-    #t.runevery_hl(2, 0.04, 0.07, 0.99)
-    #t.runevery_hl(3, 0.03, 0.06, 0.99)
-    #t.runevery_hl(3, 0.02, 0.06, 0.99)
+    #t.runevery_percent(2, 0.02, 0.07, 0.99)
+    #t.runevery_percent(2, 0.03, 0.07, 0.99)
+    #t.runevery_percent(2, 0.04, 0.07, 0.99)
+    #t.runevery_percent(3, 0.03, 0.06, 0.99)
+    #t.runevery_percent(3, 0.02, 0.06, 0.99)
     
