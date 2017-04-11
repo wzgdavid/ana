@@ -1070,7 +1070,7 @@ class General(object):
             if bpsp == 'bp' and kjs != 0 and bs == 'b': # 多头信号平仓
                 
                 #bpprice = df.loc[idx, 'sdjj']  # 平仓价格  平仓价也应该用最低价，可开仓一样
-                if df.loc[idx, 'o'] < df.loc[idx, 'nllp']: #< df.loc[idx, 'h']: # 
+                if df.loc[idx, 'o'] <= df.loc[idx, 'nllp']: #< df.loc[idx, 'h']: # 
                     bpprice = df.loc[idx, 'o'] # 
                 else:  
                     bpprice = df.loc[idx, 'nllp']
@@ -1086,7 +1086,7 @@ class General(object):
 
             if bpsp == 'sp' and kjs != 0 and bs == 's': # 空头信号平仓
                 # spprice = df.loc[idx, 'sdjj']
-                if df.loc[idx, 'o'] > df.loc[idx, 'nhhp']:# < df.loc[idx, 'h']: # 
+                if df.loc[idx, 'o'] >= df.loc[idx, 'nhhp']:# < df.loc[idx, 'h']: # 
                     spprice = df.loc[idx, 'o'] # 
                 else:  
                     spprice = df.loc[idx, 'nhhp']

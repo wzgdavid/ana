@@ -726,7 +726,7 @@ class Kxian(GeneralIndex):
 
 
 if __name__ == '__main__':
-    k = Kxian('999999half') # ta rb c m a ma jd dy 999999 sr
+    k = Kxian('m') # ta rb c m a ma jd dy 999999 sr
     #k.hl2(3,3)
     #k.hl2(4,4) #
     #k.hl2(5,5)
