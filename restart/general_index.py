@@ -1033,7 +1033,7 @@ class General(object):
         bpoint = 0
         spoint = 0
         sscnt = 0 # 总交易手数计数
-        sxfbl = 500 # 手续费比例   
+        sxfbl = 800 # 手续费比例   
         huadianbl = 300 # 滑点比例
 
         for i, bksk in enumerate(df.bksk):
@@ -1178,7 +1178,7 @@ class General(object):
 
         
         self._plot(df, zjqx, kccs)
-        print int(zj-zj_init), int((zj-zj_init)/sscnt), kccnt
+        print int(zj-zj_init), '平均每手收益：',int((zj-zj_init)/sscnt), '交易次数：',kccnt
         return zj-zj_init,(zj-zj_init)/sscnt
 
 

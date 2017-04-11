@@ -666,7 +666,7 @@ class Kxian(GeneralIndex):
     def hl2(self, n=5, m=10, zs=1, zj=100000, f=0.02 ):
         '''用runhl跑，runhl专为hl写的 
          突破n天高低点
-         移动止损m天高低点
+         移动止损m高低点
          zs 开仓止损
          zj 总资金量
          f 风险百分比
@@ -677,6 +677,8 @@ class Kxian(GeneralIndex):
         self.get_ncl(n)
         self.get_nhhp(m)
         self.get_nllp(m)
+        self.get_nchp(m)
+        self.get_nclp(m)
         ma = 20
         ma_name = 'ma'+str(ma)
         self.get_ma(ma)
@@ -688,8 +690,9 @@ class Kxian(GeneralIndex):
         option = {
             'tupo_high': df.h > df.nhh,
             'tupo_low': df.l < df.nll,
-            'tupo_high_c': df.c > df.nch, # 是不是用这个效果好
             'tupo_low_c': df.c < df.ncl,
+            'tupo_high_c': df.c > df.nch, # 是不是用这个效果好
+            
             'higher_than_ma': df.l.shift(1) > df[ma_name].shift(1),
             'lower_than_ma': df.h.shift(1) < df[ma_name].shift(1),
             'higher_than_ma_c': df.c.shift(1) > df[ma_name].shift(1),
@@ -701,15 +704,17 @@ class Kxian(GeneralIndex):
 
                   }
 
-        df['higher'] = option['tupo_high_c'] #& option['higher_than_ma_c']
-        df['lower'] = option['tupo_low_c']   #& option['lower_than_ma_c'] 
-
+        df['higher'] = option['tupo_high_c'] #& option['higher_than_ma_c'] #& option['maup']
+        df['lower'] = option['tupo_low_c']   #& option['lower_than_ma_c']  # & option['madown']    
         #df['higher'] = option['tupo_high'] 
         #df['lower'] = option['tupo_low']   
         
         df['bksk'] = np.where(df['higher'], 'bk' , None)
-        #df['bksk'] = np.where(df['lower'], 'sk' , None)
         df['bksk'] = np.where(df['lower'], 'sk' , df['bksk'])
+        #df['bksk'] = np.where(df['lower'], 'sk' , None)
+        #df['bksk'] = np.where(df['higher'], 'bk' , df['bksk'])
+
+
 
         df['phigher'] = df.h >= df.nhhp 
         df['bpsp'] = np.where(df['phigher'], 'sp' , None)
@@ -721,7 +726,7 @@ class Kxian(GeneralIndex):
 
 
 if __name__ == '__main__':
-    k = Kxian('c') # ta rb c m a ma jd dy 999999 sr
+    k = Kxian('999999half') # ta rb c m a ma jd dy 999999 sr
     #k.hl2(3,3)
     #k.hl2(4,4) #
     #k.hl2(5,5)
