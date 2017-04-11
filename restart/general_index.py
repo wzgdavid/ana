@@ -1033,7 +1033,7 @@ class General(object):
         bpoint = 0
         spoint = 0
         sscnt = 0 # 总交易手数计数
-        sxfbl = 1000 # 手续费比例   
+        sxfbl = 500 # 手续费比例   
         huadianbl = 300 # 滑点比例
 
         for i, bksk in enumerate(df.bksk):
@@ -1070,10 +1070,10 @@ class General(object):
             if bpsp == 'bp' and kjs != 0 and bs == 'b': # 多头信号平仓
                 
                 #bpprice = df.loc[idx, 'sdjj']  # 平仓价格  平仓价也应该用最低价，可开仓一样
-                if df.loc[idx, 'l'] < df.loc[idx, 'nllp'] < df.loc[idx, 'h']: # 
-                    bpprice = df.loc[idx, 'nllp'] # 
+                if df.loc[idx, 'o'] < df.loc[idx, 'nllp']: #< df.loc[idx, 'h']: # 
+                    bpprice = df.loc[idx, 'o'] # 
                 else:  
-                    bpprice = df.loc[idx, 'sdjj']
+                    bpprice = df.loc[idx, 'nllp']
                 gain = (bpprice  - bkprice) * kjs* 10 # 平仓收益
                 print i, '信号bp', bpprice, gain
                 sxf = bkprice/sxfbl * kjs# 
@@ -1086,10 +1086,10 @@ class General(object):
 
             if bpsp == 'sp' and kjs != 0 and bs == 's': # 空头信号平仓
                 # spprice = df.loc[idx, 'sdjj']
-                if df.loc[idx, 'l'] < df.loc[idx, 'nhhp'] < df.loc[idx, 'h']: # 用前n天高价开多
-                    spprice = df.loc[idx, 'nhhp'] # 
+                if df.loc[idx, 'o'] > df.loc[idx, 'nhhp']:# < df.loc[idx, 'h']: # 
+                    spprice = df.loc[idx, 'o'] # 
                 else:  
-                    spprice = df.loc[idx, 'sdjj']
+                    spprice = df.loc[idx, 'nhhp']
                 gain = (skprice - spprice) * kjs * 10 
                 print i, '信号sp', spprice, gain
                 sxf = skprice/sxfbl * kjs# 

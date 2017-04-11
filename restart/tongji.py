@@ -536,6 +536,8 @@ class Tongji(GeneralIndex):
         self.get_nll(n)
         self.get_lnhh(n)
         self.get_hnll(n)
+        self.get_nch(n)
+        self.get_ncl(n)
         ma = 20
         ma_small = 2
         ma_name = 'ma'+str(ma)
@@ -561,6 +563,10 @@ class Tongji(GeneralIndex):
             'hl_bothlow': (df.l.shift(1) < df.l.shift(2)) & (df.l.shift(1) < df.l.shift(2)),
             'small_maup': df[ma_small_name].shift(1) > df[ma_small_name].shift(2),
             'small_madown': df[ma_small_name].shift(1) < df[ma_small_name].shift(2),
+            'tupo_high_c': df.c > df.nch, # 是不是用这个效果好
+            'tupo_low_c': df.c < df.ncl,
+            'higher_than_ma_c': df.c.shift(1) > df[ma_name].shift(1),
+            'lower_than_ma_c': df.c.shift(1) < df[ma_name].shift(1),
         }
 
 
@@ -568,8 +574,8 @@ class Tongji(GeneralIndex):
         #df['lower'] = option['tupo_low']   & option['lower_than_ma']
         #df['higher'] = option['tupo_high']  & option['maup'] 
         #df['lower'] = option['tupo_low']    & option['madown']
-        df['higher'] =  option['low_tupo_high'] & option['higher_than_ma'] & option['maup'] 
-        df['lower'] =  option['high_tupo_low']  & option['lower_than_ma']  & option['madown']
+        #df['higher'] =  option['low_tupo_high'] & option['higher_than_ma'] & option['maup'] 
+        #df['lower'] =  option['high_tupo_low']  & option['lower_than_ma']  & option['madown']
         #df['higher'] = option['low_tupo_high'] & option['maup'] 
         #df['lower'] = option['high_tupo_low']  & option['madown']
         #df['higher'] = option['tupo_high'] & option['low_tupo_high']
@@ -578,6 +584,8 @@ class Tongji(GeneralIndex):
         #df['lower'] = option['lower_than_ma']
         #df['higher'] = option['maup']  & option['higher_than_ma'] 
         #df['lower'] = option['madown'] & option['lower_than_ma'] 
+        df['higher'] = option['tupo_high_c']  & option['higher_than_ma_c'] 
+        df['lower'] = option['tupo_low_c']    & option['lower_than_ma_c']         
         df['bksk'] = np.where(df.higher, 'bk' , None)
         df['bksk'] = np.where(df.lower, 'sk' , df.bksk)   
         dflen = len(df)
@@ -589,9 +597,9 @@ class Tongji(GeneralIndex):
             r = range(i+1, dflen)
 
             if bksk=='bk':
-                #bkprice = df.loc[idx, 'o']
-                bkprice = self._get_hl_bkpoint(df,idx)
-                bkprice = self._get_hl_bkpoint2(df,idx)
+                bkprice = df.loc[idx, 'o']
+                #bkprice = self._get_hl_bkpoint(df,idx)
+                #bkprice = self._get_hl_bkpoint2(df,idx)
                 newhigh = df.loc[idx, 'h']
                 #newlow = df.loc[idx, 'l']
 
@@ -625,9 +633,9 @@ class Tongji(GeneralIndex):
                         break
 
             if bksk=='sk':
-                #skprice = df.loc[idx, 'o']
-                skprice = self._get_hl_skpoint(df,idx)
-                skprice = self._get_hl_skpoint2(df,idx)
+                skprice = df.loc[idx, 'o']
+                #skprice = self._get_hl_skpoint(df,idx)
+                #skprice = self._get_hl_skpoint2(df,idx)
                 newlow = df.loc[idx, 'l']
 
                 atr = df.loc[idx, 'atr']
@@ -726,7 +734,7 @@ def runcloseratio():
 if __name__ == '__main__':
     #m80()
     #runcloseratio()
-    t = Tongji('ta')
+    t = Tongji('m')
     #t.ratio(5)
     #t.ratio_high_bl(90, 1.4)
     #t.ratio_high(5)
