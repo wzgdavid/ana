@@ -1170,7 +1170,16 @@ class General(object):
         return zj-zj_init,(zj-zj_init)/sscnt
 
     def _cnt_lianxu_kuisun(self, yinkuilist):
+        cnts = []
+        cnt = 0
+        for n in yinkuilist:
+            if n == 0:
+                cnt += 1
+            else:
+                cnts.append(cnt)
+                cnt = 0
         print yinkuilist
+        print max(cnts)  # 最大连亏次数
 
     def runhl2(self, df, zj=50000, f=0.01, zs=0.02):
         print 'runhl2'
