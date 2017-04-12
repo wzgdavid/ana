@@ -1035,71 +1035,13 @@ class General(object):
         sscnt = 0 # 总交易手数计数
         sxfbl = 800 # 手续费比例   
         huadianbl = 300 # 滑点比例
+        yinkuilist = [] # 盈亏计数用 [1,0,0,1] 1盈利，0亏损
 
         for i, bksk in enumerate(df.bksk):
             
             idx = df.index[i]
             bpsp = df.loc[idx, 'bpsp']
-
-
-            #if bpoint!=0 and kjs!=0 and bs=='b': # 多头开仓止损平仓
-            #    if df.loc[idx, 'l'] <= bpoint:# <= df.loc[idx, 'l']: 
-            #        bpoint = df.loc[idx, 'o'] if df.loc[idx, 'o'] < bpoint else df.loc[idx, 'o']
-            #        #print bpoint, bkprice, bpoint - bkprice
-            #        gain = (bpoint  - bkprice) * kjs* 10 # 平仓收益
-            #        #print i, '止损bp', gain
-            #        sxf = bkprice/sxfbl * kjs
-            #        hd = bkprice/huadianbl * kjs 
-            #        zj += gain - sxf - hd
-            #        sscnt += kjs
-            #        bpoint = 0
-            #        kjs = 0
-            #        bs = ''
-            #if spoint!=0 and kjs!=0 and bs=='s': # 空头开仓止损平仓
-            #    if df.loc[idx, 'h'] >= spoint: 
-            #        gain = (skprice - spoint)  * kjs * 10
-            #        #print i, '止损sp', gain
-            #        sxf = skprice/sxfbl * kjs# 
-            #        hd = skprice/huadianbl * kjs  # 
-            #        zj += gain - sxf - hd
-            #        sscnt += kjs
-            #        spoint = 0
-            #        kjs = 0
-            #        bs = ''
-
-            if bpsp == 'bp' and kjs != 0 and bs == 'b': # 多头信号平仓
-                
-                #bpprice = df.loc[idx, 'sdjj']  # 平仓价格  平仓价也应该用最低价，可开仓一样
-                if df.loc[idx, 'o'] <= df.loc[idx, 'nllp']: #< df.loc[idx, 'h']: # 
-                    bpprice = df.loc[idx, 'o'] # 
-                else:  
-                    bpprice = df.loc[idx, 'nllp']
-                gain = (bpprice  - bkprice) * kjs* 10 # 平仓收益
-                print i, '信号bp', bpprice, gain
-                sxf = bkprice/sxfbl * kjs# 
-                hd = bkprice/huadianbl * kjs  # 
-                zj += gain - sxf - hd
-                sscnt += kjs
-                bpoint = 0
-                kjs = 0
-                bs = ''
-
-            if bpsp == 'sp' and kjs != 0 and bs == 's': # 空头信号平仓
-                # spprice = df.loc[idx, 'sdjj']
-                if df.loc[idx, 'o'] >= df.loc[idx, 'nhhp']:# < df.loc[idx, 'h']: # 
-                    spprice = df.loc[idx, 'o'] # 
-                else:  
-                    spprice = df.loc[idx, 'nhhp']
-                gain = (skprice - spprice) * kjs * 10 
-                print i, '信号sp', spprice, gain
-                sxf = skprice/sxfbl * kjs# 
-                hd = skprice/huadianbl * kjs # 滑点
-                zj += gain - sxf - hd
-                sscnt += kjs
-                spoint = 0
-                kjs = 0
-                bs = ''
-
+            date = df.loc[idx, 'date']
 
             if bksk=='bk' and kjs==0: # 开多
                 if df.loc[idx, 'o'] > df.loc[idx, 'nch']: # 用前n天高价开多
@@ -1119,7 +1061,7 @@ class General(object):
                 if kjs > 0:
                     
                     bs = 'b'
-                    print i, 'bk  ', bkprice, bpoint,kjs, zj
+                    print i, date, 'bk  ', bkprice, bpoint,kjs, zj
                     kccnt += 1
 
             if bksk=='sk' and kjs==0:  # 开空
@@ -1127,8 +1069,10 @@ class General(object):
                 # hl用这个开仓价
                 if df.loc[idx, 'o'] < df.loc[idx, 'ncl']: # 
                     skprice = df.loc[idx, 'o'] # 
+                    #print 'skprice is o'
                 else:  
                     skprice = df.loc[idx, 'ncl']
+                    #print 'skprice is ncl'
 
                 if zs<1:
                     skczs = skprice * zs * 10# 开仓止损
@@ -1140,47 +1084,93 @@ class General(object):
                 kjs = min(int((zj*f)/skczs), klimit)  # 这次可开几手
                 if kjs > 0:
                     bs = 's'
-                    print i, 'sk  ', skprice,  spoint, kjs, zj
+                    print i, date, 'sk  ', skprice,  spoint, kjs, zj
                     kccnt += 1
 
             # 当天开仓的止损
             if bpoint!=0 and kjs!=0 and bs=='b': # 多头止损平仓
 
                 if df.loc[idx, 'l'] <= bpoint:# <= df.loc[idx, 'l']: 
-                    bpoint = df.loc[idx, 'o'] if df.loc[idx, 'o'] < bpoint else df.loc[idx, 'o']
-                    #print i, bpoint, bkprice, bpoint - bkprice
+                    
+                    if df.loc[idx, 'o'] < bpoint:
+                        bpoint = df.loc[idx, 'o']
                     gain = (bpoint  - bkprice) * kjs* 10 # 平仓收益
-                    print i, '止损bp',bpoint, gain
+                    print i,date, '止损bp',bpoint, gain
                     sxf = bkprice/sxfbl * kjs# 
                     hd = bkprice/huadianbl * kjs  # 
-                    zj += gain - sxf - hd
+                    shouyi = gain - sxf - hd
+                    zj += shouyi
                     sscnt += kjs
                     bpoint = 0
                     kjs = 0
                     bs = ''
+                    yinkuilist.append(1) if shouyi > 0 else yinkuilist.append(0)
+                    
             if spoint!=0 and kjs!=0 and bs=='s': # 空头止损平仓
                 if df.loc[idx, 'h'] >= spoint: 
+                    if df.loc[idx, 'o'] > spoint:
+                        spoint = df.loc[idx, 'o']
                     gain = (skprice - spoint)  * kjs * 10
-                    print i, '止损sp', spoint,gain
+                    print i,date, '止损sp', spoint, gain
                     sxf = skprice/sxfbl * kjs# 
                     hd = skprice/huadianbl * kjs  # 
-                    zj += gain - sxf - hd
+                    shouyi = gain - sxf - hd
+                    zj += shouyi
                     sscnt += kjs
                     spoint = 0
                     kjs = 0
                     bs = ''
+                    yinkuilist.append(1) if shouyi > 0 else yinkuilist.append(0)
 
+            if bpsp == 'bp' and kjs != 0 and bs == 'b': # 多头信号平仓(移动止损)
+                
+                #bpprice = df.loc[idx, 'sdjj']  # 平仓价格  平仓价也应该用最低价，可开仓一样
+                if df.loc[idx, 'o'] <= df.loc[idx, 'nllp']: #< df.loc[idx, 'h']: # 
+                    bpprice = df.loc[idx, 'o'] # 
+                else:  
+                    bpprice = df.loc[idx, 'nllp']
+                gain = (bpprice  - bkprice) * kjs* 10 # 平仓收益
+                print i,date, '信号bp', bpprice, gain
+                sxf = bkprice/sxfbl * kjs# 
+                hd = bkprice/huadianbl * kjs  # 
+                shouyi = gain - sxf - hd
+                zj += shouyi
+                sscnt += kjs
+                bpoint = 0
+                kjs = 0
+                bs = ''
+                yinkuilist.append(1) if shouyi > 0 else yinkuilist.append(0)
+            if bpsp == 'sp' and kjs != 0 and bs == 's': # 空头信号平仓
+                # spprice = df.loc[idx, 'sdjj']
+                if df.loc[idx, 'o'] >= df.loc[idx, 'nhhp']:# < df.loc[idx, 'h']: # 
+                    spprice = df.loc[idx, 'o'] # 
+                else:  
+                    spprice = df.loc[idx, 'nhhp']
+                gain = (skprice - spprice) * kjs * 10 
+                print i, date,'信号sp', spprice, gain
+                sxf = skprice/sxfbl * kjs# 
+                hd = skprice/huadianbl * kjs # 滑点
+                shouyi = gain - sxf - hd
+                zj += shouyi
+                sscnt += kjs
+                spoint = 0
+                kjs = 0
+                bs = ''
+                yinkuilist.append(1) if shouyi > 0 else yinkuilist.append(0)
             zjqx.append(zj)
             if sscnt >0:
                 kccs.append((zj-zj_init)/sscnt)
             else:
                 kccs.append(0)
 
-        
+        self._cnt_lianxu_kuisun(yinkuilist)
+
         self._plot(df, zjqx, kccs)
         print int(zj-zj_init), '平均每手收益：',int((zj-zj_init)/sscnt), '交易次数：',kccnt
         return zj-zj_init,(zj-zj_init)/sscnt
 
+    def _cnt_lianxu_kuisun(self, yinkuilist):
+        print yinkuilist
 
     def runhl2(self, df, zj=50000, f=0.01, zs=0.02):
         print 'runhl2'

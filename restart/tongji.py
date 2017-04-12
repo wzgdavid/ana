@@ -547,8 +547,8 @@ class Tongji(GeneralIndex):
 
         # 以下higher lower 选其一
         option = {
-            'tupo_high': df.h > df.nhh,
-            'tupo_low': df.l < df.nll,
+            'tupo_high': df.h.shift(1) > df.nhh.shift(1),
+            'tupo_low': df.l.shift(1) < df.nll.shift(1),
             #'tupo_high': df.h.shift(1) > df.nhh.shift(1),
             #'tupo_low': df.l.shift(1) < df.nll.shift(1),
             'low_tupo_high': df.l > df.lnhh,
@@ -563,8 +563,8 @@ class Tongji(GeneralIndex):
             'hl_bothlow': (df.l.shift(1) < df.l.shift(2)) & (df.l.shift(1) < df.l.shift(2)),
             'small_maup': df[ma_small_name].shift(1) > df[ma_small_name].shift(2),
             'small_madown': df[ma_small_name].shift(1) < df[ma_small_name].shift(2),
-            'tupo_high_c': df.c > df.nch, # 是不是用这个效果好
-            'tupo_low_c': df.c < df.ncl,
+            'tupo_high_c': df.c.shift(1) > df.nch.shift(1), # 是不是用这个效果好
+            'tupo_low_c': df.c.shift(1) < df.ncl.shift(1),
             'higher_than_ma_c': df.c.shift(1) > df[ma_name].shift(1),
             'lower_than_ma_c': df.c.shift(1) < df[ma_name].shift(1),
         }
