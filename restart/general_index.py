@@ -1104,7 +1104,8 @@ class General(object):
                     bpoint = 0
                     kjs = 0
                     bs = ''
-                    yinkuilist.append(1) if shouyi > 0 else yinkuilist.append(0)
+                    #yinkuilist.append(1) if shouyi > 0 else yinkuilist.append(0)
+                    yinkuilist.append((date, 1)) if shouyi > 0 else yinkuilist.append((date, 0))
                     
             if spoint!=0 and kjs!=0 and bs=='s': # 空头止损平仓
                 if df.loc[idx, 'h'] >= spoint: 
@@ -1120,7 +1121,9 @@ class General(object):
                     spoint = 0
                     kjs = 0
                     bs = ''
-                    yinkuilist.append(1) if shouyi > 0 else yinkuilist.append(0)
+                    #yinkuilist.append(1) if shouyi > 0 else yinkuilist.append(0)
+                    yinkuilist.append((date, 1)) if shouyi > 0 else yinkuilist.append((date, 0))
+
 
             if bpsp == 'bp' and kjs != 0 and bs == 'b': # 多头信号平仓(移动止损)
                 
@@ -1139,7 +1142,9 @@ class General(object):
                 bpoint = 0
                 kjs = 0
                 bs = ''
-                yinkuilist.append(1) if shouyi > 0 else yinkuilist.append(0)
+                #yinkuilist.append(1) if shouyi > 0 else yinkuilist.append(0)
+                yinkuilist.append((date, 1)) if shouyi > 0 else yinkuilist.append((date, 0))
+
             if bpsp == 'sp' and kjs != 0 and bs == 's': # 空头信号平仓
                 # spprice = df.loc[idx, 'sdjj']
                 if df.loc[idx, 'o'] >= df.loc[idx, 'nhhp']:# < df.loc[idx, 'h']: # 
@@ -1156,7 +1161,9 @@ class General(object):
                 spoint = 0
                 kjs = 0
                 bs = ''
-                yinkuilist.append(1) if shouyi > 0 else yinkuilist.append(0)
+                #yinkuilist.append(1) if shouyi > 0 else yinkuilist.append(0)
+                yinkuilist.append((date, 1)) if shouyi > 0 else yinkuilist.append((date, 0))
+            
             zjqx.append(zj)
             if sscnt >0:
                 kccs.append((zj-zj_init)/sscnt)
@@ -1164,22 +1171,42 @@ class General(object):
                 kccs.append(0)
 
         self._cnt_lianxu_kuisun(yinkuilist)
-
+        #self._cnt_lianxu_kuisun2(yinkuilist)
         self._plot(df, zjqx, kccs)
         print int(zj-zj_init), '平均每手收益：',int((zj-zj_init)/sscnt), '交易次数：',kccnt
         return zj-zj_init,(zj-zj_init)/sscnt
+
+    def _cnt_lianxu_kuisun2(self, yinkuilist):
+        #cnts = []
+        #cnt = 0
+        #for n in yinkuilist:
+        #    if n == 0:
+        #        cnt += 1
+        #    else:
+        #        if cnt>0:
+        #            cnts.append(cnt)
+        #            cnt = 0
+        #mean = round(np.mean(cnts), 1)
+        #median = np.median(cnts)
+        print yinkuilist
+        #print cnts
+        #print '最大连亏次数:%s, 平均连亏:%s, 连亏中位数:%s' %  (max(cnts) , mean, median) # 
 
     def _cnt_lianxu_kuisun(self, yinkuilist):
         cnts = []
         cnt = 0
         for n in yinkuilist:
-            if n == 0:
+            if n[1] == 0: # 0连亏  1连盈
                 cnt += 1
             else:
-                cnts.append(cnt)
-                cnt = 0
+                if cnt>0:
+                    cnts.append(cnt)
+                    cnt = 0
+        mean = round(np.mean(cnts), 1)
+        median = np.median(cnts)
         print yinkuilist
-        print max(cnts)  # 最大连亏次数
+        print cnts
+        print '最大连亏次数:%s, 平均连亏:%s, 连亏中位数:%s' %  (max(cnts) , mean, median) # 
 
     def runhl2(self, df, zj=50000, f=0.01, zs=0.02):
         print 'runhl2'
