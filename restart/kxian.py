@@ -690,8 +690,9 @@ class Kxian(GeneralIndex):
         option = {
             'tupo_high': df.h > df.nhh,
             'tupo_low': df.l < df.nll,
-            'tupo_low_c': df.c < df.ncl,
-            'tupo_high_c': df.c > df.nch, # 是不是用这个效果好
+            
+            'tupo_high_c': df.h > df.nch, # 是不是用这个效果好
+            'tupo_low_c': df.l < df.ncl,
             
             'higher_than_ma': df.l.shift(1) > df[ma_name].shift(1),
             'lower_than_ma': df.h.shift(1) < df[ma_name].shift(1),
@@ -704,10 +705,15 @@ class Kxian(GeneralIndex):
 
             'last_yang': df.o.shift(1) > df.c.shift(1),
             'last_yin': df.o.shift(1) < df.c.shift(1),
+
+            'higher_nll': df.nll> df.nll.shift(7),
+            'lower_nhh': df.nhh< df.nhh.shift(7),
                   }
 
-        df['higher'] = option['tupo_high_c'] & option['higher_than_ma_c'] #&  option['last_yin']
-        df['lower'] = option['tupo_low_c']   & option['lower_than_ma_c']  #&  option['last_yang']
+        df['higher'] = option['tupo_high_c'] & option['higher_than_ma_c'] #&  option['maup']
+        df['lower'] = option['tupo_low_c']   & option['lower_than_ma_c']  #&  option['madown']
+        #df['higher'] = option['tupo_high_c'] & option['higher_nll'] #&  option['last_yin']
+        #df['lower'] = option['tupo_low_c']   & option['lower_nhh']  #&  option['last_yang']
         #df['higher'] = option['tupo_high'] 
         #df['lower'] = option['tupo_low']   
         
@@ -758,7 +764,7 @@ def fuhe_liankui():
     print '最大连亏次数:%s, 平均连亏:%s, 连亏中位数:%s' %  (max(cnts) , mean, median) # 
 
 if __name__ == '__main__':
-    k = Kxian('m') # ta rb c m a ma jd dy 999999 sr au
+    k = Kxian('rb') # ta rb c m a ma jd dy 999999 sr au
 
     k.hl2(2,7,2)
 
