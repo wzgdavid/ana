@@ -1033,7 +1033,7 @@ class General(object):
         bpoint = 0
         spoint = 0
         sscnt = 0 # 总交易手数计数
-        sxfbl = 800 # 手续费比例   
+        sxfbl = 500 # 手续费比例   
         huadianbl = 500 # 滑点比例
         yinkuilist = [] # 盈亏计数用 [1,0,0,1] 1盈利，0亏损
 
@@ -1044,10 +1044,10 @@ class General(object):
             date = df.loc[idx, 'date']
 
             if bksk=='bk' and kjs==0: # 开多
-                if df.loc[idx, 'o'] > df.loc[idx, 'nch']: # 用前n天高价开多
+                if df.loc[idx, 'o'] > df.loc[idx, 'nhh']: # 用前n天高价开多
                     bkprice = df.loc[idx, 'o'] # 
                 else:  
-                    bkprice = df.loc[idx, 'nch']
+                    bkprice = df.loc[idx, 'nhh']
 
                 if zs<1:
                     bkczs = bkprice * zs *10 # 开仓止损幅度
@@ -1067,11 +1067,11 @@ class General(object):
             if bksk=='sk' and kjs==0:  # 开空
                 #skprice = df.loc[idx, 'sdjj']
                 # hl用这个开仓价
-                if df.loc[idx, 'o'] < df.loc[idx, 'ncl']: # 
+                if df.loc[idx, 'o'] < df.loc[idx, 'nll']: # 
                     skprice = df.loc[idx, 'o'] # 
                     #print 'skprice is o'
                 else:  
-                    skprice = df.loc[idx, 'ncl']
+                    skprice = df.loc[idx, 'nll']
                     #print 'skprice is ncl'
 
                 if zs<1:
@@ -1081,8 +1081,10 @@ class General(object):
                     spoint = df.loc[df.index[i], 'zshh'] 
                     skczs = (spoint - skprice) * 10
                 #print skprice, skczs, klimit
+                if skczs <=0: print date,'---------------skczs <=0------------------------------------------------------------'
+
                 kjs = min(int((zj*f)/skczs), klimit)  # 这次可开几手
-                if kjs > 0:
+                if kjs > 0 and skczs > 0:
                     bs = 's'
                     print i, date, 'sk  ', skprice,  spoint, kjs, zj
                     kccnt += 1
@@ -1128,10 +1130,10 @@ class General(object):
             if bpsp == 'bp' and kjs != 0 and bs == 'b': # 多头信号平仓(移动止损)
                 
                 #bpprice = df.loc[idx, 'sdjj']  # 平仓价格  平仓价也应该用最低价，可开仓一样
-                if df.loc[idx, 'o'] <= df.loc[idx, 'nclp']: #< df.loc[idx, 'h']: # 
+                if df.loc[idx, 'o'] <= df.loc[idx, 'nllp']: #< df.loc[idx, 'h']: # 
                     bpprice = df.loc[idx, 'o'] # 
                 else:  
-                    bpprice = df.loc[idx, 'nclp']
+                    bpprice = df.loc[idx, 'nllp']
                 gain = (bpprice  - bkprice) * kjs* 10 # 平仓收益
                 print i,date, '信号bp', bpprice, gain
                 sxf = bkprice/sxfbl * kjs# 
@@ -1148,10 +1150,10 @@ class General(object):
             if bpsp == 'sp' and kjs != 0 and bs == 's': # 空头信号平仓
 
                 # spprice = df.loc[idx, 'sdjj']
-                if df.loc[idx, 'o'] >= df.loc[idx, 'nchp']:# < df.loc[idx, 'h']: # 
+                if df.loc[idx, 'o'] >= df.loc[idx, 'nhhp']:# < df.loc[idx, 'h']: # 
                     spprice = df.loc[idx, 'o'] # 
                 else:  
-                    spprice = df.loc[idx, 'nchp']
+                    spprice = df.loc[idx, 'nhhp']
                 gain = (skprice - spprice) * kjs * 10 
                 print i, date,'信号sp', spprice, gain
                 sxf = skprice/sxfbl * kjs# 
@@ -1774,7 +1776,14 @@ class GeneralIndex(General):
     def get_nhh(self, n):
         '''前n天最高价最高点（不包含当天）'''
         self.df['nhh'] = self.df.h.shift(1).rolling(window=n, center=False).max()
-    
+
+    def get_nsthl(self, n):
+        '''前n天k线实体最高点，最低点（不包含当天）'''
+        self.df['noh'] = self.df.o.shift(1).rolling(window=n, center=False).max()
+        self.df['nsth'] = np.where(self.df.noh>self.df.nch, self.df.noh, self.df.nch)
+
+        self.df['nol'] = self.df.o.shift(1).rolling(window=n, center=False).min()
+        self.df['nstl'] = np.where(self.df.nol<self.df.ncl, self.df.nol, self.df.ncl)
 
     def get_lnhh(self, n):
         '''前n天最低价最高点（不包含当天）'''
