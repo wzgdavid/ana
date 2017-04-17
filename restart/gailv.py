@@ -627,42 +627,50 @@ class GL(GeneralIndex):
     ############################################################################################
     '''
 
+    def zhisungailv(self):
+        '''今天l大于前一天，后一天l大于今天l的概率'''
+        self.get_nhh(2)
+        self.get_nll(2)
+        self.get_nch(2)
+        self.get_ncl(2)
+        self.get_mhh(7)
+        self.get_mll(7)
+        ma = 20
+        ma_name = 'ma'+str(ma)
+        self.get_ma(ma)
+        df = deepcopy(self.df)
+
+        #df['higher'] = df.c > df.c.shift(1)
+        df['close_higher_than_ma'] = df.c > df[ma_name]
+        df['higher'] = (df.c > df.c.shift(1)) & (df.c > df.c.shift(2)) & df.close_higher_than_ma
+        df['higher1'] = np.where(df.higher, 1, None)
+        df['higher2'] = np.where(df.higher & (df.mll.shift(-1) > df.l), 1, None)
+        
+        print 'duo', round(df.higher2.sum() / float(df.higher1.sum()), 2)
+
+        #df['lower'] = df.c < df.c.shift(1)
+        df['close_lower_than_ma']= df.c < df[ma_name]
+        df['lower'] = (df.c < df.c.shift(1)) & (df.c < df.c.shift(2)) & df.close_lower_than_ma
+        df['lower1'] = np.where(df.lower, 1, None)
+        df['lower2'] = np.where(df.lower & (df.mhh.shift(-1) < df.h), 1, None)
+        
+        print 'kong', round(df.lower2.sum() / float(df.lower1.sum()), 2)
+
+
+        df.to_csv('tmp.csv')
 
 if __name__ == '__main__':
     
     #test()
     #run_ev_tupohl('ta')
-    g = GL('m') # ta rb c m a ma jd dy 999999
+    g = GL('sr') # ta rb c m a ma jd dy sr 999999
     #g.tupohl(3, 7, 1)
     #g.ev_ma(20,0.03)
-    g.ev_tupohl(3, 7, 1)
-    g.ev_tupohl(3, 11, 1)
+    #g.ev_tupohl(3, 7, 1)
+    #g.ev_tupohl(3, 11, 1) 
     #g.ev_tupohl(3, 17, 1)
-    #g.ev_tupohl(3, 20, 1)
-    #g.ev_tupohl(4, 20, 1)
 
-    #g.tupohl(7, 7, 1)
-    #g.tupohl(7, 11, 1)
-    #g.tupohl(7, 17, 1)
-    #g.ev_tupohl(7,17, 0.02)
-    #g.ev_tupohl(7,17, 1)
-    #g.ev_tupohl(7,30, 1)
-    #g.ev_tupohl(11,11, 0.02)
-    #g.ev_tupohl(7, 7, 1)
-    #g.ev_tupohl(7, 17, 1)
-    #g.ev_tupohl(7, 30, 1)
-    #g.ev_tupohl(7, 40, 1)
-    #g.ev_tupohl(7, 50, 1)
-    #g.ev_tupohl(7, 60, 1)
-    #g.ev_tupohl(7, 70, 1)
-    #g.ev_tupohl(7, 80, 1)
-    #g.ev_tupohl(7, 90, 1)
-    #g.ev_tupohl(7, 100, 1)
-    #g.ev_tupohl(7, 110, 1)
-
-    #g.ev_tupohl_highlow(3, 7, 1)
-    #g.zdzy_hl(7,0.02,0.02)
-
+    g.zhisungailv()
    
     
 

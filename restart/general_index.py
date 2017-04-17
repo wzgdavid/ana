@@ -1044,10 +1044,10 @@ class General(object):
             date = df.loc[idx, 'date']
 
             if bksk=='bk' and kjs==0: # 开多
-                if df.loc[idx, 'o'] > df.loc[idx, 'nhh']: # 用前n天高价开多
+                if df.loc[idx, 'o'] > df.loc[idx, 'nch']: # 用前n天高价开多
                     bkprice = df.loc[idx, 'o'] # 
                 else:  
-                    bkprice = df.loc[idx, 'nhh']
+                    bkprice = df.loc[idx, 'nch']
 
                 if zs<1:
                     bkczs = bkprice * zs *10 # 开仓止损幅度
@@ -1067,11 +1067,11 @@ class General(object):
             if bksk=='sk' and kjs==0:  # 开空
                 #skprice = df.loc[idx, 'sdjj']
                 # hl用这个开仓价
-                if df.loc[idx, 'o'] < df.loc[idx, 'nll']: # 
+                if df.loc[idx, 'o'] < df.loc[idx, 'ncl']: # 
                     skprice = df.loc[idx, 'o'] # 
                     #print 'skprice is o'
                 else:  
-                    skprice = df.loc[idx, 'nll']
+                    skprice = df.loc[idx, 'ncl']
                     #print 'skprice is ncl'
 
                 if zs<1:
@@ -1081,7 +1081,7 @@ class General(object):
                     spoint = df.loc[df.index[i], 'zshh'] 
                     skczs = (spoint - skprice) * 10
                 #print skprice, skczs, klimit
-                if skczs <=0: print date,'---------------skczs <=0------------------------------------------------------------'
+                #if skczs <=0: print date,'---------------skczs <=0------------------------------------------------------------'
 
                 kjs = min(int((zj*f)/skczs), klimit)  # 这次可开几手
                 if kjs > 0 and skczs > 0:

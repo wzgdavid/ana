@@ -714,11 +714,11 @@ class Kxian(GeneralIndex):
             'lower_nhh': df.nhh< df.nhh.shift(7),
                   }
         # 别忘了在runhl中改nhh cnh等
-        #df['higher'] = option['tupo_high_c'] & option['higher_than_ma_c'] 
-        #df['lower'] = option['tupo_low_c']   & option['lower_than_ma_c']  
+        df['higher'] = option['tupo_high_c'] & option['higher_than_ma_c'] 
+        df['lower'] = option['tupo_low_c']   & option['lower_than_ma_c']  
         # 别忘了在runhl中改nhh cnh等  还是这个稳点
-        df['higher'] = option['tupo_high'] & option['higher_than_ma_c'] 
-        df['lower'] = option['tupo_low']    & option['lower_than_ma_c'] 
+        #df['higher'] = option['tupo_high'] & option['higher_than_ma_c'] 
+        #df['lower'] = option['tupo_low']    & option['lower_than_ma_c'] 
         # 别忘了在runhl中改nhh cnh等
         #df['higher'] = option['tupo_high_st'] & option['higher_than_ma_c'] 
         #df['lower'] = option['tupo_low_st']    & option['lower_than_ma_c'] 
@@ -775,7 +775,7 @@ def fuhe_liankui():
     print '最大连亏次数:%s, 平均连亏:%s, 连亏中位数:%s' %  (max(cnts) , mean, median) # 
 
 if __name__ == '__main__':
-    k = Kxian('c') # ta rb c m a ma jd dy 999999 sr au
+    k = Kxian('ta') # ta rb c m a ma jd dy 999999 sr au
 
     k.hl2(2,7,2)
 
