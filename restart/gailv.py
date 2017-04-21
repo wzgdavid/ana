@@ -11,6 +11,7 @@ import util
 class GL(GeneralIndex):
     def __init__(self, daima):
         super(GL, self).__init__(daima)
+        self.get_sdjj()
 
     def foo(self, n, m, zs=2):
         '''没条件， 对比用'''
@@ -240,6 +241,8 @@ class GL(GeneralIndex):
         print 'ev_tupohl------%s------%s------%s-----'% (n, y, zs)
         self.get_nhh(n)
         self.get_nll(n)
+        self.get_nch(n)
+        self.get_ncl(n)
         self.get_nhhp(y)
         self.get_nllp(y)
         ma = 20
@@ -259,13 +262,17 @@ class GL(GeneralIndex):
             'madown': df[ma_name].shift(1) < df[ma_name].shift(2),
             'hl_bothhigh': (df.h.shift(1) > df.h.shift(2)) & (df.h.shift(1) > df.h.shift(2)),
             'hl_bothlow': (df.l.shift(1) < df.l.shift(2)) & (df.l.shift(1) < df.l.shift(2)),
+            'tupo_high_c': df.h > df.nch, # 突破前几天收盘价的高点
+            'tupo_low_c': df.l < df.ncl,
 
+            'close_higher_than_ma': df.c.shift(1) > df[ma_name].shift(1),
+            'close_lower_than_ma': df.c.shift(1) < df[ma_name].shift(1),
                   }
 
         df['higher'] = option['tupo_high'] & option['higher_than_ma'] #& option['maup']
         df['lower'] = option['tuo_low']    & option['lower_than_ma']  #& option['madown']
-        #df['higher'] = option['tupo_high'] & option['hl_bothhigh'] #& option['higher_than_ma']
-        #df['lower'] = option['tuo_low']    & option['hl_bothlow']  #& option['lower_than_ma']
+        df['higher'] = option['tupo_high_c'] & option['close_higher_than_ma'] #& option['higher_than_ma']
+        df['lower'] = option['tupo_low_c']    & option['close_lower_than_ma']  #& option['lower_than_ma']
 
         df['bksk'] = np.where(df['higher'], 'bk', None)
         df['bksk'] = np.where(df['lower'], 'sk', df['bksk'])
@@ -276,121 +283,6 @@ class GL(GeneralIndex):
         df['bpsp'] = np.where(df['lowerp'], 'bp', df['bpsp'])
         df.to_csv('tmp.csv')
         return self._runev(df,zs)
-
-
-    def ev_ma(self, n, zs=0.01):
-        '''所有符合条件的，平仓点与开仓点的比值
-        跑出来ma没用
-        '''
-        print 'ev_ma------%s-------------'% (n)
-        self.get_ma(n)
-        ma = 'ma%s' % n
-        if zs >= 1:
-            self.get_zshh(zs)
-            self.get_zsll(zs)
-        df = deepcopy(self.df) 
-        # K线在ma之上开多
-        #df['higher'] = df.l > df[ma]
-        #df['lower'] = df.h < df[ma]
-        # K线向上穿越ma开多 与上选其一跑
-        df['higher'] = (df.h.shift(1) < df[ma]) &  (df.h > df[ma]) 
-        df['lower'] = (df.l.shift(1) > df[ma]) &  (df.l < df[ma])
-        df['bksk'] = np.where(df['higher'], 'bk', None)
-        df['bksk'] = np.where(df['lower'], 'sk', df['bksk'])
-
-        df['higherp'] = (df.h.shift(1) < df[ma]) &  (df.h > df[ma])    # 空单平仓
-        df['lowerp'] = (df.l.shift(1) > df[ma]) &  (df.l < df[ma])
-        df['bpsp'] = np.where(df['higherp'], 'sp', None)
-        df['bpsp'] = np.where(df['lowerp'], 'bp', df['bpsp'])
-        df.to_csv('tmp.csv')
-        bkpoints = dict() # 每次开多的价格等一些数值
-        skpoints = dict() # 空
-        bbzs = list() # 每次多单平仓价与开仓价的比值
-        sbzs = list()
-        bsbzs = list()
-        has = 1
-        bzlen = list()
-        FEIYONG = 1
-        for i, bksk in enumerate(df.bksk):
-            idx = df.index[i]
-            bpsp = df.loc[idx, 'bpsp']
-            #print idx, bpsp
-            if zs < 1:
-                if bksk == 'bk':
-                    bkpoints[idx] = df.loc[idx, 'o']
-    
-                if bksk == 'sk':
-                    skpoints[idx] = df.loc[idx, 'o']
-                    
-                if bpsp == 'bp' and bkpoints:
-                    pingcang = df.loc[idx, 'o']
-                    
-                    bbz = list()
-                    for x in bkpoints.values():
-                        bbz.append(max(pingcang/x, 1-zs))
-                    bbzs.extend(bbz)
-                    bsbzs.extend(bbz)
-                    bkpoints = dict()
-                elif bpsp == 'sp' and skpoints:
-                    pingcang = df.loc[idx, 'o']
-                    #sbz = [x/d for x in skpoints.values()] # 为了看起来方便，用x/d
-                    sbz = list()
-                    for x in skpoints.values():
-                        #bz = x/d # 为了看起来方便，用x/d
-                        sbz.append(max(x/pingcang, 1-zs))
-                    sbzs.extend(sbz)
-                    bsbzs.extend(sbz)
-                    skpoints = dict()
-            elif zs>=1 and type(zs)==int:
-                if bksk == 'bk':
-                    bkpoints[idx] = (df.loc[idx, 'o'], df.loc[idx, 'zsll']) # (开仓点，开仓止损点)
-            
-                if bksk == 'sk':
-                    skpoints[idx] = (df.loc[idx, 'o'], df.loc[idx, 'zshh'])
-                    
-                if bpsp == 'bp' and bkpoints:
-                    pingcang = df.loc[idx, 'o']
-                    #bbz = [d/x for x in bkpoints.values()]
-                    bbz = list()
-                    for x in bkpoints.values():
-                        bbz.append(max(pingcang/x[0]*FEIYONG, x[1]/x[0]*FEIYONG ))
-                
-                    bbzs.extend(bbz)
-                    #bzlen.append(len(bbz))
-                    bsbzs.extend(bbz)
-                    bkpoints = dict()
-                    
-                elif bpsp == 'sp' and skpoints:
-                    pingcang = df.loc[idx, 'o']
-                    #sbz = [x/d for x in skpoints.values()] # 为了看起来方便，用x/d
-                    sbz = list()
-                    for x in skpoints.values():
-                        #bz = x/d # 为了看起来方便，用x/d
-                        sbz.append(max(x[0]/pingcang*FEIYONG, x[0]/x[1]*FEIYONG))
-                    sbzs.extend(sbz)
-                    bsbzs.extend(sbz)
-                    skpoints = dict()
-        br = reduce(lambda x,y:x*y,bbzs)
-        print br , '--------br--------'
-        #print str(sum(sbzs)/len(sbzs))[:6], len(sbzs)
-        sr = reduce(lambda x,y:x*y,sbzs)
-        print sr , '--------sr--------'
-        #print sorted(sbzs)
-
-        # 累计相乘，看曲线，看回撤
-        every = list()
-        cummulti=1
-        
-        #for n in bbzs:
-        for n in bsbzs:
-            cummulti = n*cummulti
-            every.append(cummulti)
-        #print every
-
-        s = pd.Series(every)
-        s.plot()
-        plt.show() 
-
 
     def _plot_cummulti(self, lst):
         # 累计相乘，看曲线，看回撤
@@ -424,8 +316,10 @@ class GL(GeneralIndex):
             if zs < 1:
                 if bksk == 'bk':
                     bkpoints[idx] = self._get_hl_bkpoint(df, idx)
+                    bkpoints[idx] = self._get_chl_bkpoint(df, idx)
                 if bksk == 'sk':
                     skpoints[idx] = self._get_hl_skpoint(df, idx)
+                    skpoints[idx] = self._get_chl_skpoint(df, idx)
                     
                 if bpsp == 'bp' and bkpoints:
                     nllp = df.loc[idx, 'nllp']
@@ -453,10 +347,12 @@ class GL(GeneralIndex):
             elif zs>=1 and type(zs)==int:
                 if bksk == 'bk':
                     bkp = self._get_hl_bkpoint(df, idx)
+                    bkp = self._get_chl_bkpoint(df, idx)
                     bkpoints[idx] = (bkp, df.loc[idx, 'zsll']) # (开仓点，开仓止损点)
                     
                 if bksk == 'sk':
                     skp = self._get_hl_skpoint(df, idx)
+                    skp = self._get_chl_skpoint(df, idx)
                     skpoints[idx] = (skp, df.loc[idx, 'zshh'])
                     
                 if bpsp == 'bp' and bkpoints:
@@ -559,10 +455,21 @@ class GL(GeneralIndex):
         o = df.loc[idx, 'o']
         return o if o > nhh else nhh
 
+    def _get_chl_bkpoint(self, df, idx):
+        ''''''
+        nch = df.loc[idx, 'nch']
+        o = df.loc[idx, 'o']
+        return o if o > nch else nch
+
     def _get_hl_skpoint(self, df, idx):
         nll = df.loc[idx, 'nll']
         o = df.loc[idx, 'o']
         return o if o < nll else nll
+
+    def _get_chl_skpoint(self, df, idx):
+        ncl = df.loc[idx, 'ncl']
+        o = df.loc[idx, 'o']
+        return o if o < ncl else ncl
 
     def _tongjilist(self, lst):
         #print sorted([round(x,3) for x in lst])
@@ -639,23 +546,39 @@ class GL(GeneralIndex):
         ma_name = 'ma'+str(ma)
         self.get_ma(ma)
         df = deepcopy(self.df)
+        option = {
+            'tupo_high': df.h > df.nhh,
+            'tupo_low': df.l < df.nll,
+            
 
-        #df['higher'] = df.c > df.c.shift(1)
-        df['close_higher_than_ma'] = df.c > df[ma_name]
-        df['higher'] = (df.c > df.c.shift(1)) & (df.c > df.c.shift(2)) & df.close_higher_than_ma
+
+            'higher_than_ma': df.l > df[ma_name],
+            'lower_than_ma': df.h < df[ma_name],
+            'close_higher_than_ma': df.c > df[ma_name],
+            'close_lower_than_ma': df.c < df[ma_name],
+            'maup': df[ma_name] > df[ma_name].shift(1),
+            'madown': df[ma_name] < df[ma_name].shift(1),
+            '2liangyang': (df.c > df.o) & (df.c.shift(1) > df.o.shift(1)),
+            '2lianyin': (df.c < df.o) & (df.c.shift(1) < df.o.shift(1)),
+            '3liangyang': (df.c > df.o) & (df.c.shift(1) > df.o.shift(1)) & (df.c.shift(2) > df.o.shift(2)),
+            '3lianyin': (df.c < df.o) & (df.c.shift(1) < df.o.shift(1)) & (df.c.shift(2) < df.o.shift(2)),
+                  }
+        df['higher'] = (df.h > df.nhh)
+        #df['higher'] =   option['close_higher_than_ma']
+        df['higher'] = (df.c > df.nch) & option['2liangyang'] #& option['close_higher_than_ma']
         df['higher1'] = np.where(df.higher, 1, None)
         df['higher2'] = np.where(df.higher & (df.mll.shift(-1) > df.l), 1, None)
         
         print 'duo', round(df.higher2.sum() / float(df.higher1.sum()), 2)
 
-        #df['lower'] = df.c < df.c.shift(1)
-        df['close_lower_than_ma']= df.c < df[ma_name]
-        df['lower'] = (df.c < df.c.shift(1)) & (df.c < df.c.shift(2)) & df.close_lower_than_ma
+        df['lower'] = (df.l < df.nll)
+        #df['lower'] =  option['close_lower_than_ma']
+        df['lower'] =  (df.c < df.ncl) & option['2lianyin'] #& option['close_lower_than_ma']
         df['lower1'] = np.where(df.lower, 1, None)
         df['lower2'] = np.where(df.lower & (df.mhh.shift(-1) < df.h), 1, None)
         
         print 'kong', round(df.lower2.sum() / float(df.lower1.sum()), 2)
-
+        print '次数', df.lower2.sum() + df.higher2.sum()
 
         df.to_csv('tmp.csv')
 
@@ -663,10 +586,10 @@ if __name__ == '__main__':
     
     #test()
     #run_ev_tupohl('ta')
-    g = GL('sr') # ta rb c m a ma jd dy sr 999999
+    g = GL('ma') # ta rb c m a ma jd dy sr 999999
     #g.tupohl(3, 7, 1)
     #g.ev_ma(20,0.03)
-    #g.ev_tupohl(3, 7, 1)
+    #g.ev_tupohl(2, 7, 1)
     #g.ev_tupohl(3, 11, 1) 
     #g.ev_tupohl(3, 17, 1)
 
