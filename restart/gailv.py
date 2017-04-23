@@ -542,41 +542,81 @@ class GL(GeneralIndex):
         self.get_ncl(2)
         self.get_mhh(7)
         self.get_mll(7)
+        self.get_atr(50)
         ma = 20
         ma_name = 'ma'+str(ma)
-        self.get_ma(ma)
+        ma2 = 5
+        ma2_name = 'ma'+str(ma2)
+        self.get_ma(ma, ma2)
         df = deepcopy(self.df)
         option = {
             'tupo_high': df.h > df.nhh,
             'tupo_low': df.l < df.nll,
-            
+            'tupo_high_c': df.h > df.nch,
+            'tupo_low_c': df.l < df.ncl,            
 
 
             'higher_than_ma': df.l > df[ma_name],
             'lower_than_ma': df.h < df[ma_name],
-            'close_higher_than_ma': df.c > df[ma_name],
-            'close_lower_than_ma': df.c < df[ma_name],
+            'close_higher_than_ma': df.c.shift(1) > df[ma_name],
+            'close_lower_than_ma': df.c.shift(1) < df[ma_name],
+            'bigger_than_nch': df.c > df.nch,
+            'lower_than_ncl': df.c < df.ncl,
             'maup': df[ma_name] > df[ma_name].shift(1),
             'madown': df[ma_name] < df[ma_name].shift(1),
+            '1liangyang':df.c > df.o,
+            '1lianyin':df.c < df.o,
             '2liangyang': (df.c > df.o) & (df.c.shift(1) > df.o.shift(1)),
             '2lianyin': (df.c < df.o) & (df.c.shift(1) < df.o.shift(1)),
             '3liangyang': (df.c > df.o) & (df.c.shift(1) > df.o.shift(1)) & (df.c.shift(2) > df.o.shift(2)),
             '3lianyin': (df.c < df.o) & (df.c.shift(1) < df.o.shift(1)) & (df.c.shift(2) < df.o.shift(2)),
+            'duo_huitiao': (df.c < df[ma2_name]),         
+            'kong_huitiao': (df.c > df[ma2_name]),  
                   }
-        df['higher'] = (df.h > df.nhh)
-        #df['higher'] =   option['close_higher_than_ma']
-        df['higher'] = (df.c > df.nch) & option['2liangyang'] #& option['close_higher_than_ma']
+
+        # 2%和一个atr开仓止损挑较小的那个
+        #df['kczs_b'] = np.where(df.nhh-df.atr >= df.nhh*0.98, df.nhh-df.atr, df.nhh*0.98) 
+        #df['kczs_s'] = np.where(df.nll+df.atr <= df.nll*1.02, df.nll+df.atr, df.nll*1.02)
+        # 2%和前两天高低点开仓止损挑较小的那个
+        #df['kczs_b'] = np.where(df.nll >= df.nhh*0.98,df.nll, df.nhh*0.98) 
+        #df['kczs_s'] = np.where(df.nhh <= df.nll*1.02, df.nhh, df.nll*1.02) 
+
+
+
+        df['test0'] = (df.nhh-df.l.shift(1)) / df.nhh  # 看前一天低点的百分比
+        df['test'] = (df.nhh-df.nll) / df.nhh  # 看前两天低点的百分比
+        df['test2'] = df.atr / df.nhh # 看atr的百分比，大多数atr还是在2%里面
+
+        # atr比前一天更稳，小于2%的比例高10%多
+
+
+        #df['higher'] = (df.h > df.nhh)
+        df['higher'] =   option['tupo_high'] & option['close_higher_than_ma']
+        #df['higher'] =  option['bigger_than_nch'] & option['close_higher_than_ma']
         df['higher1'] = np.where(df.higher, 1, None)
-        df['higher2'] = np.where(df.higher & (df.mll.shift(-1) > df.l), 1, None)
+        # 信号出现之后开仓
+        #df['higher2'] = np.where(df.higher & (df.mll.shift(-1) > df.l), 1, None) 
+        # 信号当日开仓，设条件单开仓
+        #df['higher2'] = np.where(df.higher & (df.mll > df.l.shift(1)), 1, None) # 以开仓前一天低点为开仓止损
+        #df['higher2'] = np.where(df.higher & (df.mll > df.nll), 1, None) # 以开仓前两天低点为开仓止损
+        #df['higher2'] = np.where(df.higher & (df.mll > df.nhh-df.atr), 1, None) # 以开仓点一定atr为开仓止损
+        #df['higher2'] = np.where(df.higher & (df.mll > df.nhh*0.98), 1, None) # 以开仓点一定百分比为开仓止损
+        df['higher2'] = np.where(df.higher & (df.mll > df.kczs_b), 1, None)
         
         print 'duo', round(df.higher2.sum() / float(df.higher1.sum()), 2)
 
-        df['lower'] = (df.l < df.nll)
-        #df['lower'] =  option['close_lower_than_ma']
-        df['lower'] =  (df.c < df.ncl) & option['2lianyin'] #& option['close_lower_than_ma']
+        #df['lower'] = (df.l < df.nll)
+        df['lower'] =  option['tupo_low'] & option['close_lower_than_ma']
+        #df['lower'] =   option['lower_than_ncl'] & option['close_lower_than_ma']
         df['lower1'] = np.where(df.lower, 1, None)
-        df['lower2'] = np.where(df.lower & (df.mhh.shift(-1) < df.h), 1, None)
-        
+        # 信号出现之后开仓
+        #df['lower2'] = np.where(df.lower & (df.mhh.shift(-1) < df.h), 1, None)
+        # 信号当日开仓，设条件单开仓
+        #df['lower2'] = np.where(df.lower & (df.mhh < df.h.shift(1)), 1, None) # 以开仓前一天高点为开仓止损
+        #df['lower2'] = np.where(df.lower & (df.mhh < df.nhh), 1, None) # 以开仓前两天高点为开仓止损
+        #df['lower2'] = np.where(df.lower & (df.mhh < df.nll+df.atr), 1, None) # 以开仓点一定atr为开仓止损
+        #df['lower2'] = np.where(df.lower & (df.mhh < df.nll*1.02), 1, None) # 以开仓点一定百分比为开仓止损
+        df['lower2'] = np.where(df.lower & (df.mhh < df.kczs_s), 1, None)
         print 'kong', round(df.lower2.sum() / float(df.lower1.sum()), 2)
         print '次数', df.lower2.sum() + df.higher2.sum()
 
@@ -586,7 +626,7 @@ if __name__ == '__main__':
     
     #test()
     #run_ev_tupohl('ta')
-    g = GL('ma') # ta rb c m a ma jd dy sr 999999
+    g = GL('a') # ta rb c m a ma jd dy sr 999999
     #g.tupohl(3, 7, 1)
     #g.ev_ma(20,0.03)
     #g.ev_tupohl(2, 7, 1)
