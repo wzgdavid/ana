@@ -236,7 +236,7 @@ class GL(GeneralIndex):
         信号开仓
         开仓止损，移动止损（被动止盈）
 
-        不能只看跑出来的结果就，因为程序没有限制，而真实情况持仓总有个限制，不可能无限大的持仓
+        不能只看跑出来的结果就，程序没有限制，而真实情况持仓有个限制，不可能无限大
         '''
         print 'ev_tupohl------%s------%s------%s-----'% (n, y, zs)
         self.get_nhh(n)
@@ -378,7 +378,7 @@ class GL(GeneralIndex):
                     sbzs.extend(sbz)
                     bsbzs.extend(sbz)
                     skpoints = dict()
-        return self._tongjilist(bsbzs)
+        return self._tongjilist(bsbzs, zs)
         
     '''
     ############################################################################################
@@ -409,17 +409,19 @@ class GL(GeneralIndex):
     ############################################################################################
     '''
 
-    def zdzy_hl(self):
+    def zdzy_hl(self, ydzs=False):
         '''主动止损主动止盈'''
         self.get_nhh(2)
         self.get_nll(2)
+        self.get_nhhp(7)
+        self.get_nllp(7)
         self.get_nch(2)
         self.get_ncl(2)
         self.get_mhh(7)
         self.get_mll(7)
         self.get_atr(50)
-        zy = 0.01
-        zs = 0.01
+        zy = 0.02
+        zs = 0.02 
  
         ma = 20
         ma_name = 'ma'+str(ma)
@@ -433,8 +435,8 @@ class GL(GeneralIndex):
             'tupo_high_c': df.h > df.nch,
             'tupo_low_c': df.l < df.ncl,  
 
-            'gdd_low_last':(df.l.shift(3) > df.l.shift(2)) & (df.l.shift(1) > df.l.shift(2)) & (df.h.shift(3) > df.h.shift(2)) & (df.h.shift(1) > df.h.shift(2)), 
-            'gdd_high_last': (df.h.shift(3) < df.h.shift(2)) & (df.h.shift(1) < df.h.shift(2)) & (df.l.shift(3) < df.l.shift(2)) & (df.l.shift(1) < df.l.shift(2)),
+            'gdd_low_last':(df.l.shift(3) > df.l.shift(2)) & (df.l.shift(1) > df.l.shift(2)), 
+            'gdd_high_last': (df.h.shift(3) < df.h.shift(2)) & (df.h.shift(1) < df.h.shift(2)),
             'gdd_low_last2':(df.l.shift(4) > df.l.shift(3)) & (df.l.shift(2) > df.l.shift(3)),
             'gdd_high_last2': (df.h.shift(4) < df.h.shift(3)) & (df.h.shift(2) < df.h.shift(3)),
             'last_lowpoint':df.l.shift(1) < df.l.shift(2),
@@ -456,13 +458,15 @@ class GL(GeneralIndex):
             'bigger_than_nch': df.c > df.nch,
             'lower_than_ncl': df.c < df.ncl,
 
-            'bigger_than_nch_lastday': df.c.shift(1) > df.nch.shift(1),
-            'lower_than_ncl_lastday': df.c.shift(1) < df.ncl.shift(1),
+            'close_bigger_than_nch_lastday': df.c.shift(1) > df.nch.shift(1),
+            'close_lower_than_ncl_lastday': df.c.shift(1) < df.ncl.shift(1),
             'bigger_than_nhh_lastday': df.c.shift(1) > df.nhh.shift(1),
             'lower_than_nll_lastday': df.c.shift(1) < df.nll.shift(1),
 
             'maup': df[ma_name] > df[ma_name].shift(1),
             'madown': df[ma_name] < df[ma_name].shift(1),
+            'maup_lastday': df[ma_name].shift(1) > df[ma_name].shift(2),
+            'madown_lastday': df[ma_name].shift(1) < df[ma_name].shift(2),
             '1liangyang':df.c > df.o,
             '1lianyin':df.c < df.o,
             '2liangyang': (df.c > df.o) & (df.c.shift(1) > df.o.shift(1)),
@@ -472,15 +476,15 @@ class GL(GeneralIndex):
             'duo_huitiao': (df.c < df[ma2_name]),         
             'kong_huitiao': (df.c > df[ma2_name]),  
                   }
-
-        df['higher'] = option['tupo_high'] & option['close_higher_than_ma']
-        df['lower'] = option['tupo_low'] & option['close_lower_than_ma']
-        df['bksk'] = np.where(df['higher'], 'bk', None)
-        df['bksk'] = np.where(df['lower'], 'sk', df['bksk'])
+        #df['higher'] = option['maup_lastday'] & option['close_higher_than_ma_lastday']
+        #df['lower'] = option['madown_lastday'] & option['close_lower_than_ma_lastday']
+        df['higher'] = option['tupo_high'] & option['maup_lastday'] & option['close_higher_than_ma_lastday']
+        df['lower'] = option['tupo_low'] & option['madown_lastday'] & option['close_lower_than_ma_lastday']
+        df['bksk'] = np.where(df['higher'] & df.atr, 'bk', None)
+        df['bksk'] = np.where(df['lower'] & df.atr, 'sk', df['bksk'])
         df.to_csv('tmp.csv')
-        self._run_zdzy(df, zy, zs)
-  
-
+        self._run_zdzy(df, zy, zs, ydzs)
+        
     def _get_hl_bkpoint(self, df, idx):
         ''''''
         nhh = df.loc[idx, 'nhh']
@@ -503,7 +507,7 @@ class GL(GeneralIndex):
         o = df.loc[idx, 'o']
         return o if o < ncl else ncl
 
-    def _tongjilist(self, lst, zy, zs):
+    def _tongjilist(self, lst, zy=1, zs=1):
         #print sorted([round(x,3) for x in lst])
         m = np.mean(lst)
         s = np.std(lst)
@@ -512,14 +516,16 @@ class GL(GeneralIndex):
         #print '标准差:', round(s, 4)
         #print '标准差/均值:', round(y, 4)
         self._plot_cummulti(lst)
+        #print sorted(lst)
         bigthanone = [n for n in lst if n > 1]
         srate = len(bigthanone) / float(len(lst))
-        print 'success rate:', round(srate, 2)
-        print 'exp', round(zy*srate-zs*(1-srate), 3)
+        print 'success rate:', round(srate, 2) 
+        print 'exp', round(zy*srate-zs*(1-srate), 4)
+
         return m, s, y
         
 
-    def _run_zdzy(self, df, zy, zs):
+    def _run_zdzy(self, df, zy, zs, ydzs):
         move_len = 99
         bzlist = []
         for i, bksk in enumerate(df.bksk):
@@ -529,47 +535,88 @@ class GL(GeneralIndex):
             r = range(i+1, i+move_len)
             idx = df.index[i]
             if bksk == 'bk':
+
                 bkpoint = self._get_hl_bkpoint(df, idx)
-                bkpoint = df.loc[idx, 'o']
+                #bkpoint = df.loc[idx, 'o']
+                atr = df.loc[idx, 'atr']
+                if not atr:
+                    atr = bkpoint * 0.015
                 if zs < 1: # 百分比
                     zypoint = bkpoint * (1+zy)
                     zspoint = bkpoint * (1-zs)
                 else: # atr 止盈止损
-                    zypoint = bkpoint + df.loc[idx, 'atr'] * zy
-                    zspoint = bkpoint - df.loc[idx, 'atr'] * zs
+                    zypoint = bkpoint + atr * zy
+                    zspoint = bkpoint - atr * zs
+                    zy = atr * zy / float(bkpoint)
+                    zs = atr * zs / float(bkpoint)
                 for j in r:
                     
                     move_low = df.loc[df.index[j], 'l']
                     move_high = df.loc[df.index[j], 'h']
                     #print i,j, bkpoint, zypoint, zspoint, move_low, move_high
+                    o = float(df.loc[df.index[j], 'o'])
                     if move_low <= zspoint:
-                        bzlist.append(zspoint/bkpoint)
+                        if o > zspoint:
+                            bzlist.append(zspoint/bkpoint)
+                        else:
+                            bzlist.append(o/bkpoint)
                         break
                     if move_high >= zypoint:
-                        bzlist.append(zypoint/bkpoint)
+                        
+                        if o < zypoint:
+                            bzlist.append(zypoint/bkpoint)
+                        else:
+                            bzlist.append(o/bkpoint)
                         break
+                    if ydzs: # 带移动止损的不好
+                        
+                        nllp = df.loc[df.index[j], 'nllp']
+                        if move_low <= nllp:
+
+                            bzlist.append(nllp/bkpoint)
+                            break
             if bksk == 'sk':
                 skpoint = self._get_hl_skpoint(df, idx)
-                skpoint = df.loc[idx, 'o']
+                #skpoint = df.loc[idx, 'o']
+                atr = df.loc[idx, 'atr']
+                if not atr:
+                    atr = skpoint * 0.015
                 if zs < 1 and zy<1: # 百分比
                     zypoint = skpoint * (1-zy)
                     zspoint = skpoint * (1+zs)
                 else: # atr 止盈止损
-                    zypoint = skpoint - df.loc[idx, 'atr']*zy
-                    zspoint = skpoint + df.loc[idx, 'atr']*zs
+                    zypoint = skpoint - atr*zy
+                    zspoint = skpoint + atr*zs
+                    zy = atr*zy / float(skpoint)
+                    zs = atr*zs / float(skpoint)
                 for j in r:
                     
                     move_low = df.loc[df.index[j], 'l']
                     move_high = df.loc[df.index[j], 'h']
+                    o = float(df.loc[df.index[j], 'o'])
                     #print i,j, bkpoint, zypoint, zspoint, move_low, move_high
                     if move_high >= zspoint:
-                        bzlist.append(skpoint/zspoint)
+                        if o < zspoint:
+                            bzlist.append(skpoint/zspoint)
+                        else:
+                            bzlist.append(skpoint/o)
                         break
                     if move_low <= zypoint:
-                        bzlist.append(skpoint/zypoint)
+                        
+                        if o > zypoint:
+                            bzlist.append(skpoint/zypoint)
+                        else:
+                            bzlist.append(skpoint/o)
                         break
+                    if ydzs:
 
+                        nhhp = df.loc[df.index[j], 'nhhp']
+                        if move_high >= nhhp:
+                            bzlist.append(skpoint/nhhp)
+                            break
+        self._cnt_lianxu_kuisun2(bzlist)
         return self._tongjilist(bzlist,zy,zs)
+
 
     '''
     ############################################################################################
@@ -580,9 +627,9 @@ class GL(GeneralIndex):
     '''
 
     def zhisungailv(self):
-        '''今天l大于前一天，后一天l大于今天l的概率'''
-        self.get_nhh(7)
-        self.get_nll(7)
+        '''开仓止损概率'''
+        self.get_nhh(2)
+        self.get_nll(2)
         self.get_nch(2)
         self.get_ncl(2)
         self.get_mhh(7)
@@ -630,6 +677,8 @@ class GL(GeneralIndex):
 
             'maup': df[ma_name] > df[ma_name].shift(1),
             'madown': df[ma_name] < df[ma_name].shift(1),
+            'maup_lastday': df[ma_name].shift(1) > df[ma_name].shift(2),
+            'madown_lastday': df[ma_name].shift(1) < df[ma_name].shift(2),
             '1liangyang':df.c > df.o,
             '1lianyin':df.c < df.o,
             '2liangyang': (df.c > df.o) & (df.c.shift(1) > df.o.shift(1)),
@@ -661,7 +710,7 @@ class GL(GeneralIndex):
 
 
         #df['higher'] = (df.h > df.nhh)
-        df['higher'] =   option['tupo_high']  & option['close_higher_than_ma_lastday'] #& option['last_lowpoint']
+        df['higher'] =   option['tupo_high']  & option['close_higher_than_ma_lastday'] & option['maup_lastday']
         #df['higher'] =   option['gdd_low_last']  & option['bigger_than_nch_lastday']
         #df['higher'] =  option['bigger_than_nch'] & option['close_higher_than_ma']
         df['higher1'] = np.where(df.higher, 1, None)
@@ -678,7 +727,7 @@ class GL(GeneralIndex):
         print 'duo', round(result_duo, 2)
 
         #df['lower'] = (df.l < df.nll)
-        df['lower'] =  option['tupo_low']  & option['close_lower_than_ma_lastday'] #& option['last_highpoint']
+        df['lower'] =  option['tupo_low']  & option['close_lower_than_ma_lastday'] & option['madown_lastday']
         #df['lower'] =  option['gdd_high_last']  & option['lower_than_ncl_lastday']
         #df['lower'] =   option['lower_than_ncl'] & option['close_lower_than_ma']
         df['lower1'] = np.where(df.lower, 1, None)
@@ -704,16 +753,16 @@ if __name__ == '__main__':
     
     #test()
     #run_ev_tupohl('ta')
-    g = GL('dy') # ta rb c m a ma jd dy sr 999999
+    g = GL('m') # ta rb c m a ma jd dy sr 999999
     #g.tupohl(3, 7, 1)
     #g.ev_ma(20,0.03)
-    #g.ev_tupohl(2, 7, 1)
+    #g.ev_tupohl(3, 7, 0.01)
     #g.ev_tupohl(3, 11, 1) 
     #g.ev_tupohl(3, 17, 1)
 
     #g.zhisungailv()
 
-    g.zdzy_hl()
+    g.zdzy_hl(ydzs=0)
    
     
 

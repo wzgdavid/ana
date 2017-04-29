@@ -1195,6 +1195,22 @@ class General(object):
         #print cnts
         #print '最大连亏次数:%s, 平均连亏:%s, 连亏中位数:%s' %  (max(cnts) , mean, median) # 
 
+    def _cnt_lianxu_kuisun2(self, yinkuilist):
+        cnts = []
+        cnt = 0
+        for n in yinkuilist:
+            if n <= 1: # 0连亏  1连盈
+                cnt += 1
+            else:
+                if cnt>0:
+                    cnts.append(cnt)
+                    cnt = 0
+        mean = round(np.mean(cnts), 1)
+        median = np.median(cnts)
+        print yinkuilist
+        print cnts
+        print '最大连亏次数:%s, 平均连亏:%s, 连亏中位数:%s' %  (max(cnts) , mean, median) # 
+
     def _cnt_lianxu_kuisun(self, yinkuilist):
         cnts = []
         cnt = 0
