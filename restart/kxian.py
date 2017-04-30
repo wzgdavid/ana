@@ -663,7 +663,7 @@ class Kxian(GeneralIndex):
 
 
     @util.display_func_name
-    def hl2(self, n=5, m=10, zs=1, zj=100000, f=0.02):
+    def hl2(self, n=5, m=10, zs=1, zj=100000, f=0.06):
         '''用runhl跑，runhl专为hl写的 
          突破n天高低点
          移动止损m高低点
@@ -775,7 +775,7 @@ def fuhe_liankui():
     print '最大连亏次数:%s, 平均连亏:%s, 连亏中位数:%s' %  (max(cnts) , mean, median) # 
 
 if __name__ == '__main__':
-    k = Kxian('ta') # ta rb c m a ma jd dy 999999 sr au
+    k = Kxian('m') # ta rb c m a ma jd dy 999999 sr au
 
     k.hl2(2,7,2)
 

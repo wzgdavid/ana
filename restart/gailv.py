@@ -642,6 +642,7 @@ class GL(GeneralIndex):
         zjqx = [zj]
         gain = 0
         move_i = 0
+        klimit = 99999999
         for i, bksk in enumerate(df.bksk):
             if i < move_i: # 有持仓时不开仓
                 continue
@@ -653,7 +654,7 @@ class GL(GeneralIndex):
             if bksk == 'bk':
                 bkpoint = self._get_hl_bkpoint(df, idx)
                 bkczs = bkpoint * zs *10 # 开仓止损幅度
-                kjs = int((zj*f)/bkczs) # 开几手
+                kjs = min(int((zj*f)/bkczs), klimit) # 开几手
                 zypoint = bkpoint * (1+zy)
                 zspoint = bkpoint * (1-zs)
                 for j in r:
@@ -682,7 +683,7 @@ class GL(GeneralIndex):
             if bksk == 'sk':
                 skpoint = self._get_hl_skpoint(df, idx)
                 skczs = skpoint * zs * 10# 开仓止损
-                kjs = int((zj*f)/skczs)
+                kjs = min(int((zj*f)/skczs), klimit)
                 zypoint = skpoint * (1-zy)
                 zspoint = skpoint * (1+zs)
 
@@ -864,7 +865,7 @@ if __name__ == '__main__':
     
     #test()
     #run_ev_tupohl('ta')
-    g = GL('sr') # ta rb c m a ma jd dy sr 999999
+    g = GL('a') # ta rb c m a ma jd dy sr 999999
     #g.tupohl(3, 7, 1)
     #g.ev_ma(20,0.03)
     #g.ev_tupohl(3, 7, 0.01)
