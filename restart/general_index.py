@@ -1180,26 +1180,10 @@ class General(object):
         return zj-zj_init,(zj-zj_init)/sscnt
 
     def _cnt_lianxu_kuisun2(self, yinkuilist):
-        #cnts = []
-        #cnt = 0
-        #for n in yinkuilist:
-        #    if n == 0:
-        #        cnt += 1
-        #    else:
-        #        if cnt>0:
-        #            cnts.append(cnt)
-        #            cnt = 0
-        #mean = round(np.mean(cnts), 1)
-        #median = np.median(cnts)
-        print yinkuilist
-        #print cnts
-        #print '最大连亏次数:%s, 平均连亏:%s, 连亏中位数:%s' %  (max(cnts) , mean, median) # 
-
-    def _cnt_lianxu_kuisun2(self, yinkuilist):
         cnts = []
         cnt = 0
         for n in yinkuilist:
-            if n <= 1: # 0连亏  1连盈
+            if n < 1: # 0连亏  1连盈
                 cnt += 1
             else:
                 if cnt>0:
@@ -1207,8 +1191,8 @@ class General(object):
                     cnt = 0
         mean = round(np.mean(cnts), 1)
         median = np.median(cnts)
-        print yinkuilist
-        print cnts
+        #print yinkuilist
+        print sorted(cnts)
         print '最大连亏次数:%s, 平均连亏:%s, 连亏中位数:%s' %  (max(cnts) , mean, median) # 
 
     def _cnt_lianxu_kuisun(self, yinkuilist):
@@ -1733,6 +1717,7 @@ class General(object):
         df3 = pd.DataFrame(index=df.date,
                       columns=['avg'])
         #print index
+        
         data = {
             'avg' : pd.Series(kccs, index=df.date),
             }
