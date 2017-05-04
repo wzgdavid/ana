@@ -1778,6 +1778,10 @@ class GeneralIndex(General):
         '''前n天最高价最高点（不包含当天）'''
         self.df['nhh'] = self.df.h.shift(1).rolling(window=n, center=False).max()
 
+    def get_nlh(self, n):
+        '''前n天最低价最高点（不包含当天）'''
+        self.df['nlh'] = self.df.l.shift(1).rolling(window=n, center=False).max()
+
     def get_nsthl(self, n):
         '''前n天k线实体最高点，最低点（不包含当天）'''
         self.df['noh'] = self.df.o.shift(1).rolling(window=n, center=False).max()
@@ -1808,6 +1812,9 @@ class GeneralIndex(General):
     def get_nll(self, n):
         '''前n天最低价最低点（不包含当天）'''
         self.df['nll'] = self.df.l.shift(1).rolling(window=n, center=False).min()
+    def get_nhl(self, n):
+        '''前n天最低价最低点（不包含当天）'''
+        self.df['nhl'] = self.df.h.shift(1).rolling(window=n, center=False).min()
 
     def get_hnll(self, n):
         '''前n天最高价的最低点（不包含当天）'''

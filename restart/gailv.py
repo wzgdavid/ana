@@ -415,15 +415,18 @@ class GL(GeneralIndex):
         '''
         self.get_nhh(2)
         self.get_nll(2)
-        self.get_nhhp(7)
-        self.get_nllp(7)
+        self.get_nlh(2)
+        self.get_nhl(2)
         self.get_nch(2)
         self.get_ncl(2)
+        self.get_nhhp(7)
+        self.get_nllp(7)
+
         self.get_mhh(7)
         self.get_mll(7)
         self.get_atr(50)
         zy = 0.02
-        zs = 0.02 
+        zs = 0.02
  
         ma = 20
         ma_name = 'ma'+str(ma)
@@ -436,7 +439,8 @@ class GL(GeneralIndex):
             'tupo_low': df.l < df.nll,
             'tupo_high_c': df.h > df.nch,
             'tupo_low_c': df.l < df.ncl,  
-
+            'tupo_high2': df.h > df.nlh,
+            'tupo_low2': df.l < df.nhl,
             'gdd_low_last':(df.l.shift(3) > df.l.shift(2)) & (df.l.shift(1) > df.l.shift(2)), 
             'gdd_high_last': (df.h.shift(3) < df.h.shift(2)) & (df.h.shift(1) < df.h.shift(2)),
             'gdd_low_last2':(df.l.shift(4) > df.l.shift(3)) & (df.l.shift(2) > df.l.shift(3)),
@@ -482,10 +486,10 @@ class GL(GeneralIndex):
             'duo_huitiao': (df.c < df[ma2_name]),         
             'kong_huitiao': (df.c > df[ma2_name]),  
                   }
-        df['higher'] = option['tupo_high']  & option['higher_than_ma_lastday'] & option['maup_lastday']
-        df['lower'] = option['tupo_low']  & option['lower_than_ma_lastday'] & option['madown_lastday'] 
-        #df['higher'] = option['tupo_high'] & option['high_2liangao'] & option['close_higher_than_ma_lastday']
-        #df['lower'] = option['tupo_low'] & option['low_2liandi'] & option['close_lower_than_ma_lastday']
+        df['higher'] = option['tupo_high']  & option['higher_than_ma_lastday'] #& option['maup_lastday']
+        df['lower'] = option['tupo_low'] & option['lower_than_ma_lastday'] # & option['madown_lastday'] 
+        #df['higher'] = option['tupo_high'] & option['close_bigger_than_nch_lastday'] #& option['close_higher_than_ma_lastday']
+        #df['lower'] = option['tupo_low'] & option['close_lower_than_ncl_lastday'] #& option['close_lower_than_ma_lastday']
         df['bksk'] = np.where(df['higher'] & df.atr, 'bk', None)
         df['bksk'] = np.where(df['lower'] & df.atr, 'sk', df['bksk'])
         #df['bksk'] = np.where(df['lower'] & df.atr, 'sk', None)
@@ -498,6 +502,12 @@ class GL(GeneralIndex):
         o = df.loc[idx, 'o']
         return o if o > nhh else nhh
 
+    def _get_hl2_bkpoint(self, df, idx):
+        ''''''
+        nlh = df.loc[idx, 'nlh']
+        o = df.loc[idx, 'o']
+        return o if o > nlh else nlh
+
     def _get_chl_bkpoint(self, df, idx):
         ''''''
         nch = df.loc[idx, 'nch']
@@ -508,6 +518,11 @@ class GL(GeneralIndex):
         nll = df.loc[idx, 'nll']
         o = df.loc[idx, 'o']
         return o if o < nll else nll
+
+    def _get_hl2_skpoint(self, df, idx):
+        nhl = df.loc[idx, 'nhl']
+        o = df.loc[idx, 'o']
+        return o if o < nhl else nhl
 
     def _get_chl_skpoint(self, df, idx):
         ncl = df.loc[idx, 'ncl']
@@ -522,31 +537,40 @@ class GL(GeneralIndex):
         print '均值:', round(m, 4)
         #print '标准差:', round(s, 4)
         #print '标准差/均值:', round(y, 4)
-        self._plot_cummulti(lst)
+        
         #print sorted(lst)
         bigthanone = [n for n in lst if n > 1]
         srate = len(bigthanone) / float(len(lst))
         print 'success rate:', round(srate, 2) 
         print 'exp', round(zy*srate-zs*(1-srate), 4)
-
+        self._plot_cummulti(lst)
         return m, s, y
         
 
     def _run_zdzy(self, df, zy, zs, ydzs):
         move_len = 99
         bzlist = []
+        move_i = 0
+        move_j = 0
+        last_bksk = 0
         for i, bksk in enumerate(df.bksk):
+            #if i <= move_i: # 有持仓时不开仓, 
+            #    continue
+            #if i < move_j + 2: # 前一次开仓后2天里不开仓
+            #    continue
 
             if i+move_len > len(df.bksk):
                 break
+            
             r = range(i+1, i+move_len)
             idx = df.index[i]
 
             if bksk == 'bk':
-
+                move_j = i
+                #print i                 
                 bkpoint = self._get_hl_bkpoint(df, idx)
                 #bkpoint = df.loc[idx, 'o']
-
+                nhh = df.loc[idx, 'nhh']
 
                 atr = df.loc[idx, 'atr']
                 if not atr:
@@ -554,6 +578,8 @@ class GL(GeneralIndex):
                 if zs < 1: # 百分比
                     zypoint = bkpoint * (1+zy)
                     zspoint = bkpoint * (1-zs)
+                    #zypoint = nhh * (1+zy)
+                    #zspoint = nhh * (1-zs)
                 else: # atr 止盈止损
                     zypoint = bkpoint + atr * zy
                     zspoint = bkpoint - atr * zs
@@ -564,19 +590,23 @@ class GL(GeneralIndex):
                     move_high = df.loc[df.index[j], 'h']
                     #print i,j, bkpoint, zypoint, zspoint, move_low, move_high
                     o = float(df.loc[df.index[j], 'o'])
+
+                    # 先止盈后止损 和先止损后止盈效果有区别
                     if move_low <= zspoint:
                         if o > zspoint:
                             bzlist.append(zspoint/bkpoint)
                         else:
                             bzlist.append(o/bkpoint)
+                        move_i = j
                         break
                     if move_high >= zypoint:
-                        
                         if o < zypoint:
                             bzlist.append(zypoint/bkpoint)
                         else:
                             bzlist.append(o/bkpoint)
+                        move_i = j
                         break
+
                     if ydzs: # 带移动止损的不好
                         nllp = df.loc[df.index[j], 'nllp']
                         if move_low <= nllp:
@@ -590,15 +620,19 @@ class GL(GeneralIndex):
                           
 
             if bksk == 'sk':
+                #print i
+                move_j = i 
                 skpoint = self._get_hl_skpoint(df, idx)
                 #skpoint = df.loc[idx, 'o']
-
+                nll = df.loc[idx, 'nll']
                 atr = df.loc[idx, 'atr']
                 if not atr:
                     atr = skpoint * 0.015
                 if zs < 1 and zy<1: # 百分比
                     zypoint = skpoint * (1-zy)
                     zspoint = skpoint * (1+zs)
+                    #zypoint = nll * (1-zy)
+                    #zspoint = nll * (1+zs)
                 else: # atr 止盈止损
                     zypoint = skpoint - atr*zy
                     zspoint = skpoint + atr*zs
@@ -615,6 +649,7 @@ class GL(GeneralIndex):
                             bzlist.append(skpoint/zspoint)
                         else:
                             bzlist.append(skpoint/o)
+                        move_i = j
                         break
                     if move_low <= zypoint:
                         
@@ -622,7 +657,9 @@ class GL(GeneralIndex):
                             bzlist.append(skpoint/zypoint)
                         else:
                             bzlist.append(skpoint/o)
+                        move_i = j
                         break
+
                     if ydzs:
                         nhhp = df.loc[df.index[j], 'nhhp']
                         if move_high >= nhhp:
@@ -631,6 +668,7 @@ class GL(GeneralIndex):
                             else:
                                 bzlist.append(skpoint/o)
                             break
+        print 'sortedbzlist', sorted(bzlist)
         self._cnt_lianxu_kuisun2(bzlist)
         return self._tongjilist(bzlist,zy,zs)
 
@@ -642,9 +680,10 @@ class GL(GeneralIndex):
         zjqx = [zj]
         gain = 0
         move_i = 0
-        klimit = 99999999
+        klimit = 9999999
         for i, bksk in enumerate(df.bksk):
-            if i < move_i: # 有持仓时不开仓
+            #print move_i
+            if i < move_i: # 有持仓时不开仓, 这个影响蛮大
                 continue
             if i+move_len > len(df.bksk):
                 break
@@ -670,9 +709,7 @@ class GL(GeneralIndex):
                         move_i = j
                         break
                     if move_high >= zypoint:
-                        
                         if o < zypoint:
-                            #bzlist.append(zypoint/bkpoint)
                             gain = (zypoint  - bkpoint) * kjs* 10 # 平仓收益
                         else:
                             gain = (o  - bkpoint) * kjs* 10 # 平仓收益
@@ -694,20 +731,15 @@ class GL(GeneralIndex):
                     o = float(df.loc[df.index[j], 'o'])
                     if move_high >= zspoint:
                         if o < zspoint:
-                            #bzlist.append(skpoint/zspoint)
                             gain = (skpoint  - zspoint) * kjs* 10
                         else:
-                            #bzlist.append(skpoint/o)
                             gain = (skpoint  - o) * kjs* 10
                         move_i = j
                         break
                     if move_low <= zypoint:
-                        
                         if o > zypoint:
-                            #bzlist.append(skpoint/zypoint)
                             gain = (skpoint  - zypoint) * kjs* 10
                         else:
-                            #bzlist.append(skpoint/o)
                             gain = (skpoint  - o) * kjs* 10
                         move_i = j
                         break
