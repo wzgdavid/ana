@@ -1183,7 +1183,7 @@ class General(object):
         cnts = []
         cnt = 0
         for n in yinkuilist:
-            if n < 1: # 0连亏  1连盈
+            if n <1: # <1 亏损 >1 盈利
                 cnt += 1
             else:
                 if cnt>0:
@@ -1192,6 +1192,7 @@ class General(object):
         mean = round(np.mean(cnts), 1)
         median = np.median(cnts)
         #print yinkuilist
+        print cnts
         print sorted(cnts)
         print '最大连亏次数:%s, 平均连亏:%s, 连亏中位数:%s' %  (max(cnts) , mean, median) # 
 

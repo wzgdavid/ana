@@ -425,9 +425,10 @@ class GL(GeneralIndex):
         self.get_mhh(7)
         self.get_mll(7)
         self.get_atr(50)
+        #zy = 2
+        #zs = 2
         zy = 0.02
-        zs = 0.02
- 
+        zs = 0.02 
         ma = 20
         ma_name = 'ma'+str(ma)
         ma2 = 5
@@ -476,8 +477,12 @@ class GL(GeneralIndex):
             'madown_lastday': df[ma_name].shift(1) < df[ma_name].shift(2),
             '1liangyang':df.c > df.o,
             '1lianyin':df.c < df.o,
+            'last_yang':df.c.shift(1) > df.o.shift(1),
+            'last_yin':df.c.shift(1) < df.o.shift(1),
             '2liangyang': (df.c > df.o) & (df.c.shift(1) > df.o.shift(1)),
             '2lianyin': (df.c < df.o) & (df.c.shift(1) < df.o.shift(1)),
+            '2liangyang_lastday': (df.c.shift(1) > df.o.shift(1)) & (df.c.shift(2) > df.o.shift(2)),
+            '2lianyin_lastday': (df.c.shift(1) < df.o.shift(1)) & (df.c.shift(2) < df.o.shift(2)),
             '3liangyang': (df.c > df.o) & (df.c.shift(1) > df.o.shift(1)) & (df.c.shift(2) > df.o.shift(2)),
             '3lianyin': (df.c < df.o) & (df.c.shift(1) < df.o.shift(1)) & (df.c.shift(2) < df.o.shift(2)),
             'high_2liangao':(df.h.shift(2) > df.h.shift(3)) & (df.h.shift(1) > df.h.shift(2)),
@@ -486,8 +491,8 @@ class GL(GeneralIndex):
             'duo_huitiao': (df.c < df[ma2_name]),         
             'kong_huitiao': (df.c > df[ma2_name]),  
                   }
-        df['higher'] = option['tupo_high']  & option['higher_than_ma_lastday'] #& option['maup_lastday']
-        df['lower'] = option['tupo_low'] & option['lower_than_ma_lastday'] # & option['madown_lastday'] 
+        df['higher'] = option['tupo_high']  & option['higher_than_ma_lastday'] #& option['low_2liangao']
+        df['lower'] = option['tupo_low'] & option['lower_than_ma_lastday']  #& option['high_2liandi'] 
         #df['higher'] = option['tupo_high'] & option['close_bigger_than_nch_lastday'] #& option['close_higher_than_ma_lastday']
         #df['lower'] = option['tupo_low'] & option['close_lower_than_ncl_lastday'] #& option['close_lower_than_ma_lastday']
         df['bksk'] = np.where(df['higher'] & df.atr, 'bk', None)
@@ -542,7 +547,7 @@ class GL(GeneralIndex):
         bigthanone = [n for n in lst if n > 1]
         srate = len(bigthanone) / float(len(lst))
         print 'success rate:', round(srate, 2) 
-        print 'exp', round(zy*srate-zs*(1-srate), 4)
+        #print 'exp', round(zy*srate-zs*(1-srate), 4)
         self._plot_cummulti(lst)
         return m, s, y
         
@@ -668,7 +673,7 @@ class GL(GeneralIndex):
                             else:
                                 bzlist.append(skpoint/o)
                             break
-        print 'sortedbzlist', sorted(bzlist)
+        #print 'sortedbzlist', sorted(bzlist)
         self._cnt_lianxu_kuisun2(bzlist)
         return self._tongjilist(bzlist,zy,zs)
 
@@ -676,21 +681,31 @@ class GL(GeneralIndex):
         '''带资金管理'''
         move_len = 99
         zj = 100000
-        f = 0.06
+        f0 = 0.02
+        f = f0
         zjqx = [zj]
         gain = 0
         move_i = 0
         klimit = 9999999
+        cnts = [] # 连亏计数
+        cnt = 0 # 连亏计数
+        cnt2 = 0 # 连盈计数
         for i, bksk in enumerate(df.bksk):
             #print move_i
-            if i < move_i: # 有持仓时不开仓, 这个影响蛮大
-                continue
+            #if i < move_i: # 有持仓时不开仓, 这个影响蛮大
+            #    continue
             if i+move_len > len(df.bksk):
                 break
             r = range(i+1, i+move_len)
             idx = df.index[i]
-
+            date = df.loc[idx, 'date']
             if bksk == 'bk':
+                if cnt2 >=4:
+                    f = f0 * 2
+                elif cnt2 >= 2: # 连盈时，f变大
+                    f = f0 * 1.5
+                else:
+                    f = f0
                 bkpoint = self._get_hl_bkpoint(df, idx)
                 bkczs = bkpoint * zs *10 # 开仓止损幅度
                 kjs = min(int((zj*f)/bkczs), klimit) # 开几手
@@ -703,45 +718,65 @@ class GL(GeneralIndex):
                     o = float(df.loc[df.index[j], 'o'])
                     if move_low <= zspoint:
                         if o > zspoint:
-                            gain = (zspoint  - bkpoint) * kjs* 10 # 平仓收益
+                            gain = (zspoint - bkpoint) * kjs* 10 # 平仓收益
                         else:
-                            gain = (o  - bkpoint) * kjs* 10 # 平仓收益
+                            gain = (o - bkpoint) * kjs* 10 # 平仓收益
                         move_i = j
+                        cnt += 1
+                        cnt2 = 0
                         break
                     if move_high >= zypoint:
                         if o < zypoint:
-                            gain = (zypoint  - bkpoint) * kjs* 10 # 平仓收益
+                            gain = (zypoint - bkpoint) * kjs* 10 # 平仓收益
                         else:
-                            gain = (o  - bkpoint) * kjs* 10 # 平仓收益
+                            gain = (o - bkpoint) * kjs* 10 # 平仓收益
                         move_i = j
+                        if cnt>0:
+                            cnts.append(cnt)
+                            if cnt > 4: # 看连亏数多，是什么情况
+                                print date
+                            cnt = 0
+                        cnt2 += 1
                         break
                 zj += gain *0.99
                 zjqx.append(zj)
             if bksk == 'sk':
+                if cnt2 >=4:
+                    f = f0 * 2
+                elif cnt2 >= 2: # 连盈时，f变大
+                    f = f0 * 1.5
+                else:
+                    f = f0
                 skpoint = self._get_hl_skpoint(df, idx)
                 skczs = skpoint * zs * 10# 开仓止损
                 kjs = min(int((zj*f)/skczs), klimit)
                 zypoint = skpoint * (1-zy)
                 zspoint = skpoint * (1+zs)
-
                 for j in r:
-                    
                     move_low = df.loc[df.index[j], 'l']
                     move_high = df.loc[df.index[j], 'h']
                     o = float(df.loc[df.index[j], 'o'])
                     if move_high >= zspoint:
                         if o < zspoint:
-                            gain = (skpoint  - zspoint) * kjs* 10
+                            gain = (skpoint - zspoint) * kjs* 10
                         else:
-                            gain = (skpoint  - o) * kjs* 10
+                            gain = (skpoint - o) * kjs* 10
                         move_i = j
+                        cnt += 1
+                        cnt2 =0
                         break
                     if move_low <= zypoint:
                         if o > zypoint:
-                            gain = (skpoint  - zypoint) * kjs* 10
+                            gain = (skpoint - zypoint) * kjs* 10
                         else:
-                            gain = (skpoint  - o) * kjs* 10
+                            gain = (skpoint - o) * kjs* 10
                         move_i = j
+                        if cnt>0:
+                            cnts.append(cnt)
+                            if cnt > 4: # 看连亏数多，是什么情况
+                                print date
+                            cnt = 0
+                        cnt2 += 1
                         break
                 zj += gain*0.99
                 zjqx.append(zj)
@@ -749,11 +784,10 @@ class GL(GeneralIndex):
         print zj
         print zjqx
 
-
+        print 'sorted_cnts', sorted(cnts) # 连亏计数
         data = {
             'total' : pd.Series(zjqx),
             }
-        
         df2 = pd.DataFrame(data)
         df2.plot(x_compat=True)
         plt.show()
@@ -897,11 +931,11 @@ if __name__ == '__main__':
     
     #test()
     #run_ev_tupohl('ta')
-    g = GL('a') # ta rb c m a ma jd dy sr 999999
+    g = GL('sr') # ta rb c m a ma jd dy sr cs 999999
     #g.tupohl(3, 7, 1)
     #g.ev_ma(20,0.03)
     #g.ev_tupohl(3, 7, 0.01)
-    #g.ev_tupohl(3, 11, 1) 
+    #g.ev_tupohl(3, 17, 1) 
     #g.ev_tupohl(3, 17, 1)
 
     #g.zhisungailv()
