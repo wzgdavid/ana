@@ -4,6 +4,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import random
 
 KLIMIT = 9999999999
 
@@ -1180,6 +1181,7 @@ class General(object):
         return zj-zj_init,(zj-zj_init)/sscnt
 
     def _cnt_lianxu_kuisun2(self, yinkuilist):
+        #random.shuffle(yinkuilist)
         cnts = []
         cnt = 0
         for n in yinkuilist:
