@@ -105,7 +105,7 @@ class Celue(GeneralIndex):
         df['bksk'] = np.where(df['lower'] & df.atr, 'sk', df['bksk'])
         #df['bksk'] = np.where(df['lower'] & df.atr, 'sk', None)
         df.to_csv('tmp.csv')
-        self._run_zdzy2(df, zy, zs, ydzs)
+        self._run_zdzy(df, zy, zs, ydzs)
         
         
     def _get_hl_bkpoint(self, df, idx):
@@ -158,7 +158,20 @@ class Celue(GeneralIndex):
         self._plot_cummulti(lst)
         return m, s, y
         
+    def _plot_cummulti(self, lst):
+        # 累计相乘，看曲线，看回撤
+        every = list()
+        cummulti=1
+        
+        #for n in bbzs:
+        for n in lst:
+            cummulti = n*cummulti
+            every.append(cummulti)
+        #print every
 
+        s = pd.Series(every)
+        s.plot()
+        plt.show()  
 
     def _run_zdzy(self, df, zy, zs, ydzs):
         move_len = 99
@@ -440,7 +453,7 @@ if __name__ == '__main__':
     
     #test()
     #run_ev_tupohl('ta')
-    g = Celue('sr') # ta rb c m a ma jd dy sr cs 999999
+    g = Celue('m') # ta rb c m a ma jd dy sr cs 999999
     #g.tupohl(3, 7, 1)
     #g.ev_ma(20,0.03)
     #g.ev_tupohl(3, 7, 0.01)
