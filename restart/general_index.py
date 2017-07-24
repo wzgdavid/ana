@@ -1816,7 +1816,7 @@ class GeneralIndex(General):
         '''前n天最低价最低点（不包含当天）'''
         self.df['nll'] = self.df.l.shift(1).rolling(window=n, center=False).min()
     def get_nhl(self, n):
-        '''前n天最低价最低点（不包含当天）'''
+        '''前n天最高价最低点（不包含当天）'''
         self.df['nhl'] = self.df.h.shift(1).rolling(window=n, center=False).min()
 
     def get_hnll(self, n):
