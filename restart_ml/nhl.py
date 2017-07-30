@@ -28,28 +28,28 @@ df['cnll'] = df.c / df.nll
 #df = df.ix[n:, ['oma', 'cma' ,'hma', 'lma', 'do']] 
 df = df.ix[n:, ['cnhh', 'cnll', 'do']] 
 df = df.dropna()
-x = df.drop('do', axis=1)
+X = df.drop('do', axis=1)
 
-x = StandardScaler().fit_transform(x)
+#X = StandardScaler().fit_transform(X)
 
 #print(x)
 #classle = LabelEncoder()
 y = df['do']
 
 #print(x, y)
-x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=0.7, test_size=0.3)
+X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.7, test_size=0.3)
 
-#model = GaussianNB() # 60左右
+model = GaussianNB() # 60左右
 #model = MLPClassifier(hidden_layer_sizes=(13,13,13),max_iter=999)  # ma20 67左右
-model = DTC() #
+#model = DTC() #
 # 以下都有UndefinedMetricWarning
 #model = MultinomialNB() 
 #model = SVC(kernel='linear', C=1.0, random_state=1) # ma20  76左右
 #model = SVC(kernel='rbf', C=1.0, random_state=0, gamma=0.1) # ma20 67左右
-model.fit(x_train, y_train)
+model.fit(X_train, y_train)
+print(model.score(X_test, y_test))
 
-
-predicted = model.predict(x_test)
+predicted = model.predict(X_test)
 expected = y_test
 report = metrics.classification_report(predicted, expected)
 print(report)

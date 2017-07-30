@@ -57,7 +57,7 @@ df['lowerthanma'] = np.where(df.c<df.ma, 1, 0)
 df = df.ix[:, ['higherthanma', 'lowerthanma', 'do']] 
 #df.drop('do', axis=1).to_csv('tmp.csv')
 #df.to_csv('tmp.csv')
-x = df.drop('do', axis=1)
+X = df.drop('do', axis=1)
 
 #x = StandardScaler().fit_transform(x)
 
@@ -65,13 +65,13 @@ x = df.drop('do', axis=1)
 #classle = LabelEncoder()
 y = df['do']
 
-print(y[y==2].sum())
-#print(x, y)
-x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=0.6, test_size=0.4)
-print(y_test.shape)
+#print(y[y==2].sum())
+#print(X, y)
+X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.6, test_size=0.4)
+#print(y_test.shape)
 model = GaussianNB() # 
-#model = MLPClassifier(hidden_layer_sizes=(13,13,13),max_iter=999)  # 
-#model = DTC() #
+model = MLPClassifier(hidden_layer_sizes=(13,13,13),max_iter=999)  # 
+model = DTC() #
 #model = KNeighborsClassifier(n_neighbors=5, p=2, metric='minkowski')
 #model = LogisticRegression(C=1000, random_state=0)                 
 # 以下都有UndefinedMetricWarning
@@ -79,10 +79,10 @@ model = GaussianNB() #
 #model = SVC(kernel='linear', C=1.0, random_state=1) # ma20  76左右
 #model = SVC(kernel='rbf', C=1.0, random_state=0, gamma=0.1) # ma20 67左右
 
-model.fit(x_train, y_train)
+model.fit(X_train, y_train)
+print(model.score(X_train, y_train))
 
-
-predicted = model.predict(x_test)
+predicted = model.predict(X_test)
 expected = y_test
 report = metrics.classification_report(predicted, expected)
 print(report)
