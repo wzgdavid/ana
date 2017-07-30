@@ -5,7 +5,7 @@ import seaborn as sns
 
 
 plt.rcParams['font.sans-serif'] = ['SimHei'] # 正常显示中文
-hy = 'dy' # rb ta m a ma c jd dy cs
+hy = 'm' # rb ta m a ma c jd dy cs
 df = pd.read_csv(r'..\data\{}.csv'.format(hy))
 df['ma'] = df.c.rolling(window=20, center=False).mean()
 def get_atr(df, n):
@@ -18,6 +18,8 @@ def get_atr(df, n):
     df['atr'] = df.tr.rolling(window=n, center=False).mean()
     df = df.drop(['hl', 'ch','cl','tr'], axis=1)
     return df
+df['st_h'] = df[['o', 'c']].apply(lambda x: x.max(),axis=1)
+df['st_l'] = df[['o', 'c']].apply(lambda x: x.min(),axis=1)
 df = get_atr(df, 50)
 df = df.dropna()
 print(df.head(9))
@@ -127,7 +129,7 @@ def violinplot1():
 #violinplot1()
 
 '''
-看止损,移动止损
+看止损,移动止损,选移动止损的止损依据
 ---------------------------------------------------------------
 ---------------------------------------------------------------
 ---------------------------------------------------------------
@@ -148,15 +150,19 @@ cond = df.o.shift(1)   < df.l.shift(2)    # 昨天低开
 df['ll_pct'] = np.where(cond, (df.l / df.l.shift(1)) * 100, np.nan)
 # 今天低点与昨天收盘百分比
 df['lc_pct'] = np.where(cond, (df.l / (df.c.shift(1)*0.98)) * 100, np.nan)
-# 今天低点与昨天收盘减atr百分比
+# 今天低点与昨天收盘减atr的百分比
 df['lcatr_pct'] = np.where(cond, (df.l / (df.c.shift(1)-df.atr.shift(1))) * 100, np.nan)
+# 今天低点与昨天最高减atr的百分比   这个就是之前用的3atr移动止损依据
+df['lhatr_pct'] = np.where(cond, (df.l / (df.h.shift(1)-df.atr.shift(1))) * 100, np.nan)
+# 今天低点与昨天实体高点的百分比   
+df['lsthatr_pct'] = np.where(cond, (df.l / (df.st_h.shift(1)-df.atr.shift(1))) * 100, np.nan)
 # 做空
 # 今天高点与昨天高点百分比
 df['hh_pct'] = np.where(cond, (df.h / df.h.shift(1)) * 100, np.nan)
 # 今天高点与昨天收盘百分比
 df['hc_pct'] = np.where(cond, (df.h / df.c.shift(1)) * 100, np.nan)
 
-print(df[['ll_pct','lc_pct','lcatr_pct','hh_pct','hc_pct']].describe())
+print(df[['ll_pct','lc_pct','lcatr_pct','lhatr_pct','lsthatr_pct','hh_pct','hc_pct']].describe())
 
 # 第百分之n个数据
 getn = int((float(5)/100) * (df.shape[0]))
@@ -177,7 +183,7 @@ def foo1(): # 写成函数加减注释容易
 
 
 def boxplot1():
-    df2 = df[['ll_pct','lc_pct','lcatr_pct','hh_pct','hc_pct']]
+    df2 = df[['ll_pct','lc_pct','lcatr_pct','lhatr_pct','lsthatr_pct','hh_pct','hc_pct']]
     # 箱型图
     # whis参数指胡须的长度是盒子长度的几倍，
     # 超出这个值被认为是离群点（异常值）
@@ -194,7 +200,7 @@ def violinplot1():
     sns.violinplot(data = df2)
     plt.ylim(95,105) 
     plt.show()
-violinplot1()
+#violinplot1()
 
 
 '''
