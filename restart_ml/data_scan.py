@@ -5,7 +5,7 @@ import seaborn as sns
 
 
 plt.rcParams['font.sans-serif'] = ['SimHei'] # 正常显示中文
-hy = 'm' # rb ta m a ma c jd dy cs
+hy = 'rb' # rb ta m a ma c jd dy cs
 df = pd.read_csv(r'..\data\{}.csv'.format(hy))
 df['ma'] = df.c.rolling(window=20, center=False).mean()
 def get_atr(df, n):
@@ -135,21 +135,20 @@ def violinplot1():
 ---------------------------------------------------------------
 '''
 # 条件
-
-#cond = True  # 0 没条件
+cond = True  # 0 没条件
 #cond = df.o > df.c.shift(1)  #  今天开盘大于昨天收盘，今天向上的概率更大
 #cond = df.o < df.c.shift(1)    # 反之，今天开盘大于昨天收盘，今天向上的概率更小
 #cond = df.o > df.h.shift(1)    # 今天高开
 #cond = df.o < df.l.shift(1)    # 今天低开
-cond = df.o.shift(1)   > df.h.shift(2)    # 昨天高开
-cond = df.o.shift(1)   < df.l.shift(2)    # 昨天低开
+#cond = df.o.shift(1)   > df.h.shift(2)    # 昨天高开
+#cond = df.o.shift(1)   < df.l.shift(2)    # 昨天低开
 #cond = df.l.shift(1) > df.ma.shift(1)  #  昨天K线在ma之上   这两个区别不大
 #cond = df.h.shift(1) < df.ma.shift(1)  #  昨天K线在ma之下
 # 做多
 # 今天低点与昨天低点百分比
 df['ll_pct'] = np.where(cond, (df.l / df.l.shift(1)) * 100, np.nan)
 # 今天低点与昨天收盘百分比
-df['lc_pct'] = np.where(cond, (df.l / (df.c.shift(1)*0.98)) * 100, np.nan)
+df['lc_pct'] = np.where(cond, (df.l / (df.c.shift(1)*0.97)) * 100, np.nan)
 # 今天低点与昨天收盘减atr的百分比
 df['lcatr_pct'] = np.where(cond, (df.l / (df.c.shift(1)-df.atr.shift(1))) * 100, np.nan)
 # 今天低点与昨天最高减atr的百分比   这个就是之前用的3atr移动止损依据
@@ -192,7 +191,7 @@ def boxplot1():
     sns.boxplot(data=df2)
     plt.ylim(95,105)  #change the scale of the plot
     plt.show()
-#boxplot1()
+boxplot1()
 
 def violinplot1():
     plt.title(hy)
