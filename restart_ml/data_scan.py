@@ -2,27 +2,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-
+from tool import get_atr, get_ma
 
 plt.rcParams['font.sans-serif'] = ['SimHei'] # 正常显示中文
-hy = 'rb' # rb ta m a ma c jd dy cs
+hy = 'ta' # rb ta m a ma c jd dy cs
 df = pd.read_csv(r'..\data\{}.csv'.format(hy))
-df['ma'] = df.c.rolling(window=20, center=False).mean()
-def get_atr(df, n):
-    '''TR : MAX( MAX( (HIGH-LOW),ABS(REF(CLOSE,1)-HIGH) ), ABS(REF(CLOSE,1)-LOW));文华的公式
-    '''
-    df['hl'] = df.h - df.l
-    df['ch'] = abs(df.c.shift(1) - df.h)
-    df['cl'] = abs(df.c.shift(1) - df.l)
-    df['tr'] = df.loc[:, ['hl','ch', 'cl']].apply(lambda x: x.max(), axis=1)
-    df['atr'] = df.tr.rolling(window=n, center=False).mean()
-    df = df.drop(['hl', 'ch','cl','tr'], axis=1)
-    return df
+df['ma'] = get_ma(df, 20)
+df['atr'] = get_atr(df, 50)
 df['st_h'] = df[['o', 'c']].apply(lambda x: x.max(),axis=1)
 df['st_l'] = df[['o', 'c']].apply(lambda x: x.min(),axis=1)
-df = get_atr(df, 50)
 df = df.dropna()
-print(df.head(9))
+#print(df.head(9))
 # 做多
 # 一段时间买入持有
 #first_open = df.o.iloc[0]
@@ -144,24 +134,29 @@ cond = True  # 0 没条件
 #cond = df.o.shift(1)   < df.l.shift(2)    # 昨天低开
 #cond = df.l.shift(1) > df.ma.shift(1)  #  昨天K线在ma之上   这两个区别不大
 #cond = df.h.shift(1) < df.ma.shift(1)  #  昨天K线在ma之下
-# 做多
+# 做多  与前n天比较
+n = 9
 # 今天低点与昨天低点百分比
-df['ll_pct'] = np.where(cond, (df.l / df.l.shift(1)) * 100, np.nan)
-# 今天低点与昨天收盘百分比
-df['lc_pct'] = np.where(cond, (df.l / (df.c.shift(1)*0.97)) * 100, np.nan)
+df['ll_pct'] = np.where(cond, (df.l / df.l.shift(n)) * 100, np.nan)
+df['lh_pct'] = np.where(cond, (df.l / df.h.shift(n)) * 100, np.nan)
+# 今天低点与昨天收盘百分比  看下来这个标准差最小
+df['lc_pct'] = np.where(cond, (df.l / df.c.shift(n)) * 100, np.nan)
 # 今天低点与昨天收盘减atr的百分比
-df['lcatr_pct'] = np.where(cond, (df.l / (df.c.shift(1)-df.atr.shift(1))) * 100, np.nan)
+df['lsth_pct'] = np.where(cond, (df.l / df.st_h.shift(n)) * 100, np.nan)
+df['lstl_pct'] = np.where(cond, (df.l / df.st_l.shift(n)) * 100, np.nan)
+df['lcatr_pct'] = np.where(cond, (df.l / (df.c.shift(n)-df.atr)) * 100, np.nan)
 # 今天低点与昨天最高减atr的百分比   这个就是之前用的3atr移动止损依据
-df['lhatr_pct'] = np.where(cond, (df.l / (df.h.shift(1)-df.atr.shift(1))) * 100, np.nan)
+# 应该是减去今天的atr
+df['lhatr_pct'] = np.where(cond, (df.l / (df.h.shift(n)-df.atr)) * 100, np.nan)
 # 今天低点与昨天实体高点的百分比   
-df['lsthatr_pct'] = np.where(cond, (df.l / (df.st_h.shift(1)-df.atr.shift(1))) * 100, np.nan)
+df['lsthatr_pct'] = np.where(cond, (df.l / (df.st_h.shift(n)-df.atr)) * 100, np.nan)
 # 做空
 # 今天高点与昨天高点百分比
-df['hh_pct'] = np.where(cond, (df.h / df.h.shift(1)) * 100, np.nan)
+df['hh_pct'] = np.where(cond, (df.h / df.h.shift(n)) * 100, np.nan)
 # 今天高点与昨天收盘百分比
-df['hc_pct'] = np.where(cond, (df.h / df.c.shift(1)) * 100, np.nan)
+df['hc_pct'] = np.where(cond, (df.h / df.c.shift(n)) * 100, np.nan)
 
-print(df[['ll_pct','lc_pct','lcatr_pct','lhatr_pct','lsthatr_pct','hh_pct','hc_pct']].describe())
+print(df[['ll_pct','lh_pct','lc_pct','lsth_pct','lstl_pct','lcatr_pct','lhatr_pct','lsthatr_pct','hh_pct','hc_pct']].describe())
 
 # 第百分之n个数据
 getn = int((float(5)/100) * (df.shape[0]))
@@ -191,7 +186,7 @@ def boxplot1():
     sns.boxplot(data=df2)
     plt.ylim(95,105)  #change the scale of the plot
     plt.show()
-boxplot1()
+#boxplot1()
 
 def violinplot1():
     plt.title(hy)
@@ -243,3 +238,9 @@ def boxplot1():
     plt.ylim(95,105)  #change the scale of the plot
     plt.show()
 #boxplot1()
+
+def _test():
+    pass
+
+if __name__ == '__main__':
+    _test()
