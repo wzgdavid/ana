@@ -10,7 +10,7 @@ def get_atr(df, n):
     return df
 
 def get_ma(df, n):
-    df['ma'] = df.c.rolling(window=n, center=False).mean()
+    df['ma'] = round(df.c.rolling(window=n, center=False).mean())
     return df
 
 def get_nhh(df, n):
