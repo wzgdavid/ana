@@ -15,5 +15,17 @@ def get_ma(df, n):
     return df['ma']
 
 def get_nhh(df, n):
-    df['nhh'] =df.c.rolling(window=n, center=False).max()
+    df['nhh'] =df.h.rolling(window=n, center=False).max()
     return df['nhh']
+
+def get_nhhst(df, n):
+    df['nhhst'] =df.st_h.rolling(window=n, center=False).max()
+    return df['nhhst']
+
+def get_nll(df, n):
+    df['nll'] =df.l.rolling(window=n, center=False).min()
+    return df['nhh']
+
+def get_nllst(df, n):
+    df['nllst'] =df.st_l.rolling(window=n, center=False).min()
+    return df['nllst']
