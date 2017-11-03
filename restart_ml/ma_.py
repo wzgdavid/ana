@@ -16,7 +16,7 @@ from sklearn.preprocessing import MinMaxScaler, StandardScaler, LabelEncoder
 from sklearn.linear_model import LogisticRegression
 
 df = pd.read_csv(r'..\data\rb.csv')
-df = pd.read_csv(r'..\data\ta.csv')
+#df = pd.read_csv(r'..\data\ta.csv')
 df = df.ix[:, ['o', 'h', 'l', 'c']] 
 
 df = df.fillna(0) # 把手动输入的do的空行补满
@@ -67,13 +67,13 @@ y = df['do']
 
 #print(y[y==2].sum())
 #print(X, y)
-X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.6, test_size=0.4)
+X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.7, test_size=0.3)
 #print(y_test.shape)
 model = GaussianNB() # 
-model = MLPClassifier(hidden_layer_sizes=(13,13,13),max_iter=999)  # 
-model = DTC() #
+model = MLPClassifier(hidden_layer_sizes=(133,133,133),max_iter=999)  # 
+#model = DTC() #
 #model = KNeighborsClassifier(n_neighbors=5, p=2, metric='minkowski')
-#model = LogisticRegression(C=1000, random_state=0)                 
+model = LogisticRegression(C=1000, random_state=0)                 
 # 以下都有UndefinedMetricWarning
 #model = MultinomialNB() 
 #model = SVC(kernel='linear', C=1.0, random_state=1) # ma20  76左右

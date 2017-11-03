@@ -1,7 +1,3 @@
-'''
-看移动止损
-都是以多为例
-'''
 
 import matplotlib.pyplot as plt
 import numpy as np
