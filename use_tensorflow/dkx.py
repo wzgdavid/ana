@@ -46,7 +46,7 @@ df['lb'] = df.l / df.b
 
 df['bb'] = df.ma / df.ma.shift(1)# b比值
 
-df['label'] = df.c.shift(-10) / df.o.shift(-1) # 后n天收盘价除明天开盘价
+df['label'] = df.c.shift(-20) / df.o.shift(-1) # 后n天收盘价除明天开盘价
 df['label'] = np.round(df.label, 2)  # 改变小数点保留位数
 print(df.label[0])
 #y_labels = df.label.dropna().unique()
@@ -91,12 +91,23 @@ outs = ys.shape[1]
 
 
 x = tf.placeholder(tf.float32, shape=(None, 5) )
-W = tf.Variable( tf.zeros([5, outs ]) )  # [10, 4]其实就是shape
-b = tf.Variable( tf.zeros([outs]) )
+W = tf.Variable( tf.zeros([5, 10 ]) )  # [10, 4]其实就是shape
+b = tf.Variable( tf.zeros([10]) )
+
+# 中间层1
+x1 = tf.nn.sigmoid(tf.matmul(x,W) + b)
+W1 = tf.Variable( tf.zeros([10, 10]) )
+b1 = tf.Variable( tf.zeros([10]) )
+
+
+# 中间层2
+x2 = tf.nn.sigmoid(tf.matmul(x1,W1) + b1)
+W2 = tf.Variable( tf.zeros([10, outs]) )
+b2 = tf.Variable( tf.zeros([outs]) )
 
 # 激励函数可用 sigmoid softmax 
 #y = tf.matmul(x, W) + b  # 是不是没有用激励函数
-y = tf.nn.sigmoid(tf.matmul(x,W) + b)  # 
+y = tf.nn.sigmoid(tf.matmul(x2,W2) + b2)  # 
 y_ = tf.placeholder(tf.float32, shape=[None, outs])
 
 #cost = tf.reduce_mean( tf.pow((y_-y), 2) )  
@@ -126,7 +137,7 @@ with tf.Session() as sess:
     #np.random.shuffle(a)
     dff = pd.DataFrame(np.zeros([0,2]), columns=['y_true','y_pred'])
     #print(dff)
-    for n in range(30,1900):
+    for n in range(30,400):
         print(n)  
         y = tf.nn.softmax(tf.matmul(x, W_) + b_)
         feed_dict = {x: [xs[n, :]]}
