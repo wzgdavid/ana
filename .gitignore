@@ -1,6 +1,7 @@
 data/*.xls
 files_tmp/
 *.pyc
+*/tmp.csv
 
 restart/tmp.csv
 restart/tmp2.csv

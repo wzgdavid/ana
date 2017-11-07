@@ -44,7 +44,7 @@ df['lb'] = df.l / df.b
 #df['hb2'] = df.h.shift(1) / df.b.shift(1)
 #df['lb2'] = df.l.shift(1) / df.b.shift(1)
 
-df['bb'] = df.ma / df.ma.shift(1)# b比值
+df['bb'] = df.b / df.b.shift(1)# b比值
 
 df['label'] = df.c.shift(-20) / df.o.shift(-1) # 后n天收盘价除明天开盘价
 df['label'] = np.round(df.label, 2)  # 改变小数点保留位数
@@ -91,23 +91,23 @@ outs = ys.shape[1]
 
 
 x = tf.placeholder(tf.float32, shape=(None, 5) )
-W = tf.Variable( tf.zeros([5, 5 ]) )  # [10, 4]其实就是shape
-b = tf.Variable( tf.zeros([5]) )
+W = tf.Variable( tf.zeros([5, outs ]) )  # [10, 4]其实就是shape
+b = tf.Variable( tf.zeros([outs]) )
 
 # 中间层1
-x1 = tf.nn.softmax(tf.matmul(x,W) + b)
-W1 = tf.Variable( tf.zeros([5, 5]) )
-b1 = tf.Variable( tf.zeros([5]) )
+#x1 = tf.nn.softmax(tf.matmul(x,W) + b)
+#W1 = tf.Variable( tf.zeros([5, 5]) )
+#b1 = tf.Variable( tf.zeros([5]) )
 #
 #
 ## 中间层2
-x2 = tf.nn.softmax(tf.matmul(x1,W1) + b1)
-W2 = tf.Variable( tf.zeros([5, outs]) )
-b2 = tf.Variable( tf.zeros([outs]) )
+#x2 = tf.nn.softmax(tf.matmul(x1,W1) + b1)
+#W2 = tf.Variable( tf.zeros([5, outs]) )
+#b2 = tf.Variable( tf.zeros([outs]) )
 
 # 激励函数可用 sigmoid softmax 
 #y = tf.matmul(x, W) + b  # 是不是没有用激励函数
-y = tf.nn.softmax(tf.matmul(x2, W2) + b2)  # 
+y = tf.nn.sigmoid(tf.matmul(x, W) + b)  # 
 y_ = tf.placeholder(tf.float32, shape=[None, outs])
 
 #cost = tf.reduce_mean( tf.pow((y_-y), 2) )  
@@ -126,9 +126,9 @@ with tf.Session() as sess:
         feed_dict = {x: [xs[idx, :]],
                      y_: [ys[idx, :]]}
         sess.run( train_step, feed_dict=feed_dict )
-    W_, b_ = sess.run([W2, b2])
+    #W_, b_ = sess.run([W, b])
 
-print(W_)
+#print(W_)
 
 #print(type(df.label))
 #print(df.label)
@@ -139,10 +139,10 @@ with tf.Session() as sess:
 
     #a = np.arange(10)
     #np.random.shuffle(a)
-    dff = pd.DataFrame(np.zeros([0,2]), columns=['y_true','y_pred'])  # 结果比较的dataframe
+    dff = pd.DataFrame(np.zeros([0,2]), columns=['y_true_value','y_pred_value'])  # 结果比较的dataframe
     #print(dff)
     sess.run(tf.global_variables_initializer())
-    for n in range(100,1800):
+    for n in range(100,200):
         print(n)  
         feed_dict = {x: [xs[n, :]]}
         y_pred = sess.run(y, feed_dict=feed_dict)
@@ -155,8 +155,8 @@ with tf.Session() as sess:
         dff.loc[n] = [y_true_value, y_pred_value]
         #print(type(y_pred), y_pred.shape, y_pred.argmax())
 
-dff['both>1'] = (dff.y_true > 1) & (dff.y_pred > 1)
-dff['both<1'] = (dff.y_true < 1) & (dff.y_pred < 1)
+dff['both>1'] = (dff.y_true_value > 1) & (dff.y_pred_value > 1)
+dff['both<1'] = (dff.y_true_value < 1) & (dff.y_pred_value < 1)
 dff['right'] =  dff['both>1'] | dff['both<1'] # 预测方向正确 
 print(dff.right.sum()/ dff.shape[0], '预测方向正确率')
 dff.to_csv('tmp.csv')
