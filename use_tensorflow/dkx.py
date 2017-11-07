@@ -48,7 +48,7 @@ df['bb'] = df.ma / df.ma.shift(1)# b比值
 
 df['label'] = df.c.shift(-20) / df.o.shift(-1) # 后n天收盘价除明天开盘价
 df['label'] = np.round(df.label, 2)  # 改变小数点保留位数
-print(df.label[0])
+#print(df.label[0])
 #y_labels = df.label.dropna().unique()
 #print(y_labels)
 #y_labels = sorted(np.int8(y_labels*100))
@@ -91,23 +91,23 @@ outs = ys.shape[1]
 
 
 x = tf.placeholder(tf.float32, shape=(None, 5) )
-W = tf.Variable( tf.zeros([5, 10 ]) )  # [10, 4]其实就是shape
-b = tf.Variable( tf.zeros([10]) )
+W = tf.Variable( tf.zeros([5, 5 ]) )  # [10, 4]其实就是shape
+b = tf.Variable( tf.zeros([5]) )
 
 # 中间层1
-x1 = tf.nn.sigmoid(tf.matmul(x,W) + b)
-W1 = tf.Variable( tf.zeros([10, 10]) )
-b1 = tf.Variable( tf.zeros([10]) )
-
-
-# 中间层2
-x2 = tf.nn.sigmoid(tf.matmul(x1,W1) + b1)
-W2 = tf.Variable( tf.zeros([10, outs]) )
+x1 = tf.nn.softmax(tf.matmul(x,W) + b)
+W1 = tf.Variable( tf.zeros([5, 5]) )
+b1 = tf.Variable( tf.zeros([5]) )
+#
+#
+## 中间层2
+x2 = tf.nn.softmax(tf.matmul(x1,W1) + b1)
+W2 = tf.Variable( tf.zeros([5, outs]) )
 b2 = tf.Variable( tf.zeros([outs]) )
 
 # 激励函数可用 sigmoid softmax 
 #y = tf.matmul(x, W) + b  # 是不是没有用激励函数
-y = tf.nn.sigmoid(tf.matmul(x2,W2) + b2)  # 
+y = tf.nn.softmax(tf.matmul(x2, W2) + b2)  # 
 y_ = tf.placeholder(tf.float32, shape=[None, outs])
 
 #cost = tf.reduce_mean( tf.pow((y_-y), 2) )  
@@ -117,29 +117,33 @@ train_step = tf.train.GradientDescentOptimizer(1).minimize(cost)
 init = tf.global_variables_initializer()
 
 
-
+# 训练
 with tf.Session() as sess:
     sess.run(init)
 
-    for i in range(999):
-        idx = np.random.randint(10)  # 随机获取一个index
+    for i in range(9999):
+        idx = np.random.randint(xs.shape[0])  # 随机获取一个index
         feed_dict = {x: [xs[idx, :]],
                      y_: [ys[idx, :]]}
         sess.run( train_step, feed_dict=feed_dict )
-    W_, b_ = sess.run([W,b])
-    
+    W_, b_ = sess.run([W2, b2])
+
+print(W_)
+
 #print(type(df.label))
 #print(df.label)
 
+
+# 预测
 with tf.Session() as sess:
 
     #a = np.arange(10)
     #np.random.shuffle(a)
-    dff = pd.DataFrame(np.zeros([0,2]), columns=['y_true','y_pred'])
+    dff = pd.DataFrame(np.zeros([0,2]), columns=['y_true','y_pred'])  # 结果比较的dataframe
     #print(dff)
-    for n in range(30,400):
+    sess.run(tf.global_variables_initializer())
+    for n in range(100,1800):
         print(n)  
-        y = tf.nn.softmax(tf.matmul(x, W_) + b_)
         feed_dict = {x: [xs[n, :]]}
         y_pred = sess.run(y, feed_dict=feed_dict)
         #print('n {}: '.format(n), y_pred.argmax())
@@ -150,16 +154,9 @@ with tf.Session() as sess:
         y_pred_value = y_labels[y_pred.argmax()]
         dff.loc[n] = [y_true_value, y_pred_value]
         #print(type(y_pred), y_pred.shape, y_pred.argmax())
-    # 这个检验方式是针对输出结果是哑变量的
-    #correct_prediction = tf.equal(tf.argmax(y_pred,1), tf.argmax(y,1))
-    #accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-    #print(sess.run(accuracy, feed_dict=feed_dict))
-#dff['y_true>1'] = dff.y_true > 1
-#dff['y_true<1'] = dff.y_true < 1
-#dff['y_pred>1'] = dff.y_pred > 1
-#dff['y_pred<1'] = dff.y_pred < 1
 
 dff['both>1'] = (dff.y_true > 1) & (dff.y_pred > 1)
 dff['both<1'] = (dff.y_true < 1) & (dff.y_pred < 1)
 dff['right'] =  dff['both>1'] | dff['both<1'] # 预测方向正确 
 print(dff.right.sum()/ dff.shape[0], '预测方向正确率')
+dff.to_csv('tmp.csv')

@@ -146,14 +146,14 @@ class Celue(GeneralIndex):
         m = np.mean(lst)
         s = np.std(lst)
         y = s/m
-        print '均值:', round(m, 4)
+        print('均值:', round(m, 4))
         #print '标准差:', round(s, 4)
         #print '标准差/均值:', round(y, 4)
         
         #print sorted(lst)
         bigthanone = [n for n in lst if n > 1]
         srate = len(bigthanone) / float(len(lst))
-        print 'success rate:', round(srate, 2) 
+        print('success rate:', round(srate, 2) )
         #print 'exp', round(zy*srate-zs*(1-srate), 4)
         self._plot_cummulti(lst)
         return m, s, y
@@ -392,7 +392,7 @@ class Celue(GeneralIndex):
                         if cnt>0:
                             cnts.append(cnt)
                             if cnt > 5: # 看连亏数多，是什么情况
-                                print date
+                                print(date)
                             cnt = 0
                         cnt2 += 1
                         zj += gain *(1-feiyong)
@@ -428,7 +428,7 @@ class Celue(GeneralIndex):
                         if cnt>0:
                             cnts.append(cnt)
                             if cnt > 5: # 看连亏数多，是什么情况
-                                print date
+                                print(date)
                             cnt = 0
                         cnt2 += 1
                         zj += gain*(1-feiyong)
@@ -436,10 +436,10 @@ class Celue(GeneralIndex):
                 
                 zjqx.append(zj)
             #zjqx.append(zj)
-        print zj
+        print(zj)
         #print zjqx
 
-        print 'sorted_cnts', sorted(cnts) # 连亏计数
+        print('sorted_cnts', sorted(cnts)) # 连亏计数
         data = {
             'total' : pd.Series(zjqx),
             }
@@ -453,16 +453,16 @@ if __name__ == '__main__':
     
     #test()
     #run_ev_tupohl('ta')
-    g = Celue('m') # ta rb c m a ma jd dy sr cs 999999
+    g = Celue('rb') # ta rb c m a ma jd dy sr cs 999999
     #g.tupohl(3, 7, 1)
     #g.ev_ma(20,0.03)
     #g.ev_tupohl(3, 7, 0.01)
-    #g.ev_tupohl(3, 17, 1) 
+    g.ev_tupohl(3, 17, 1) 
     #g.ev_tupohl(3, 17, 1)
 
     #g.zhisungailv()
 
-    g.zdzy_hl(ydzs=0)
+    #g.zdzy_hl(ydzs=0)
    
     
 

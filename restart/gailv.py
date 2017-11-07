@@ -15,7 +15,7 @@ class GL(GeneralIndex):
 
     def foo(self, n, m, zs=2):
         '''没条件， 对比用'''
-        print 'foo------%s------%s-----------'% (n, m)
+        #print 'foo------%s------%s-----------'% (n, m)
         df = self._init_data(n, m, zs)
         df['hbz'] = np.where(1, df.mll/df.zsll , None)
         df['lbz'] = np.where(1, df.mhh/df.zshh , None)
@@ -25,7 +25,7 @@ class GL(GeneralIndex):
         '''以多为例，突破前n天高点，以前n天高点为开仓价，
         开仓止损为前zs天的最低价，看后m天（包含当天）低点与开仓止损的比值
         空反之'''
-        print 'tupohl------%s------%s-----------'% (n, m)
+        #print 'tupohl------%s------%s-----------'% (n, m)
         df = self._init_data(n, m, zs)
         df['higher'] = df.h > df.nhh
         df['lower'] = df.l < df.nll
@@ -39,7 +39,7 @@ class GL(GeneralIndex):
         '''以多为例，突破前n天高点，以前n天高点为开仓价，
         开仓止损为开仓价下的百分比zs，看后m天（包含当天）低点与开仓止损的比值
         空反之'''
-        print 'tupohlp------%s------%s-----------'% (n, m)
+        #print 'tupohlp------%s------%s-----------'% (n, m)
         df = self._init_data(n, m)
         df['higher'] = df.h > df.nhh
         df['lower'] = df.l < df.nll
@@ -51,7 +51,7 @@ class GL(GeneralIndex):
 
     def tupohl_low(self, n, m, zs=2):
         '''tupohl变式，加条件,函数名以多为例'''
-        print 'tupohl_low------%s------%s-----------'% (n, m)
+        #print 'tupohl_low------%s------%s-----------'% (n, m)
         df = self._init_data(n, m, zs)
         # duo tou
         df['higher'] = df.h > df.nhh
@@ -65,7 +65,7 @@ class GL(GeneralIndex):
         self._to_result(df)
 
     def tupohl_close(self, n, m, zs=2):
-        print 'tupohl_close------%s------%s-----------'% (n, m)
+        #print 'tupohl_close------%s------%s-----------'% (n, m)
         df = self._init_data(n, m, zs)
         # duo tou
         df['higher'] = df.h > df.nhh
@@ -78,7 +78,7 @@ class GL(GeneralIndex):
         self._to_result(df)
 
     def tupohl_high(self, n, m, zs=2):
-        print 'tupohl_high------%s------%s-----------'% (n, m)
+        #print 'tupohl_high------%s------%s-----------'% (n, m)
         df = self._init_data(n, m, zs)
 
         # duo tou
@@ -92,7 +92,7 @@ class GL(GeneralIndex):
         self._to_result(df)
 
     def tupohl_lowclose(self, n, m, zs=2):
-        print 'tupohl_lowclose------%s------%s-----------'% (n, m)
+        #print 'tupohl_lowclose------%s------%s-----------'% (n, m)
         df = self._init_data(n, m, zs)
         # duo tou
         df['higher'] = df.h > df.nhh
@@ -107,7 +107,7 @@ class GL(GeneralIndex):
         self._to_result(df)
 
     def tupohl_highclose(self, n, m, zs=2):
-        print 'tupohl_highclose------%s------%s-----------'% (n, m)
+        #print 'tupohl_highclose------%s------%s-----------'% (n, m)
         df = self._init_data(n, m, zs)
         # duo tou
         df['higher'] = df.h > df.nhh
@@ -123,7 +123,7 @@ class GL(GeneralIndex):
 
     def tupohl_lowhigh(self, n, m, zs=2):
         ''''''
-        print 'tupohl_lowhigh------%s------%s-----------'% (n, m)
+        #print 'tupohl_lowhigh------%s------%s-----------'% (n, m)
         df = self._init_data(n, m, zs)
         # duo tou
         df['higher'] = df.h > df.nhh
@@ -138,7 +138,7 @@ class GL(GeneralIndex):
         self._to_result(df)
 
     def tupohl_hlc(self, n, m, zs=2):
-        print 'tupohl_hlc------%s------%s-----------'% (n, m)
+        #print 'tupohl_hlc------%s------%s-----------'% (n, m)
         df = self._init_data(n, m, zs)
         # duo tou
         df['higher'] = df.h > df.nhh
@@ -156,7 +156,7 @@ class GL(GeneralIndex):
 
     def tupohl_yang(self, n, m, zs=2):
         ''''''
-        print 'tupohl_yang------%s------%s-----------'% (n, m)
+        #print 'tupohl_yang------%s------%s-----------'% (n, m)
         df = self._init_data(n, m, zs)
         # duo tou
         df['higher'] = df.h > df.nhh
@@ -172,7 +172,7 @@ class GL(GeneralIndex):
 
     def tupohl_hlc_yang(self, n, m, zs=2):
         '''在tupohl_hcl 加个yang的条件，没效果'''
-        print 'tupohl_hlc_yang------%s------%s-----------'% (n, m)
+        #print 'tupohl_hlc_yang------%s------%s-----------'% (n, m)
         df = self._init_data(n, m, zs)
         # duo tou
         df['higher'] = df.h > df.nhh
@@ -208,14 +208,14 @@ class GL(GeneralIndex):
         len1 = len(hlist)
         hlistbiggerthan1 = [x for x in hlist if x>1]
         hgl = len(hlistbiggerthan1)/float(len1) # 大于1 的概率(在m天里没止损de概率)
-        print round(hgl, 3), len1, len1*(1-hgl)#'没打开仓止损的概率'，' 总单数'' 肯定打开仓止损的单数'
+        #print round(hgl, 3), len1, len1*(1-hgl)#'没打开仓止损的概率'，' 总单数'' 肯定打开仓止损的单数'
 
-        #print df.lbz.mean() # 应该小于1
+        ##print df.lbz.mean() # 应该小于1
         llist = [x for x in sorted(df.lbz) if x>0]
         len2 = len(llist)
         llistsmallerthan1 = [x for x in llist if x<1]
         lgl = len(llistsmallerthan1)/float(len2) # 小于1 的概率(在m天里没止损de概率)
-        print round(lgl, 3), len2,  len2*(1-lgl)#, hgl*len1
+        #print round(lgl, 3), len2,  len2*(1-lgl)#, hgl*len1
 
         df.to_csv('tmp.csv')
 
@@ -238,7 +238,7 @@ class GL(GeneralIndex):
 
         不能只看跑出来的结果就，程序没有限制，而真实情况持仓有个限制，不可能无限大
         '''
-        print 'ev_tupohl------%s------%s------%s-----'% (n, y, zs)
+        #print 'ev_tupohl------%s------%s------%s-----'% (n, y, zs)
         self.get_nhh(n)
         self.get_nll(n)
         self.get_nch(n)
@@ -293,7 +293,7 @@ class GL(GeneralIndex):
         for n in lst:
             cummulti = n*cummulti
             every.append(cummulti)
-        #print every
+        ##print every
 
         s = pd.Series(every)
         s.plot()
@@ -313,7 +313,7 @@ class GL(GeneralIndex):
         for i, bksk in enumerate(df.bksk):
             idx = df.index[i]
             bpsp = df.loc[idx, 'bpsp']
-            #print idx, bpsp
+            ##print idx, bpsp
             if zs < 1:
                 if bksk == 'bk':
                     bkpoints[idx] = self._get_hl_bkpoint(df, idx)
@@ -446,19 +446,19 @@ class GL(GeneralIndex):
         return o if o < ncl else ncl
 
     def _tongjilist(self, lst, zy=1, zs=1):
-        #print sorted([round(x,3) for x in lst])
+        ##print sorted([round(x,3) for x in lst])
         m = np.mean(lst)
         s = np.std(lst)
         y = s/m
-        print '均值:', round(m, 4)
-        #print '标准差:', round(s, 4)
-        #print '标准差/均值:', round(y, 4)
+        #print '均值:', round(m, 4)
+        ##print '标准差:', round(s, 4)
+        ##print '标准差/均值:', round(y, 4)
         
-        #print sorted(lst)
+        ##print sorted(lst)
         bigthanone = [n for n in lst if n > 1]
         srate = len(bigthanone) / float(len(lst))
-        print 'success rate:', round(srate, 2) 
-        #print 'exp', round(zy*srate-zs*(1-srate), 4)
+        print('success rate:', round(srate, 2)) 
+        ##print 'exp', round(zy*srate-zs*(1-srate), 4)
         self._plot_cummulti(lst)
         return m, s, y
     
@@ -564,7 +564,7 @@ class GL(GeneralIndex):
         #df['higher2'] = np.where(df.higher & (df.mll > df.kczs_b), 1, None)
         
         result_duo = df.higher2.sum() / float(df.higher1.sum()) # 不止损概率
-        print 'duo', round(result_duo, 2)
+        #print 'duo', round(result_duo, 2)
 
         #df['lower'] = (df.l < df.nll)
         df['lower'] =  option['tupo_low']  & option['close_lower_than_ma_lastday'] & option['madown_lastday']
@@ -580,26 +580,26 @@ class GL(GeneralIndex):
         #df['lower2'] = np.where(df.lower & (df.mhh < df.nll*1.01), 1, None) # 以开仓点一定百分比为开仓止损
         #df['lower2'] = np.where(df.lower & (df.mhh < df.kczs_s), 1, None)
         result_kong = df.lower2.sum() / float(df.lower1.sum())
-        print 'kong', round(result_kong, 2)
-        print '次数', df.lower2.sum() + df.higher2.sum() # 成功次数
+        #print 'kong', round(result_kong, 2)
+        #print '次数', df.lower2.sum() + df.higher2.sum() # 成功次数
         # 平均止损程度可换多少不开仓止损概率，越大越好
-        print round((result_duo+result_kong)/df.test1.mean(), 2) # 只看对应的信号 看前一天低点的百分比
-        print round((result_duo+result_kong)/df.test2.mean(), 2) # 只看对应的信号 看前两天低点的百分比
-        print round((result_duo+result_kong)/df.testatr.mean(), 2) # 只看对应的信号 看atr的百分比
-        print round((result_duo+result_kong)/0.01, 2) #
+        #print round((result_duo+result_kong)/df.test1.mean(), 2) # 只看对应的信号 看前一天低点的百分比
+        #print round((result_duo+result_kong)/df.test2.mean(), 2) # 只看对应的信号 看前两天低点的百分比
+        #print round((result_duo+result_kong)/df.testatr.mean(), 2) # 只看对应的信号 看atr的百分比
+        #print round((result_duo+result_kong)/0.01, 2) #
         df.to_csv('tmp.csv')
 
 if __name__ == '__main__':
     
     #test()
     #run_ev_tupohl('ta')
-    g = GL('m') # ta rb c m a ma jd dy sr cs 999999
+    g = GL('rb') # ta rb c m a ma jd dy sr cs 999999
     #g.tupohl(3, 7, 1)
     #g.ev_ma(20,0.03)
-    #g.ev_tupohl(3, 7, 0.01)
+    #g.ev_tupohl(2, 7, 1)
     #g.ev_tupohl(3, 17, 1) 
     #g.ev_tupohl(3, 17, 1)
-
+    #g.tupohl_lowhigh(2,7,1)
     #g.zhisungailv()
 
    

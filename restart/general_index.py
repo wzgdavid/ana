@@ -16,7 +16,8 @@ class General(object):
         self.daima = daima
 
     def foo(self):
-        print self.df['o']
+        #print(self.df['o'])
+        pass
 
     def run(self, df):
         '''没有资金管理，没有止损，每出现一次开仓信号，就开一手，一旦出现相反信号全平仓
@@ -35,17 +36,17 @@ class General(object):
             if bksk == 'bk':
                 
                 bkprice = df.loc[idx, 'sdjj'] # 买开仓的价位
-                #print bkprice
+                ##print bkprice
                 kprice += bkprice
                 cnt += 1
                 
             elif bksk == 'sk' and cnt != 0:
                 skprice = df.loc[idx, 'sdjj']
                 gain = skprice*cnt - kprice # 平仓盈亏
-                #print skprice, kprice, gain
+                ##print skprice, kprice, gain
                 total += gain
                 icnt += cnt
-                #print icnt, cnt, total
+                ##print icnt, cnt, total
                 cnt = 0
                 kprice = 0
                 
@@ -54,7 +55,7 @@ class General(object):
         kprice = 0 # 所有持仓的开仓价格之和，不是多仓就是空仓
         total2 = 0
 
-        #print '------------------------------------'
+        ##print '------------------------------------'
         # 做空 分开计算容易写
         for i, bksk in enumerate(df.bksk):  #[:90]
 
@@ -63,21 +64,21 @@ class General(object):
             if bksk == 'sk':
                 
                 skprice = df.loc[idx, 'sdjj'] # 开仓的价位, 目前跑任何，开仓平仓价格默认四点均价
-                #print skprice
+                ##print skprice
                 kprice += skprice
                 cnt += 1
             elif bksk == 'bk' and cnt != 0:
                 bkprice = df.loc[idx, 'sdjj'] # 平仓价格
                 gain = kprice - bkprice*cnt # 平仓盈亏
-                #print skprice, kprice, gain
+                ##print skprice, kprice, gain
                 total2 += gain
                 icnt += cnt
-                #print icnt, cnt, total2
+                ##print icnt, cnt, total2
                 cnt = 0
                 kprice = 0
         total =  total + total2
         avg = total/icnt
-        print total, avg 
+        ##print total, avg 
 
     def run2(self, df):
         '''
@@ -88,7 +89,7 @@ class General(object):
         买开仓bk  卖开仓sk  多头平仓bp 空头平仓sp  
         '''
         if 'bpsp' not in df.columns:
-            print 'df has no bpsp'
+            ##print 'df has no bpsp'
             return
         cnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
         kprice = 0 # 所有持仓的开仓价格之和，不是多仓就是空仓
@@ -102,22 +103,22 @@ class General(object):
             if bksk == 'bk':
                 
                 bkprice = df.loc[idx, 'sdjj'] # 买开仓的价位
-                #print bkprice
+                ##print bkprice
                 kprice += bkprice
                 cnt += 1
                 
             elif bpsp == 'bp' and cnt != 0:
                 skprice = df.loc[idx, 'sdjj']
                 gain = skprice*cnt - kprice # 平仓盈亏
-                #print skprice, kprice, gain
+                ##print skprice, kprice, gain
                 total += gain
                 icnt += cnt
-                #print icnt, cnt, total
+                ##print icnt, cnt, total
                 cnt = 0
                 kprice = 0
 
 
-        #print '------------------------------------'
+        ##print '------------------------------------'
         # 做空 分开计算容易写
         cnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
         kprice = 0 # 所有持仓的开仓价格之和，不是多仓就是空仓
@@ -129,21 +130,21 @@ class General(object):
             if bksk == 'sk':
                 
                 skprice = df.loc[idx, 'sdjj'] # 开仓的价位, 目前跑任何，开仓平仓价格默认四点均价
-                #print skprice
+                ##print skprice
                 kprice += skprice
                 cnt += 1
             elif bpsp == 'sp' and cnt != 0:
                 bkprice = df.loc[idx, 'sdjj'] # 平仓价格
                 gain = kprice - bkprice*cnt # 平仓盈亏
-                #print skprice, kprice, gain
+                ##print skprice, kprice, gain
                 total2 += gain
                 icnt += cnt
-                #print icnt, cnt, total2
+                ##print icnt, cnt, total2
                 cnt = 0
                 kprice = 0
         total =  total + total2
         avg = total/icnt
-        print total, avg 
+        ##print total, avg 
 
     def run2b(self, df):
         ''' 把run2的买卖写在一个for里
@@ -154,7 +155,7 @@ class General(object):
         买开仓bk  卖开仓sk  多头平仓bp 空头平仓sp  
         '''
         if 'bpsp' not in df.columns:
-            print 'df has no bpsp'
+            ##print 'df has no bpsp'
             return
         bcnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
         bhprice = 0 # 所有多仓持仓的开仓价格之和
@@ -171,44 +172,44 @@ class General(object):
             if bksk == 'bk':
                 
                 bkprice = df.loc[idx, 'sdjj'] # 买开仓的价位
-                #print bkprice
+                ##print bkprice
                 bhprice += bkprice
                 bcnt += 1
-                #print total
+                ##print total
                 
             elif bpsp == 'bp' and bcnt != 0:
                 skprice = df.loc[idx, 'sdjj']
                 gain = skprice * bcnt - bhprice # 平仓盈亏
-                #print skprice, bhprice, gain
+                ##print skprice, bhprice, gain
                 total += gain
                 ibcnt += bcnt
-                #print ibcnt, bcnt, total
+                ##print ibcnt, bcnt, total
                 bcnt = 0
                 bhprice = 0
 
             if bksk == 'sk':
                 
                 skprice = df.loc[idx, 'sdjj'] # 开仓的价位, 目前跑任何，开仓平仓价格默认四点均价
-                #print skprice
+                ##print skprice
                 shprice += skprice
                 scnt += 1
             elif bpsp == 'sp' and scnt != 0:
                 bkprice = df.loc[idx, 'sdjj'] # 平仓价格
                 gain = shprice - bkprice*scnt # 平仓盈亏
-                #print skprice, shprice, gain
+                ##print skprice, shprice, gain
                 total += gain
                 iscnt += scnt
-                #print iscnt, scnt, total
+                ##print iscnt, scnt, total
                 scnt = 0
                 shprice = 0
 
-                #print total
+                ##print total
         avg = total/(ibcnt + iscnt)
-        #print total, avg
+        ##print total, avg
         return total, avg
 
     def run3b(self, df, zj=50000, f=0.02, zs=0.02, jiacang=0, usehl=False):
-        print 'run3b'
+        #print 'run3b'
         '''带开仓止损的资金管理，没资金管理跑出来的曲线不现实
         
         参数 
@@ -229,10 +230,10 @@ class General(object):
         '''
 
         if 'bpsp' not in df.columns:
-            print 'df has no bpsp'
+            #print 'df has no bpsp'
             return
         
-        #print 'run3b'
+        ##print 'run3b'
         #bcnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
         #bhprice = 0 # 所有多仓持仓的开仓价格之和
         zj_init = zj
@@ -267,7 +268,7 @@ class General(object):
             if bpoint!=0 and kjs!=0 and bs=='b': # 多头止损平仓
                 if df.loc[idx, 'l'] <= bpoint: 
                     gain = (bpoint  - bkprice) * kjs* 10 # 平仓收益
-                    print i, '止损bp', gain
+                    ##print i, '止损bp', gain
                     sxf = bkprice/sxfbl * kjs
                     hd = bkprice/huadianbl * kjs  
                     zj += gain - sxf - hd
@@ -281,7 +282,7 @@ class General(object):
             if spoint!=0 and kjs!=0 and bs=='s': # 空头止损平仓
                 if df.loc[idx, 'h'] >= spoint: 
                     gain = (skprice - spoint)  * kjs * 10
-                    print i, '止损sp', gain
+                    #print i, '止损sp', gain
                     sxf = skprice/sxfbl * kjs# 
                     hd = skprice/huadianbl * kjs  # 
                     zj += gain - sxf - hd
@@ -299,7 +300,7 @@ class General(object):
                 #else:  
                 #    bpprice = df.loc[idx, 'sdjj']
                 gain = (bpprice  - bkprice) * kjs* 10 # 平仓收益
-                print i, '信号bp', bpprice, gain
+                ##print i, '信号bp', bpprice, gain
                 sxf = bkprice/sxfbl * kjs
                 hd = bkprice/huadianbl * kjs  
                 zj += gain - sxf - hd
@@ -317,7 +318,7 @@ class General(object):
                 #else:  
                 #    spprice = df.loc[idx, 'sdjj']
                 gain = (skprice - spprice) * kjs * 10 
-                print i, '信号sp', spprice, gain
+                ##print i, '信号sp', spprice, gain
                 sxf = skprice/sxfbl * kjs
                 hd = skprice/huadianbl * kjs 
                 zj += gain - sxf - hd
@@ -335,7 +336,7 @@ class General(object):
                     bkprice = df.loc[idx, 'nhh'] # 
                 else:  
                     bkprice = df.loc[idx, 'sdjj']
-                #print bkprice
+                ##print bkprice
                 if zs < 1: # 百分比开仓止损
                     bkczs = bkprice * zs *10 # 开仓止损幅度
                     bpoint =bkprice - bkprice * zs # 开仓止损点位
@@ -346,7 +347,7 @@ class General(object):
                 kjs = min(int((zj*f)/bkczs), klimit)  # 这次可开几手, 最大限制100手
                 bs = 'b'
                 bki = i
-                print i, 'bk  ', bkprice, bpoint,kjs
+                ##print i, 'bk  ', bkprice, bpoint,kjs
                 kccnt += 1
 
             if bksk=='sk' and kjs==0:  # 开空
@@ -361,20 +362,20 @@ class General(object):
                     skczs = skprice * zs * 10# 开仓止损
                     spoint =skprice + skprice * zs # 开仓止损点位
                 else:
-                    #print 'atr', df.loc[idx, 'atr']
+                    ###print 'atr', df.loc[idx, 'atr']
                     skczs = df.loc[idx, 'atr'] * zs * 10 # 开仓止损幅度
                     spoint =skprice + zs * df.loc[idx, 'atr'] # 开仓止损点位
                 kjs = min(int((zj*f)/skczs), klimit)  # 这次可开几手
                 bs = 's'
                 ski = i
-                print i, 'sk  ', skprice,  spoint, kjs
+                ##print i, 'sk  ', skprice,  spoint, kjs
                 kccnt += 1
 
             # 检查当天开仓的止损
             if bpoint!=0 and kjs!=0 and bs=='b': # 多头止损平仓
                 if df.loc[idx, 'l'] <= bpoint: 
                     gain = (bpoint  - bkprice) * kjs* 10 # 平仓收益
-                    print i, '止损bp', gain
+                    #print i, '止损bp', gain
                     sxf = bkprice/sxfbl * kjs
                     hd = bkprice/huadianbl * kjs  
                     zj += gain - sxf - hd
@@ -388,7 +389,7 @@ class General(object):
             if spoint!=0 and kjs!=0 and bs=='s': # 空头止损平仓
                 if df.loc[idx, 'h'] >= spoint: 
                     gain = (skprice - spoint)  * kjs * 10
-                    print i, '止损sp', gain
+                    ##print i, '止损sp', gain
                     sxf = skprice/sxfbl * kjs# 
                     hd = skprice/huadianbl * kjs  # 
                     zj += gain - sxf - hd
@@ -410,7 +411,7 @@ class General(object):
             #            else:
             #                jcjs = int(jcjs/2)
             #            bkprice = (bkprice*kjs + jcprice*jcjs) / (kjs + jcjs) # 平均持仓价格
-            #            #print i, 'b加仓', jcprice, jcjs
+            #            ##print i, 'b加仓', jcprice, jcjs
             #            jcprice = (1+jiacang) * jcprice
             #            kjs += jcjs
             #            bjccnt += 1
@@ -418,14 +419,14 @@ class General(object):
             #    elif bs=='s':
             #        if sjccnt == 0:
             #            jcprice = (1-jiacang) * skprice # 加仓的价格
-            #        #print '加仓bs==s',df.loc[idx, 'l'], jcprice
+            #        ##print '加仓bs==s',df.loc[idx, 'l'], jcprice
             #        if df.loc[idx, 'l'] <= jcprice: # 某天的最高价超过加仓点，加仓
             #            if sjccnt == 0:
             #                jcjs = int(kjs/2)  # 加仓几手
             #            else:
             #                jcjs = int(jcjs/2)
             #            skprice = (skprice*kjs + jcprice*jcjs) / (kjs + jcjs)
-            #            #print i, 's加仓', jcprice, jcjs
+            #            ##print i, 's加仓', jcprice, jcjs
             #            jcprice = (1-jiacang) * jcprice
             #            kjs += jcjs
             #            sjccnt += 1
@@ -438,12 +439,12 @@ class General(object):
                 kccs.append(0)
 
         self._plot(df, zjqx, kccs)
-        print int(zj-zj_init), int((zj-zj_init)/sscnt), kccnt
+        #print int(zj-zj_init), int((zj-zj_init)/sscnt), kccnt
         return zj-zj_init,(zj-zj_init)/sscnt
 
 
     def run4(self, df, zj=100000, f=0.06, zs=0.02, ydzs=0.06, jiacang=0, usehl=False):
-        print 'run4'
+        #print 'run4'
         '''
         按照f算能开几手
         zj 总资金
@@ -493,10 +494,10 @@ class General(object):
                         atr = df.loc[idx, 'tr']
                     byd_point = max(byd_point, df.loc[idx, 'h'] - ydzs*atr) #
                 bzs = max(bpoint, byd_point)
-                #print 'byd_point', byd_point, bpoint
+                ##print 'byd_point', byd_point, bpoint
                 if df.loc[idx, 'l'] <= bzs: 
                     gain = (bzs  - bkprice) * kjs* 10 # 平仓收益
-                    print i, '止损bp', bzs, gain
+                    #print i, '止损bp', bzs, gain
                     sxf = bkprice/sxfbl * kjs# 手续费定为开仓价格的0.1%
                     hd = bkprice/huadianbl * kjs  #
                     zj += gain - sxf - hd
@@ -515,10 +516,10 @@ class General(object):
                         atr = df.loc[idx, 'tr']
                     syd_point = min(syd_point, df.loc[idx, 'l'] + ydzs*atr) #
                 szs = min(spoint, syd_point)
-                #print 'syd_point', syd_point, spoint
+                ##print 'syd_point', syd_point, spoint
                 if df.loc[idx, 'h'] >= szs: 
                     gain = (skprice - szs)  * kjs * 10
-                    print i, '止损sp', szs, gain
+                    #print i, '止损sp', szs, gain
                     sxf = skprice/sxfbl * kjs# 手续费定为开仓价格的0.1%
                     hd = skprice/huadianbl * kjs  #
                     zj += gain - sxf - hd
@@ -543,7 +544,7 @@ class General(object):
                     bkczs = bkprice * zs *10 # 开仓止损幅度
                     bpoint =bkprice - bkprice * zs # 开仓止损点位
                 else: # atr开仓止损
-                    #print 'atr', atr
+                    ##print 'atr', atr
                     bkczs = atr * zs * 10 # 开仓止损幅度
                     bpoint =bkprice - zs * atr # 开仓止损点位
                 if ydzs < 1:
@@ -551,12 +552,12 @@ class General(object):
                     
                 else:
                     byd_point = df.loc[idx, 'h'] - ydzs * atr
-                #print 'byd_point', byd_point
+                ##print 'byd_point', byd_point
                 kjs = min(int((zj*f)/bkczs), klimit)  # 这次可开几手, 最大限制100手
             
                 bs = 'b'
                 #bki = i
-                print i, 'bk  ', bkprice, bpoint, kjs
+                #print i, 'bk  ', bkprice, bpoint, kjs
                 #kccnt += 1
 
             if bksk=='sk' and kjs==0:  # 开空
@@ -574,19 +575,19 @@ class General(object):
                     skczs = skprice * zs * 10# 开仓止损
                     spoint =skprice + skprice * zs # 开仓止损点位
                 else:
-                    #print 'atr', atr
+                    ##print 'atr', atr
                     skczs = atr * zs * 10 # 开仓止损幅度
                     spoint =skprice + zs * atr # 开仓止损点位
                 if ydzs < 1: # 百分比移动止损
                     syd_point = df.loc[idx, 'l'] * (1+ydzs)
                 else: # atr移动止损
                     syd_point = df.loc[idx, 'l'] + ydzs * atr
-                #print 'syd_point', syd_point
+                ##print 'syd_point', syd_point
                 kjs = min(int((zj*f)/skczs), klimit)  # 这次可开几手
             
                 bs = 's'
                 #ski = i
-                print i, 'sk  ', skprice,  spoint, kjs
+                #print i, 'sk  ', skprice,  spoint, kjs
 
                 #kccnt += 1
             if jiacang:  # 加仓
@@ -599,7 +600,7 @@ class General(object):
                         else:
                             jcjs = int(jcjs/2)
                         bkprice = (bkprice*kjs + jcprice*jcjs) / (kjs + jcjs) # 平均持仓价格
-                        print i, 'b加仓', jcprice, jcjs
+                        #print i, 'b加仓', jcprice, jcjs
                         jcprice = (1+jiacang) * jcprice
                         kjs += jcjs
                         bjccnt += 1
@@ -607,14 +608,14 @@ class General(object):
                 elif bs=='s':
                     if sjccnt == 0:
                         jcprice = (1-jiacang) * skprice # 加仓的价格
-                    #print '加仓bs==s',df.loc[idx, 'l'], jcprice
+                    ##print '加仓bs==s',df.loc[idx, 'l'], jcprice
                     if df.loc[idx, 'l'] <= jcprice: # 某天的最高价超过加仓点，加仓
                         if sjccnt == 0:
                             jcjs = int(kjs/2)  # 加仓几手
                         else:
                             jcjs = int(jcjs/2)
                         skprice = (skprice*kjs + jcprice*jcjs) / (kjs + jcjs)
-                        print i, 's加仓', jcprice, jcjs
+                        #print i, 's加仓', jcprice, jcjs
                         jcprice = (1-jiacang) * jcprice
                         kjs += jcjs
                         sjccnt += 1
@@ -627,7 +628,7 @@ class General(object):
                 kccs.append(0)
 
         self._plot(df, zjqx, kccs)
-        print zj-zj_init,(zj-zj_init)/sscnt, sscnt
+        #print zj-zj_init,(zj-zj_init)/sscnt, sscnt
         return zj-zj_init,(zj-zj_init)/sscnt
 
     def run5(self, df, zj=100000, f=0.02, zs=0.01, ydzs=0.01, usehl=False):
@@ -676,7 +677,7 @@ class General(object):
                 
                 bpprice = df.loc[idx, 'sdjj']  # 平仓价格
                 gain = (bpprice  - bkprice) * kjs* 10 # 平仓收益
-                print i, '信号bp', bpprice, gain
+                #print i, '信号bp', bpprice, gain
                 sxf = bkprice/sxfbl * kjs# 手续费定为开仓价格的0.1%
                 hd = bkprice/huadianbl * kjs  # 
                 zj += gain - sxf - hd
@@ -690,7 +691,7 @@ class General(object):
             if bpsp == 'sp' and kjs != 0 and bs == 's': # 空头信号平仓
                 spprice = df.loc[idx, 'sdjj']
                 gain = (skprice - spprice) * kjs * 10 
-                print i, '信号sp', spprice, gain
+                #print i, '信号sp', spprice, gain
                 sxf = skprice/sxfbl * kjs# 手续费定为开仓价格的0.1%
                 hd = skprice/huadianbl * kjs # 滑点
                 zj += gain - sxf - hd
@@ -708,10 +709,10 @@ class General(object):
                         atr = df.loc[idx, 'tr']
                     byd_point = max(byd_point, df.loc[idx, 'h'] - ydzs*atr) #
                 bzs = max(bpoint, byd_point)
-                print 'byd_point', byd_point, bpoint
+                #print 'byd_point', byd_point, bpoint
                 if df.loc[idx, 'l'] <= bzs: 
                     gain = (bzs  - bkprice) * kjs* 10 # 平仓收益
-                    #print '止损bp', bzs, gain
+                    ##print '止损bp', bzs, gain
                     sxf = bkprice/sxfbl * kjs# 手续费定为开仓价格的0.1%
                     hd = bkprice/huadianbl * kjs  #
                     zj += gain - sxf - hd
@@ -730,10 +731,10 @@ class General(object):
                         atr = df.loc[idx, 'tr']
                     syd_point = min(syd_point, df.loc[idx, 'l'] + ydzs*atr) #
                 szs = min(spoint, syd_point)
-                #print 'syd_point', syd_point, spoint
+                ##print 'syd_point', syd_point, spoint
                 if df.loc[idx, 'h'] >= szs: 
                     gain = (skprice - szs)  * kjs * 10
-                    #print '止损sp', szs, gain
+                    ##print '止损sp', szs, gain
                     sxf = skprice/sxfbl * kjs# 手续费定为开仓价格的0.1%
                     hd = skprice/huadianbl * kjs  #
                     zj += gain - sxf - hd
@@ -756,17 +757,17 @@ class General(object):
                     bkczs = bkprice * zs *10 # 开仓止损幅度
                     bpoint =bkprice - bkprice * zs # 开仓止损点位
                 else: # atr开仓止损
-                    #print 'atr', atr
+                    ##print 'atr', atr
                     bkczs = atr * zs * 10 # 开仓止损幅度
                     bpoint =bkprice - zs * atr # 开仓止损点位
                 if ydzs < 1:
                     byd_point = df.loc[idx, 'h'] * (1-ydzs)
                 else:
                     byd_point = df.loc[idx, 'h'] - ydzs * atr
-                #print 'byd_point', byd_point
+                ##print 'byd_point', byd_point
                 kjs = min(int((zj*f)/bkczs), klimit)  # 这次可开几手, 最大限制100手
                 bs = 'b'
-                print 'bk  ', bkprice, bpoint, kjs
+                #print 'bk  ', bkprice, bpoint, kjs
                 #kccnt += 1
 
             if bksk=='sk' and kjs==0:  # 开空
@@ -783,17 +784,17 @@ class General(object):
                     skczs = skprice * zs * 10# 开仓止损
                     spoint =skprice + skprice * zs # 开仓止损点位
                 else:
-                    #print 'atr', atr
+                    ##print 'atr', atr
                     skczs = atr * zs * 10 # 开仓止损幅度
                     spoint =skprice + zs * atr # 开仓止损点位
                 if ydzs < 1: # 百分比移动止损
                     syd_point = df.loc[idx, 'l'] * (1+ydzs)
                 else: # atr移动止损
                     syd_point = df.loc[idx, 'l'] + ydzs * atr
-                #print 'syd_point', syd_point
+                ##print 'syd_point', syd_point
                 kjs = min(int((zj*f)/skczs), klimit)  # 这次可开几手
                 bs = 's'
-                print 'sk  ', skprice,  spoint, kjs
+                #print 'sk  ', skprice,  spoint, kjs
                 #kccnt += 1
 
             zjqx.append(zj)
@@ -803,12 +804,12 @@ class General(object):
                 kccs.append(0)
 
         self._plot(df, zjqx, kccs)
-        print zj-zj_init,(zj-zj_init)/sscnt
+        #print zj-zj_init,(zj-zj_init)/sscnt
         return zj-zj_init,(zj-zj_init)/sscnt
 
 
     def run6(self, df, zj=50000, kclimit=4, f=0.01, zs=0.02, usehl=False):
-        print 'run6'
+        #print 'run6'
         '''
         每次用f=0.01开仓，直到开仓数到达限定kclimit, zs以持仓均价为准
       
@@ -823,7 +824,7 @@ class General(object):
         平仓方式， 信号平仓
         '''
         if 'bpsp' not in df.columns:
-            print 'df has no bpsp'
+            #print 'df has no bpsp'
             return
         
         #bcnt = 0 # 每出一次开仓信号，就开一手，共几手的计数。一旦相反信号出来全平仓
@@ -862,7 +863,7 @@ class General(object):
             if bpoint!=0 and kjs!=0 and bs=='b': # 多头止损平仓
                 if df.loc[idx, 'l'] <= bpoint: 
                     gain = (bpoint  - bkprice) * kjs* 10 # 平仓收益
-                    print i, '止损bp', gain, kjs
+                    #print i, '止损bp', gain, kjs
                     sxf = bkprice/sxfbl * kjs# 手续费定为开仓价格的0.1%
                     hd = bkprice/huadianbl * kjs  # 滑点定为0.1%
                     zj += gain - sxf - hd
@@ -879,7 +880,7 @@ class General(object):
                 
                 bpprice = df.loc[idx, 'sdjj']  # 平仓价格
                 gain = (bpprice  - bkprice) * kjs* 10 # 平仓收益
-                print i, '信号bp', bpprice, gain, kjs
+                #print i, '信号bp', bpprice, gain, kjs
                 sxf = bkprice/sxfbl * kjs# 手续费定为开仓价格的0.1%
                 hd = bkprice/huadianbl * kjs  # 
                 zj += gain - sxf - hd
@@ -895,7 +896,7 @@ class General(object):
             if spoint!=0 and kjs!=0 and bs=='s': # 空头止损平仓
                 if df.loc[idx, 'h'] >= spoint: 
                     gain = (skprice - spoint)  * kjs * 10
-                    print i, '止损sp', gain, kjs
+                    #print i, '止损sp', gain, kjs
                     sxf = skprice/sxfbl * kjs# 
                     hd = skprice/huadianbl * kjs  # 
                     zj += gain - sxf - hd
@@ -911,7 +912,7 @@ class General(object):
             if bpsp == 'sp' and kjs != 0 and bs == 's': # 空头信号平仓
                 spprice = df.loc[idx, 'sdjj']
                 gain = (skprice - spprice) * kjs * 10 
-                print i, '信号sp', spprice, gain, kjs
+                #print i, '信号sp', spprice, gain, kjs
                 sxf = skprice/sxfbl * kjs# 手续费定为开仓价格的0.1%
                 hd = skprice/huadianbl * kjs # 滑点
                 zj += gain - sxf - hd
@@ -924,7 +925,7 @@ class General(object):
                 skprice = 0
                 
             if bksk=='bk': # 开多
-                print 'bkprice', bkprice
+                #print 'bkprice', bkprice
                 if bkprice == 0:# 初次开仓
                     if usehl and df.loc[idx, 'l'] < df.loc[idx, 'nhh'] < df.loc[idx, 'h']: # 用前n天高价开多
                         bkprice = df.loc[idx, 'nhh'] # 
@@ -936,7 +937,7 @@ class General(object):
                     bs = 'b'
                     bki = i
                     bkccnt += 1
-                    print i, 'bk first  ', bkprice, bpoint,kjs
+                    #print i, 'bk first  ', bkprice, bpoint,kjs
                    
                 else:
 
@@ -949,15 +950,15 @@ class General(object):
                         this_bkczs = this_bkprice * zs *10 # 开仓止损幅度
                         
                         this_kjs = min(int((zj*f)/this_bkczs), klimit)
-                        print 'sdf', this_bkprice, this_bkczs,this_kjs
-                        #print i, bkprice, this_bkprice, '-----dd------', this_bkczs, this_kjs, kjs
+                        #print 'sdf', this_bkprice, this_bkczs,this_kjs
+                        ##print i, bkprice, this_bkprice, '-----dd------', this_bkczs, this_kjs, kjs
                         bkprice = (bkprice*kjs + this_bkprice*this_kjs) / (kjs + this_kjs) # 平均持仓价格
                         bpoint =bkprice - bkprice * zs # 持仓均价为新的止损点
                         bkccnt += 1
-                        print i, 'bk after ', bkprice, bpoint,kjs
+                        #print i, 'bk after ', bkprice, bpoint,kjs
 
 
-                #print i, 'bk  ', bkprice, bpoint,kjs
+                ##print i, 'bk  ', bkprice, bpoint,kjs
                 
                 #kccs.append(kccnt)
 
@@ -975,7 +976,7 @@ class General(object):
                     bs = 's'
                     ski = i
                     skccnt += 1
-                    print i, 'sk first ', skprice,  spoint, kjs
+                    #print i, 'sk first ', skprice,  spoint, kjs
 
                 else:
                     if skccnt <= kclimit:
@@ -989,7 +990,7 @@ class General(object):
                         skprice = (skprice*kjs + this_skprice*this_kjs) / (kjs + this_kjs) # 平均持仓价格
                         spoint = skprice + skprice * zs # 持仓均价为新的止损点
                         skccnt += 1
-                        print i, 'sk after ', skprice,  spoint, kjs
+                        #print i, 'sk after ', skprice,  spoint, kjs
                 
 
             zjqx.append(zj)
@@ -999,12 +1000,12 @@ class General(object):
                 kccs.append(0)
 
         self._plot(df, zjqx, kccs)
-        print zj-zj_init,(zj-zj_init)/sscnt, kccnt
+        #print zj-zj_init,(zj-zj_init)/sscnt, kccnt
         return zj-zj_init,(zj-zj_init)/sscnt
 
 
     def runhl(self, df, zj=50000, f=0.02, zs=0.02):
-        print 'runhl'
+        #print 'runhl'
         '''
         参数 
         zj 总资金
@@ -1020,7 +1021,7 @@ class General(object):
         
         '''
         if 'bpsp' not in df.columns:
-            print 'df has no bpsp'
+            #print 'df has no bpsp'
             return
         zj_init = zj
         zjqx = [] # 资金曲线，画图用
@@ -1056,13 +1057,13 @@ class General(object):
                 elif zs >= 1:
                     bpoint = df.loc[df.index[i], 'zsll']  
                     bkczs = (bkprice - bpoint) * 10
-                #print bkprice, bkczs, bpoint
+                ##print bkprice, bkczs, bpoint
 
                 kjs = min(int((zj*f)/bkczs), klimit)  # 这次可开几手
                 if kjs > 0:
                     
                     bs = 'b'
-                    print i, date, 'bk  ', bkprice, bpoint,kjs, zj
+                    #print i, date, 'bk  ', bkprice, bpoint,kjs, zj
                     kccnt += 1
 
             if bksk=='sk' and kjs==0:  # 开空
@@ -1070,10 +1071,10 @@ class General(object):
                 # hl用这个开仓价
                 if df.loc[idx, 'o'] < df.loc[idx, 'ncl']: # 
                     skprice = df.loc[idx, 'o'] # 
-                    #print 'skprice is o'
+                    ##print 'skprice is o'
                 else:  
                     skprice = df.loc[idx, 'ncl']
-                    #print 'skprice is ncl'
+                    ##print 'skprice is ncl'
 
                 if zs<1:
                     skczs = skprice * zs * 10# 开仓止损
@@ -1081,13 +1082,13 @@ class General(object):
                 elif zs>=1:
                     spoint = df.loc[df.index[i], 'zshh'] 
                     skczs = (spoint - skprice) * 10
-                #print skprice, skczs, klimit
-                #if skczs <=0: print date,'---------------skczs <=0------------------------------------------------------------'
+                ##print skprice, skczs, klimit
+                #if skczs <=0: #print date,'---------------skczs <=0------------------------------------------------------------'
 
                 kjs = min(int((zj*f)/skczs), klimit)  # 这次可开几手
                 if kjs > 0 and skczs > 0:
                     bs = 's'
-                    print i, date, 'sk  ', skprice,  spoint, kjs, zj
+                    #print i, date, 'sk  ', skprice,  spoint, kjs, zj
                     kccnt += 1
 
             # 当天开仓的止损
@@ -1098,7 +1099,7 @@ class General(object):
                     if df.loc[idx, 'o'] < bpoint:
                         bpoint = df.loc[idx, 'o']
                     gain = (bpoint  - bkprice) * kjs* 10 # 平仓收益
-                    print i,date, '止损bp',bpoint, gain
+                    #print i,date, '止损bp',bpoint, gain
                     sxf = bkprice/sxfbl * kjs# 
                     hd = bkprice/huadianbl * kjs  # 
                     shouyi = gain - sxf - hd
@@ -1115,7 +1116,7 @@ class General(object):
                     if df.loc[idx, 'o'] > spoint:
                         spoint = df.loc[idx, 'o']
                     gain = (skprice - spoint)  * kjs * 10
-                    print i,date, '止损sp', spoint, gain
+                    #print i,date, '止损sp', spoint, gain
                     sxf = skprice/sxfbl * kjs# 
                     hd = skprice/huadianbl * kjs  # 
                     shouyi = gain - sxf - hd
@@ -1136,7 +1137,7 @@ class General(object):
                 else:  
                     bpprice = df.loc[idx, 'nllp']
                 gain = (bpprice  - bkprice) * kjs* 10 # 平仓收益
-                print i,date, '信号bp', bpprice, gain
+                #print i,date, '信号bp', bpprice, gain
                 sxf = bkprice/sxfbl * kjs# 
                 hd = bkprice/huadianbl * kjs  # 
                 shouyi = gain - sxf - hd
@@ -1156,7 +1157,7 @@ class General(object):
                 else:  
                     spprice = df.loc[idx, 'nhhp']
                 gain = (skprice - spprice) * kjs * 10 
-                print i, date,'信号sp', spprice, gain
+                #print i, date,'信号sp', spprice, gain
                 sxf = skprice/sxfbl * kjs# 
                 hd = skprice/huadianbl * kjs # 滑点
                 shouyi = gain - sxf - hd
@@ -1177,7 +1178,7 @@ class General(object):
         self._cnt_lianxu_kuisun(yinkuilist)
         #self._cnt_lianxu_kuisun2(yinkuilist)
         self._plot(df, zjqx, kccs)
-        print int(zj-zj_init), '平均每手收益：',int((zj-zj_init)/sscnt), '交易次数：',kccnt
+        #print int(zj-zj_init), '平均每手收益：',int((zj-zj_init)/sscnt), '交易次数：',kccnt
         return zj-zj_init,(zj-zj_init)/sscnt
 
     def _cnt_lianxu_kuisun2(self, yinkuilist):
@@ -1193,10 +1194,10 @@ class General(object):
                     cnt = 0
         mean = round(np.mean(cnts), 1)
         median = np.median(cnts)
-        #print yinkuilist
-        print cnts
-        print sorted(cnts)
-        print '最大连亏次数:%s, 平均连亏:%s, 连亏中位数:%s' %  (max(cnts) , mean, median) # 
+        ##print yinkuilist
+        #print cnts
+        #print sorted(cnts)
+        #print '最大连亏次数:%s, 平均连亏:%s, 连亏中位数:%s' %  (max(cnts) , mean, median) # 
 
     def _cnt_lianxu_kuisun(self, yinkuilist):
         cnts = []
@@ -1210,12 +1211,12 @@ class General(object):
                     cnt = 0
         mean = round(np.mean(cnts), 1)
         median = np.median(cnts)
-        print yinkuilist
-        print cnts
-        print '最大连亏次数:%s, 平均连亏:%s, 连亏中位数:%s' %  (max(cnts) , mean, median) # 
+        #print yinkuilist
+        #print cnts
+        #print '最大连亏次数:%s, 平均连亏:%s, 连亏中位数:%s' %  (max(cnts) , mean, median) # 
 
     def runhl2(self, df, zj=50000, f=0.01, zs=0.02):
-        print 'runhl2'
+        #print 'runhl2'
         '''
         有开仓间隔
         参数 
@@ -1228,7 +1229,7 @@ class General(object):
 
         '''
         if 'bpsp' not in df.columns:
-            print 'df has no bpsp'
+            #print 'df has no bpsp'
             return
         zj_init = zj
         zjqx = [] # 资金曲线，画图用
@@ -1266,16 +1267,16 @@ class General(object):
             #if df.loc[idx, 'c'] >= bkprice*(1+ccfd):
 #
             #    bpoint = bkprice
-            #    print 'new bpoint', bpoint
+            #    #print 'new bpoint', bpoint
             #elif df.loc[idx, 'c'] <= skprice*(1-ccfd):
             #    spoint = skprice
-            #    print 'new spoint', spoint
+            #    #print 'new spoint', spoint
 
 
             if bpoint!=0 and kjs!=0 and bs=='b': # 多头止损平仓
                 if df.loc[idx, 'l'] <= bpoint: 
                     gain = (bpoint  - bkprice) * kjs* 10 # 平仓收益
-                    print i, '止损bp', bkprice, gain
+                    #print i, '止损bp', bkprice, gain
                     sxf = bkprice/sxfbl * kjs# 
                     hd = bkprice/huadianbl * kjs  # 
                     zj += gain - sxf - hd
@@ -1289,7 +1290,7 @@ class General(object):
                 if df.loc[idx, 'h'] >= spoint: 
                     
                     gain = (skprice - spoint)  * kjs * 10
-                    print i, '止损sp', skprice, gain
+                    #print i, '止损sp', skprice, gain
                     sxf = skprice/sxfbl * kjs# 
                     hd = skprice/huadianbl * kjs  # 
                     zj += gain - sxf - hd
@@ -1306,7 +1307,7 @@ class General(object):
                 else:  
                     bpprice = df.loc[idx, 'sdjj']
                 gain = (bpprice  - bkprice) * kjs* 10 # 平仓收益
-                print i, '信号bp', bpprice, gain
+                #print i, '信号bp', bpprice, gain
                 sxf = bkprice/sxfbl * kjs# 
                 hd = bkprice/huadianbl * kjs  # 
                 zj += gain - sxf - hd
@@ -1323,7 +1324,7 @@ class General(object):
                 else:  
                     spprice = df.loc[idx, 'sdjj']
                 gain = (skprice - spprice) * kjs * 10 
-                print i, '信号sp', spprice, gain
+                #print i, '信号sp', spprice, gain
                 sxf = skprice/sxfbl * kjs# 手续费定为开仓价格的0.1%
                 hd = skprice/huadianbl * kjs # 滑点
                 zj += gain - sxf - hd
@@ -1356,7 +1357,7 @@ class General(object):
                 
                 kjs += thiskjs
                 bs = 'b'
-                print i, 'bk  after ', this_bkprice, bpoint,kjs
+                #print i, 'bk  after ', this_bkprice, bpoint,kjs
                 kccnt += 1
                 thiskccnt += 1
                 bkci = i # 这一次买开仓的index
@@ -1384,7 +1385,7 @@ class General(object):
                 kjs += thiskjs
                 
                 bs = 's'
-                print i, 'sk after ', this_skprice,  spoint, kjs
+                #print i, 'sk after ', this_skprice,  spoint, kjs
                 kccnt += 1
                 thiskccnt += 1
                 skci = i # 这一次卖开仓的index
@@ -1408,7 +1409,7 @@ class General(object):
 
                 kjs = min(int((zj*f)/bkczs), klimit)  # 这次可开几手
                 bs = 'b'
-                print i, 'bk  first', bkprice, bpoint,kjs, zj
+                #print i, 'bk  first', bkprice, bpoint,kjs, zj
                 kccnt += 1
                 bkci = i
 
@@ -1429,7 +1430,7 @@ class General(object):
                     #spoint = df.loc[df.index[i+1], 'nhh']
                 kjs = min(int((zj*f)/skczs), klimit)  # 这次可开几手
                 bs = 's'
-                print i, 'sk  first', skprice,  spoint, kjs, zj
+                #print i, 'sk  first', skprice,  spoint, kjs, zj
                 kccnt += 1
                 skci = i
 
@@ -1439,7 +1440,7 @@ class General(object):
             if bpoint!=0 and kjs!=0 and bs=='b': # 多头止损平仓
                 if df.loc[idx, 'l'] <= bpoint: 
                     gain = (bpoint  - bkprice) * kjs* 10 # 平仓收益
-                    print i, '止损bp', bkprice, gain
+                    #print i, '止损bp', bkprice, gain
                     sxf = bkprice/sxfbl * kjs# 
                     hd = bkprice/huadianbl * kjs  # 
                     zj += gain - sxf - hd
@@ -1453,7 +1454,7 @@ class General(object):
                 if df.loc[idx, 'h'] >= spoint: 
                     
                     gain = (skprice - spoint)  * kjs * 10
-                    print i, '止损sp', skprice, gain
+                    #print i, '止损sp', skprice, gain
                     sxf = skprice/sxfbl * kjs# 
                     hd = skprice/huadianbl * kjs  # 
                     zj += gain - sxf - hd
@@ -1470,18 +1471,18 @@ class General(object):
             else:
                 kccs.append(0)
         self._plot(df, zjqx, kccs)
-        print int(zj-zj_init), int((zj-zj_init)/sscnt), kccnt
+        #print int(zj-zj_init), int((zj-zj_init)/sscnt), kccnt
         return zj-zj_init,(zj-zj_init)/sscnt
 
 
     def runhl2b(self, df, zj=50000, f=0.01, zs=0.02):
-        print 'runhl2b'
+        #print 'runhl2b'
         '''
         和runhl2不同处是开仓间隔都一起算，多空之间，前后之间都一起算
 
         '''
         if 'bpsp' not in df.columns:
-            print 'df has no bpsp'
+            #print 'df has no bpsp'
             return
         zj_init = zj
         zjqx = [] # 资金曲线，画图用
@@ -1517,7 +1518,7 @@ class General(object):
             if bpoint!=0 and kjs!=0 and bs=='b': # 多头止损平仓
                 if df.loc[idx, 'l'] <= bpoint: 
                     gain = (bpoint  - bkprice) * kjs* 10 # 平仓收益
-                    print i, '止损bp', bkprice, gain
+                    #print i, '止损bp', bkprice, gain
                     sxf = bkprice/sxfbl * kjs# 
                     hd = bkprice/huadianbl * kjs  # 
                     zj += gain - sxf - hd
@@ -1535,7 +1536,7 @@ class General(object):
                 else:  
                     bpprice = df.loc[idx, 'sdjj']
                 gain = (bpprice  - bkprice) * kjs* 10 # 平仓收益
-                print i, '信号bp', bpprice, gain
+                #print i, '信号bp', bpprice, gain
                 sxf = bkprice/sxfbl * kjs# 
                 hd = bkprice/huadianbl * kjs  # 
                 zj += gain - sxf - hd
@@ -1548,9 +1549,9 @@ class General(object):
 
             if spoint!=0 and kjs!=0 and bs=='s': # 空头止损平仓
                 if df.loc[idx, 'h'] >= spoint: 
-                    #print skprice, spoint, kjs
+                    ##print skprice, spoint, kjs
                     gain = (skprice - spoint)  * kjs * 10
-                    print i, '止损sp', skprice, gain
+                    #print i, '止损sp', skprice, gain
                     sxf = skprice/sxfbl * kjs# 
                     hd = skprice/huadianbl * kjs  # 
                     zj += gain - sxf - hd
@@ -1568,7 +1569,7 @@ class General(object):
                 else:  
                     spprice = df.loc[idx, 'sdjj']
                 gain = (skprice - spprice) * kjs * 10 
-                print i, '信号sp', spprice, gain
+                #print i, '信号sp', spprice, gain
                 sxf = skprice/sxfbl * kjs# 手续费定为开仓价格的0.1%
                 hd = skprice/huadianbl * kjs # 滑点
                 zj += gain - sxf - hd
@@ -1595,9 +1596,9 @@ class General(object):
                 bkprice = (this_bkprice*thiskjs + bkprice*kjs)/(thiskjs + kjs)
                 
                 kjs += thiskjs
-                #print kjs,'bkjs'
+                ##print kjs,'bkjs'
                 bs = 'b'
-                print i, 'bk  after ', this_bkprice, bpoint,kjs
+                #print i, 'bk  after ', this_bkprice, bpoint,kjs
                 kccnt += 1
                 thiskccnt += 1
                 kci = i # 这一次买开仓的index
@@ -1615,12 +1616,12 @@ class General(object):
                     skczs = (spoint - this_skprice) * 10
                 thiskjs = min(int((zj*f)/skczs), klimit)  # 这次可开几手
                 skprice = (this_skprice*thiskjs + skprice*kjs)/(thiskjs + kjs)
-                #print 'skprice', skprice
+                ##print 'skprice', skprice
                 
                 kjs += thiskjs
-                #print kjs,'skjs'
+                ##print kjs,'skjs'
                 bs = 's'
-                print i, 'sk after ', this_skprice,  spoint, kjs
+                #print i, 'sk after ', this_skprice,  spoint, kjs
                 kccnt += 1
                 thiskccnt += 1
                 kci = i # 这一次卖开仓的index
@@ -1642,7 +1643,7 @@ class General(object):
 
                 kjs = min(int((zj*f)/bkczs), klimit)  # 这次可开几手
                 bs = 'b'
-                print i, 'bk  first', bkprice, bpoint,kjs
+                #print i, 'bk  first', bkprice, bpoint,kjs
                 kccnt += 1
                 kci = i
 
@@ -1662,7 +1663,7 @@ class General(object):
                     skczs = (spoint - skprice) * 10
                 kjs = min(int((zj*f)/skczs), klimit)  # 这次可开几手
                 bs = 's'
-                print i, 'sk  first', skprice,  spoint, kjs
+                #print i, 'sk  first', skprice,  spoint, kjs
                 kccnt += 1
                 kci = i
 
@@ -1670,7 +1671,7 @@ class General(object):
             if bpoint!=0 and kjs!=0 and bs=='b': # 多头止损平仓
                 if df.loc[idx, 'l'] <= bpoint: 
                     gain = (bpoint  - bkprice) * kjs* 10 # 平仓收益
-                    print i, '止损bp', bkprice, gain
+                    #print i, '止损bp', bkprice, gain
                     sxf = bkprice/sxfbl * kjs# 
                     hd = bkprice/huadianbl * kjs  # 
                     zj += gain - sxf - hd
@@ -1682,9 +1683,9 @@ class General(object):
                     thiskjs = 0
             if spoint!=0 and kjs!=0 and bs=='s': # 空头止损平仓
                 if df.loc[idx, 'h'] >= spoint: 
-                    #print skprice, spoint, kjs
+                    ##print skprice, spoint, kjs
                     gain = (skprice - spoint)  * kjs * 10
-                    print i, '止损sp', skprice, gain
+                    #print i, '止损sp', skprice, gain
                     sxf = skprice/sxfbl * kjs# 
                     hd = skprice/huadianbl * kjs  # 
                     zj += gain - sxf - hd
@@ -1702,7 +1703,7 @@ class General(object):
                 kccs.append(0)
 
         self._plot(df, zjqx, kccs)
-        print int(zj-zj_init), int((zj-zj_init)/sscnt), kccnt
+        #print int(zj-zj_init), int((zj-zj_init)/sscnt), kccnt
         return zj-zj_init,(zj-zj_init)/sscnt
 
 
@@ -1719,7 +1720,7 @@ class General(object):
         # 开始画平均每次开仓盈利
         df3 = pd.DataFrame(index=df.date,
                       columns=['avg'])
-        #print index
+        ##print index
         
         data = {
             'avg' : pd.Series(kccs, index=df.date),
@@ -1880,14 +1881,14 @@ def rangerun(foo):
     for a in r1:
         for b in r2:
             index.append('%s-%s' % (a, b))
-            #print a, b
+            ##print a, b
             rtn = foo(a,b)
 
             total.append(rtn[0])
             avg.append(rtn[1])
     df = pd.DataFrame(index=index,
                   columns=['total', 'avg'])
-    #print index
+    ##print index
     data = {
         'total' : pd.Series(total, index=index),
         'avg' : pd.Series(avg, index=index)
@@ -1895,7 +1896,7 @@ def rangerun(foo):
     
     df = pd.DataFrame(data)
     df['avg'] = df.avg*100
-    print df
+    #print df
     df.plot();plt.show()
 
 
@@ -1914,20 +1915,20 @@ def rangerun3(foo, r1, r2):
     for a in r1:
         for b in r2:
             index.append('%s-%s' % (a, b))
-            #print a, b
+            ##print a, b
             rtn = foo(a,b)
             zj.append(rtn)
             
     df = pd.DataFrame(index=index,
                   columns=['zj'])
-    #print index
+    ##print index
     data = {
         'zj' : pd.Series(zj, index=index),
         
         }
     
     df = pd.DataFrame(data)
-    #print df
+    ##print df
     df.plot();plt.show()
 
 
@@ -1938,15 +1939,15 @@ if __name__ == '__main__':
     gi = GeneralIndex('rb')
     #gi.get_atr(99)
     #gi.df.to_csv('tmp.csv')
-    #print gi.df['sdjj']
+    ##print gi.df['sdjj']
     #gi.get_ma5()
-    #print gi.df.loc[:, ['c','ma5']]
-    #print gi.df.describe()
+    ##print gi.df.loc[:, ['c','ma5']]
+    ##print gi.df.describe()
     #gi.sdjj
     #gi.get_ma(5,10,20)
     
-    #print gi.df.loc[:,['c','ma5', 'ma10', 'ma20']]
+    ##print gi.df.loc[:,['c','ma5', 'ma10', 'ma20']]
     #gi.get_nsdl(10)
-    #print gi.df.loc[:, ['date','sdjj','nsdl']]
-    #print gi.df.describe()
+    ##print gi.df.loc[:, ['date','sdjj','nsdl']]
+    ##print gi.df.describe()
 
