@@ -6,8 +6,8 @@
 
 import numpy as np
 import pandas as pd
-
-
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 df = pd.read_csv(r'..\data\rb\zs.csv')
 
@@ -53,8 +53,8 @@ df.label = np.where(df.label>1, 1, 0)
 df['DKX_b_up'] = np.where(df.b > df.b.shift(1), 1, 0)
 #df = df.ix[df.DKX_b_up==1,:]  # 过滤出DKXb 向上的数据
 
-df['higher_DKX'] = np.where(df.l>df.b, 1, 0)
-df = df.ix[df.higher_DKX==1,:]  # 过滤出k线比DKXb 高的数据
+df['higher_DKX'] = np.where(df.h<df.b, 1, 0)
+#df = df.ix[df.higher_DKX==1,:]  # 过滤出k线比DKXb 高的数据
 
 df['chigher_DKX'] = np.where(df.c>df.b, 1, 0)
 #df = df.ix[df.chigher_DKX==1,:]  # 过滤close比DKXb 高的数据
@@ -63,13 +63,18 @@ df['chigher_DKX'] = np.where(df.c>df.b, 1, 0)
 df['ma_up'] = np.where(df.ma > df.ma.shift(1), 1, 0)
 #df = df.ix[df.ma_up==1, :]
 # k线在ma上的数据
-df['ma_up'] = np.where(df.h< df.ma, 1, 0)
-#df = df.ix[df.ma_up==1, :]
+df['ma_up'] = np.where(df.l > df.ma, 1, 0)
+df = df.ix[df.ma_up==1, :]
 df['chigher_ma'] = np.where(df.c>df.ma, 1, 0)
 #df = df.ix[df.chigher_ma==1,:]  # 过滤close比DKXb 高的数据
 
 df['lhb'] = df.l / df.h.shift(1)
+df['cc'] = df.c / df.c.shift(1)
 print(df.lhb.describe())
+
+data = df.cc.dropna(axis=0)
+sns.distplot(data)
+plt.show()
 
 # 过滤条件后的结果
 def result(df):
@@ -85,51 +90,16 @@ def result(df):
     print('low比前一天高的概率 {}%'.format(gailv)) # 某条件下   low比前一天高的概率
 result(df)
 
-df.to_csv('tmp.csv')
+#df.to_csv('tmp.csv')
 #df = df.dropna(axis=0)
 
 
-
-
-
-'''
-#print(df.head(30))
-
-X = df.loc[:, ['ob','cb','hb','lb']]
-#print(X)
-#X = df.loc[:,['bb']]
-#X = X * 100
-
-#ss = StandardScaler()
-ss = MinMaxScaler()
-#X = ss.fit_transform(X)
-
-X = ss.fit_transform(X)
-y = df.label
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.7, test_size=0.3)
-
-
-# 构建数据完毕
-# 开始学习
-'''
-
-'''
-model = GaussianNB()
-#model = MLPClassifier(hidden_layer_sizes=(3,3,3),max_iter=999) 
-#model = DTC()  # 100% ?
-#model = KNeighborsClassifier(n_neighbors=5, p=2, metric='minkowski')
-#model = LogisticRegression(C=1000, random_state=0)
-#model = MultinomialNB() 
-#model = SVC(kernel='linear', C=3.0, random_state=1)
-#model = SVC(kernel='rbf', C=3.0, random_state=0, gamma=0.2) 
-model.fit(X_train, y_train)
-y_pred = model.predict(X_test)
-
-dff = pd.DataFrame()  # 结果比较的dataframe
-dff['y_true'] = y_test
-dff['y_pred'] = y_pred
-dff['right pred'] = np.where(dff.y_true==dff.y_pred, 1, None)
-print(dff['right pred'].sum()/dff.shape[0])
-dff.to_csv('tmp.csv')
-'''
+def plot_heatmap(data, title):
+    plt.rcParams['font.sans-serif'] = ['SimHei'] 
+    plt.title(title)
+    data = data.astype(float)
+    ax = sns.heatmap(data, center=60, linewidths=1, 
+                     cmap="RdBu", vmin=50, vmax=70, annot=True)
+    ax.set_xticklabels(ax.xaxis.get_majorticklabels(), rotation=0)
+    ax.set_yticklabels(ax.yaxis.get_majorticklabels(), rotation=0)
+    plt.show()
