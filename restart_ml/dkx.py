@@ -54,19 +54,23 @@ df['DKX_b_up'] = np.where(df.b > df.b.shift(1), 1, 0)
 #df = df.ix[df.DKX_b_up==1,:]  # 过滤出DKXb 向上的数据
 
 df['higher_DKX'] = np.where(df.l>df.b, 1, 0)
-#df = df.ix[df.higher_DKX==1,:]  # 过滤出k线比DKXb 高的数据
+df = df.ix[df.higher_DKX==1,:]  # 过滤出k线比DKXb 高的数据
 
 df['chigher_DKX'] = np.where(df.c>df.b, 1, 0)
-df = df.ix[df.chigher_DKX==1,:]  # 过滤close比DKXb 高的数据
+#df = df.ix[df.chigher_DKX==1,:]  # 过滤close比DKXb 高的数据
 
 # 过滤出ma向上的数据
 df['ma_up'] = np.where(df.ma > df.ma.shift(1), 1, 0)
 #df = df.ix[df.ma_up==1, :]
 # k线在ma上的数据
-df['ma_up'] = np.where(df.l > df.ma, 1, 0)
+df['ma_up'] = np.where(df.h< df.ma, 1, 0)
 #df = df.ix[df.ma_up==1, :]
 df['chigher_ma'] = np.where(df.c>df.ma, 1, 0)
 #df = df.ix[df.chigher_ma==1,:]  # 过滤close比DKXb 高的数据
+
+df['lhb'] = df.l / df.h.shift(1)
+print(df.lhb.describe())
+
 # 过滤条件后的结果
 def result(df):
     '''df is dataframe'''
