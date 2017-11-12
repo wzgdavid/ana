@@ -49,7 +49,7 @@ df = get_DKX(df)
 df = get_nhh(df, 2)
 df = get_nll(df, 2)
 # 趋势判断，DKXb方向，1 向上   0向下  当天参照前两天
-df['DKXb方向'] = np.where(df.b.shift(1)<df.b.shift(2), 1, 0) 
+df['DKXb方向'] = np.where(df.b.shift(1)>df.b.shift(2), 1, 0) 
 # 开仓条件
 df['高于前两天高点'] = np.where(df.h > df.nhh, 1, None)   # 看当天 
 df['低于前两天低点'] = np.where(df.l < df.nll, 1, None)
@@ -79,33 +79,41 @@ sk_cnt = 0 # 开空仓开仓总数量
 '''
 删选出一部分试验 ，否则太慢， 注意以后要去掉
 '''
-#df = df.head(200) # 删选出一部分试验 ，否则太慢， 注意以后要去掉
+df = df.head(200) # 删选出一部分试验 ，否则太慢， 注意以后要去掉
 
 点数 = 10 # 螺纹一手10吨
 保证金 = 0.1 # 保证金10%
 db = 点数*保证金
+开仓间隔 = 2
+kindex = 0 # 开仓时的index
 for idx in range(df.shape[0]): # 
     row = df.iloc[idx]
     print(idx)
     if row.开仓 == 'bk':
-        df.bk总手数.iloc[idx] = df.bk总手数.iloc[idx-1] + row.开仓手数
-        #df.b持仓金额.iloc[idx] += row.开仓手数 * row.c * 点数
+        if idx > kindex + 开仓间隔:
+            df.bk总手数.iloc[idx] = df.bk总手数.iloc[idx-1] + row.开仓手数
+            kindex = idx
+        else:
+            df.bk总手数.iloc[idx] = df.bk总手数.iloc[idx-1]
     else:
         df.bk总手数.iloc[idx] = df.bk总手数.iloc[idx-1]
-        #df.b持仓金额.iloc[idx] += row.开仓手数 * row.c * 点数
 
     if row.开仓 == 'sk':
-        df.sk总手数.iloc[idx] = df.sk总手数.iloc[idx-1] + row.开仓手数
-        #df.s持仓金额.iloc[idx] += row.开仓手数 * row.c * 点数
+        if idx > kindex + 开仓间隔:
+            df.sk总手数.iloc[idx] = df.sk总手数.iloc[idx-1] + row.开仓手数
+            kindex = idx
+        else:
+            df.sk总手数.iloc[idx] = df.sk总手数.iloc[idx-1]
     else:
         df.sk总手数.iloc[idx] = df.sk总手数.iloc[idx-1]
-        #df.s持仓金额.iloc[idx] += row.开仓手数 * row.c * 点数
 
     if row.平仓 == 'bp': 
         #df.b持仓金额.iloc[idx] = 0
         df.bk总手数.iloc[idx] = 0
+        kindex = idx
     elif row.平仓 == 'sp':
         df.sk总手数.iloc[idx] = 0
+        kindex = idx
 
 df['b持仓金额'] = df.bk总手数 * df.c * db
 df['s持仓金额'] = df.sk总手数 * df.c * db
@@ -132,8 +140,8 @@ for idx in range(df.shape[0]):
     
 
 df['总金额'] = df.未持仓金额 + df['b持仓金额'] + df['s持仓金额']
-
+df['持仓比例'] = (df['b持仓金额'] + df['s持仓金额']) / df['总金额']
 #df.bk总手数 = np.where(df.开仓=='bk', df.bk总手数.shift(1)+df.开仓手数, df.bk总手数.shift(1))
 #df.bk总手数 = df.bk总手数.shift(1)+df.开仓手数
 
-df.to_csv('tmp_dkx向下.csv')
+df.to_csv('tmp.csv')
