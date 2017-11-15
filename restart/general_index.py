@@ -1022,7 +1022,7 @@ class General(object):
         '''
         if 'bpsp' not in df.columns:
             #print 'df has no bpsp'
-            return
+            raise Exception('没有bpsp')
         zj_init = zj
         zjqx = [] # 资金曲线，画图用
         kccs = [] # 开仓次数
