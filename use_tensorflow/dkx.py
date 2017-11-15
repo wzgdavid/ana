@@ -160,3 +160,6 @@ dff['both<1'] = (dff.y_true_value < 1) & (dff.y_pred_value < 1)
 dff['right'] =  dff['both>1'] | dff['both<1'] # 预测方向正确 
 print(dff.right.sum()/ dff.shape[0], '预测方向正确率')
 dff.to_csv('tmp.csv')
+
+
+# 一开始是好奇， 但预测还是不靠谱，投资要关注的很多，但最不需要的就是预测！！！
