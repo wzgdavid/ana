@@ -28,3 +28,7 @@ def get_nll(df, n):
     '''前n天最低点（不包含当天）'''
     df['nll'] = df.l.shift(1).rolling(window=n, center=False).min()
     return df
+
+def get_ma(df, n):
+    df['ma{}'.format(n)] = df.c.rolling(window=n, center=False).mean()
+    return df
