@@ -21,12 +21,12 @@ def get_DKX(df, n=10):
 
 def get_nhh(df, n):
     '''前n天最高价最高点（不包含当天）'''
-    df['nhh'] = df.h.shift(1).rolling(window=n, center=False).max()
+    df['nhh{}'.format(n)] = df.h.shift(1).rolling(window=n, center=False).max()
     return df
 
 def get_nll(df, n):
     '''前n天最低点（不包含当天）'''
-    df['nll'] = df.l.shift(1).rolling(window=n, center=False).min()
+    df['nll{}'.format(n)] = df.l.shift(1).rolling(window=n, center=False).min()
     return df
 
 def get_ma(df, n):
