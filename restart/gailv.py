@@ -596,7 +596,7 @@ if __name__ == '__main__':
     g = GL('rb') # ta rb c m a ma jd dy sr cs 999999
     #g.tupohl(3, 7, 1)
     #g.ev_ma(20,0.03)
-    #g.ev_tupohl(2, 7, 1)
+    g.ev_tupohl(2, 7, 1)
     #g.ev_tupohl(3, 17, 1) 
     #g.ev_tupohl(3, 17, 1)
     #g.tupohl_lowhigh(2,7,1)

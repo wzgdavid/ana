@@ -6,10 +6,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from common import get_DKX, get_nhh, get_nll, get_ma
+from common import get_DKX, get_nhh, get_nll, get_ma, avg
 plt.rcParams['font.sans-serif'] = ['SimHei'] # 正常显示中文
-df = pd.read_csv(r'..\data\rb\zl.csv')
-#df = pd.read_csv(r'..\data\dy.csv')
+df = pd.read_csv(r'..\data\rb\zs.csv')
+#df = pd.read_csv(r'..\data\jd.csv')
 df = get_DKX(df)
 df = get_nhh(df, 2)
 df = get_nll(df, 2)
@@ -323,4 +323,108 @@ def run3(df, zj_init, zs, fangxiang):
     #plt.savefig('{}.png'.format(title))
     
 #run3(df, 100000, zs=3, fangxiang='多')
-run3(df, 100000, zs=3, fangxiang='空')
+#run3(df, 100000, zs=3, fangxiang='空')
+
+def run4(df, zj_init, zs, fangxiang):
+    '''
+
+    在run3的基础上，平仓只考虑止损平仓
+    '''
+    df = get_nhh(df, zs)  # 做空止损
+    df = get_nll(df, zs)  # 做多止损
+    df['b止损'] = df['nll{}'.format(zs)] # 移动和开仓止损
+    df['s止损'] = df['nhh{}'.format(zs)]
+    df['一次开仓手数'] = 0
+    arr = np.zeros(df.shape[0])
+    arr[0] = zj_init  # 
+    df['可用余额'] = arr # 初始化可用余额
+    rows_index = range(df.shape[0])
+    new_high = 0 # 多止损
+    new_low = 0 # 空移动止损
+    kcprice = []  # 开仓价格， 开仓手数
+    for i in rows_index:
+        row = df.iloc[i]  # 判断用row， 赋值用df.ix
+        last_row = df.iloc[i-1] if i > 0 else row
+        # 多
+        
+        if fangxiang == '多':
+            if row['开仓'] == 'bk' and last_row['可用余额']/last_row['总金额'] >= 0.7:
+                ss = min(int(last_row['可用余额'] / 40000), 100)
+                df.ix[i, '一次开仓手数'] = ss
+                df.ix[i, 'bk总手数'] = last_row['bk总手数'] + df.ix[i, '一次开仓手数']
+                # 简单计算， 保证金比例就一比十， 既价格就是保证金额
+                bkprice = row.o if row.o>row.nhh2 else row.nhh2 # 前两天的高点作为开仓价,跳开用今天的开盘作为开仓价
+                kcprice.append((bkprice, ss))
+                df.ix[i, 'bkprice'] = bkprice
+                df.ix[i, 'b保证金'] = last_row['b保证金'] + df.ix[i, 'bkprice']*df.ix[i, '一次开仓手数']   # 
+                df.ix[i, 'b合约金额'] = df.ix[i, 'bkprice'] * df.ix[i, 'bk总手数'] * 10 # 螺纹一手10吨
+                df.ix[i, '可用余额'] = last_row['可用余额'] - df.ix[i, 'bkprice'] *df.ix[i, '一次开仓手数'] # 
+            else: 
+                df.ix[i, 'bk总手数'] = last_row['bk总手数']
+                df.ix[i, 'b保证金'] = last_row['b保证金']
+                df.ix[i, '可用余额'] = last_row['可用余额']
+                df.ix[i, 'b合约金额'] = row.c * df.ix[i, 'bk总手数'] * 10 # 螺纹一手10吨
+            if df.ix[i, 'bk总手数'] == 0:
+                df.ix[i, 'b止损'] = 0
+                new_high = 0
+            else:
+                new_high = max(df.ix[i, 'b止损'], new_high)
+                df.ix[i, 'b止损'] = new_high
+            #print(new_high)
+            if row.l <= df.ix[i, 'b止损'] and df.ix[i, 'bk总手数'] != 0:
+                #df.ix[i, '可用余额'] = last_row['可用余额'] + new_high * df.ix[i, 'bk总手数']
+                #print(kcprice)
+                mean_kcprice = avg(kcprice)
+                #print(mean_kcprice)
+                df.ix[i, '可用余额'] = last_row['可用余额'] + (df.ix[i-1, 'b止损'] - mean_kcprice) * df.ix[i, 'bk总手数'] * 10 + mean_kcprice * df.ix[i, 'bk总手数']
+                df.ix[i, 'b合约金额'] = 0
+                df.ix[i, 'bk总手数'] = 0
+                df.ix[i, 'b保证金'] = 0
+                kcprice= []
+            df.ix[i, '总金额'] = df.ix[i, '可用余额'] + df.ix[i, 'b保证金'] + (df.ix[i, 'b合约金额']/ 10 - df.ix[i, 'b保证金'])*10
+
+        # 空
+        if fangxiang == '空':
+            if row['开仓'] == 'sk' and last_row['可用余额']/last_row['总金额'] >= 0.7:
+                ss = min(int(last_row['可用余额'] / 40000), 100)
+                df.ix[i, '一次开仓手数'] = ss
+                df.ix[i, 'sk总手数'] = last_row['sk总手数'] + ss
+                df.ix[i, 'skprice'] = row.o if row.o<row.nll2 else row.nll2 
+                df.ix[i, 's保证金'] = last_row['s保证金'] + df.ix[i, 'skprice'] * df.ix[i, '一次开仓手数']
+                df.ix[i, 's合约金额'] = df.ix[i, 'skprice'] * df.ix[i, 'sk总手数'] * 10 # 螺纹一手10吨
+                df.ix[i, '可用余额'] = last_row['可用余额'] - df.ix[i, 'skprice'] *df.ix[i, '一次开仓手数'] # 
+            else:
+                df.ix[i, 'sk总手数'] = last_row['sk总手数']
+                df.ix[i, 's保证金'] = last_row['s保证金']
+                df.ix[i, '可用余额'] = last_row['可用余额']
+                df.ix[i, 's合约金额'] = row.c * df.ix[i, 'sk总手数'] * 10 # 螺纹一手10吨
+            if df.ix[i, 'sk总手数'] == 0:
+                df.ix[i, 's止损'] == 0
+                new_low = 99999
+            else:
+                new_low = min(df.ix[i, 's止损'], new_low)
+            #print(new_low)
+            if row.h >= new_low:
+                df.ix[i, 'sk总手数'] = 0
+                df.ix[i, 's保证金'] = 0
+                df.ix[i, '可用余额'] = last_row['总金额']
+                df.ix[i, 's合约金额'] = 0
+            df.ix[i, '总金额'] = df.ix[i, '可用余额'] + df.ix[i, 's保证金'] + (df.ix[i, 's保证金'] - df.ix[i, 's合约金额']/ 10 )*10
+        
+        #df.ix[i, '总金额'] = df.ix[i, '可用余额'] + df.ix[i, 'b保证金'] + (df.ix[i, 'b合约金额']/ 10 - df.ix[i, 'b保证金'])*10 \
+        #                       + df.ix[i, 's保证金'] + (df.ix[i, 's保证金'] - df.ix[i, 's合约金额']/ 10  )*10
+        ## 调整
+        #if row['开仓'] == 'bk':
+        #    df.ix[i, '总金额'] = df.ix[i, '总金额'] - row.l * df.ix[i, '一次开仓手数']
+
+    droplist = [ 'b', 'nhh2', 'nll2',  '高于前两天高点', '低于前两天低点']
+    df = df.drop(droplist, axis=1)
+    df.to_csv('tmp4.csv')
+    plt.plot(df['总金额'])
+    title = 'run4-zs:{}-fangxiang:{}'.format(zs, fangxiang)
+    plt.title(title)
+    plt.show()
+    #plt.savefig('{}.png'.format(title))
+
+run4(df, 100000, zs=3, fangxiang='多')
+#run4(df, 100000, zs=3, fangxiang='空')  
