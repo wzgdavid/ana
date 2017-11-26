@@ -69,12 +69,13 @@ df['bkprice'] = 0
 df['b持仓均价'] = 0  # 
 df['b保证金'] = 0  #
 df['b合约金额'] = 0  # 比如3000点买的螺纹， 实际合约价值是10吨，3万元
+df['是b止损'] = None
 #df['sk总手数'] = 0
 #df['skprice'] = 0 
 #df['s保证金'] = 0
 #df['s持仓均价'] = 0  #
 #df['s合约金额'] = 0
-df['总金额'] = 0
+
 
 
 def run1(df,zj_init):
@@ -86,6 +87,7 @@ def run1(df,zj_init):
     arr = np.zeros(df.shape[0])
     arr[0] = zj_init  # 
     df['可用余额'] = arr # 初始化可用余额
+    df['总金额'] = arr
     df = get_nhh(df, 3)  # 做空止损
     df = get_nll(df, 3)  # 做多止损
   
@@ -107,7 +109,8 @@ def run1(df,zj_init):
             df.ix[i, 'b保证金'] = df.ix[i-1, 'b保证金'] + bkprice * ss
             new_change = (row.c - bkprice) * ss * 10 # 新开仓价格变化
             old_change = (row.c - last_row.c) * df.ix[i-1, 'bk总手数'] *10# 旧开仓价格变化
-            df.ix[i, '总金额'] = df.ix[i, '可用余额'] + df.ix[i, 'b保证金'] + new_change + old_change
+            #print(new_change, old_change)
+            df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + new_change + old_change
 
         else: 
             df.ix[i, 'bk总手数'] = df.ix[i-1, 'bk总手数'] 
@@ -120,7 +123,19 @@ def run1(df,zj_init):
             old_change = (row.c - last_row.c) * df.ix[i-1, 'bk总手数']*10# 旧开仓价格变化
             df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + old_change
         
-
+        if row.l <= df.ix[i, 'b止损'] and df.ix[i, 'bk总手数'] !=0:
+            df.ix[i, '是b止损'] = 1
+            change = (df.ix[i, 'b止损'] - last_row.c)  * df.ix[i-1, 'bk总手数']* 10
+            #print(change,  i)
+            df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + change
+            df.ix[i, 'b止损'] = 0
+            df.ix[i, 'bk总手数'] = 0
+            df.ix[i, 'b保证金'] = 0
+            df.ix[i, '可用余额'] = df.ix[i, '总金额']
     df.to_csv('tmp1.csv')
+    plt.plot(df['总金额'])
+    title = 'run1'
+    plt.title(title)
+    plt.show()
 
-run1(df, 99999)
+run1(df, 100000)
