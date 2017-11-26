@@ -20,13 +20,23 @@ def get_DKX(df, n=10):
     return df.drop(['a'], axis=1)
 
 def get_nhh(df, n):
-    '''前n天最高价最高点（不包含当天）'''
+    '''前n天最高点（不包含当天）'''
     df['nhh{}'.format(n)] = df.h.shift(1).rolling(window=n, center=False).max()
     return df
 
 def get_nll(df, n):
     '''前n天最低点（不包含当天）'''
     df['nll{}'.format(n)] = df.l.shift(1).rolling(window=n, center=False).min()
+    return df
+
+def get_nhhzs(df, n):
+    '''前n天最高点（不包含当天） 止损用'''
+    df['nhh_zs'] = df.h.shift(1).rolling(window=n, center=False).max()
+    return df
+
+def get_nllzs(df, n):
+    '''前n天最低点（不包含当天）止损用'''
+    df['nll_zs'] = df.l.shift(1).rolling(window=n, center=False).min()
     return df
 
 def get_ma(df, n):
