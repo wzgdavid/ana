@@ -80,7 +80,7 @@ df['余额占比'] = 0
 
 def run1(df,zs, zj_init):
     '''
-
+    每次遇到开仓信号都开仓
     每次只开一手， 三天低点开仓止损和移动止损（先统一止损点跑，简单）
     
     '''
@@ -98,21 +98,16 @@ def run1(df,zs, zj_init):
     for i in rows_index:
         row = df.iloc[i]  # 不变动的值判断用row， 赋值用df.ix
         last_row = df.iloc[i-1] if i > 0 else row
-        #ss = min(int(df.ix[i-1, '可用余额'] / 40000), 100)
         if i == 0:
             continue
-
-        if df.ix[i, 'sk总手数'] == 0 and df.ix[i-1, 'bk总手数'] < 5: # 最多持仓5手::
+        ss = 1 # 每次新开仓手数
+        if df.ix[i, 'sk总手数'] == 0: # 多空只能做一个方向
             if row['开仓'] == 'bk':
-                ss = 1 # 每次新开仓手数
-                #ss = min(int(df.ix[i-1, '可用余额'] / 40000), 100)
-                #print(ss,'bk')
-                #df.ix[i, 'bkprice'] = bkprice = row.o if row.o>row.nhh2 else row.nhh2 
                 df.ix[i, 'bkprice'] = bkprice = row.o + feiyong if row.o>row.nhh2 else row.nhh2 + feiyong
                 df.ix[i, 'bk总手数'] = df.ix[i-1, 'bk总手数'] + ss  # 等于上一日的bk总手数加1
                 df.ix[i, 'b止损'] = row.nll_zs
                 df.ix[i, '可用余额'] = df.ix[i-1, '可用余额'] - bkprice * ss
-                df.ix[i, 'b保证金'] = df.ix[i-1, 'b保证金'] + bkprice * ss
+                #df.ix[i, 'b保证金'] = df.ix[i-1, 'b保证金'] + bkprice * ss
                 new_change = (row.c - bkprice) * ss * 10 # 新开仓价格变化
                 old_change = (row.c - last_row.c) * df.ix[i-1, 'bk总手数'] *10# 旧开仓价格变化
                 #print(new_change, old_change)
@@ -120,36 +115,21 @@ def run1(df,zs, zj_init):
             else: 
                 df.ix[i, 'bk总手数'] = df.ix[i-1, 'bk总手数'] 
                 df.ix[i, '可用余额'] = df.ix[i-1, '可用余额']
-                df.ix[i, 'b保证金'] = df.ix[i-1, 'b保证金']
+                #df.ix[i, 'b保证金'] = df.ix[i-1, 'b保证金']
                 if df.ix[i, 'bk总手数'] == 0:
                     df.ix[i, 'b止损'] = new_high = 0
                 else:
                     df.ix[i, 'b止损'] = new_high = max(df.ix[i, 'nll_zs'],  new_high)
                 old_change = (row.c - last_row.c) * df.ix[i-1, 'bk总手数']*10# 旧开仓价格变化
                 df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + old_change
-            if row.l <= df.ix[i, 'b止损'] and df.ix[i, 'bk总手数'] !=0:
-                df.ix[i, '是b止损'] = 1
-                #change = (df.ix[i, 'b止损'] - last_row.c)  * df.ix[i-1, 'bk总手数']* 10
-                change = (df.ix[i, 'b止损'] - last_row.c - feiyong)  * df.ix[i-1, 'bk总手数']* 10
-                
-                #print(change,  i)
-                df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + change
-                df.ix[i, 'b止损'] = 0
-                df.ix[i, 'bk总手数'] = 0
-                df.ix[i, 'b保证金'] = 0
-                df.ix[i, '可用余额'] = df.ix[i, '总金额']
 
-        if df.ix[i, 'bk总手数'] == 0 and df.ix[i-1, 'sk总手数'] < 5: # 最多持仓5手:
+        if df.ix[i, 'bk总手数'] == 0: # 多空只能做一个方向
             if row['开仓'] == 'sk':
-                ss = 1 # 每次新开仓手数
-                #ss = min(int(df.ix[i-1, '可用余额'] / 40000), 100)
-                #print(ss,'sk')
-                #df.ix[i, 'skprice'] = skprice = row.o if row.o<row.nll2 else row.nll2 
                 df.ix[i, 'skprice'] = skprice = row.o -feiyong if row.o<row.nll2 else row.nll2 - feiyong
                 df.ix[i, 'sk总手数'] = df.ix[i-1, 'sk总手数'] + ss  # 等于上一日的sk总手数加1
                 df.ix[i, 's止损'] = row.nhh_zs
                 df.ix[i, '可用余额'] = df.ix[i-1, '可用余额'] - skprice * ss
-                df.ix[i, 's保证金'] = df.ix[i-1, 's保证金'] + skprice * ss
+                #df.ix[i, 's保证金'] = df.ix[i-1, 's保证金'] + skprice * ss
                 new_change = (skprice - row.c) * ss * 10 # 新开仓价格变化
                 old_change = (last_row.c - row.c) * df.ix[i-1, 'sk总手数'] *10# 旧开仓价格变化
                 #print(new_change, old_change)
@@ -157,7 +137,7 @@ def run1(df,zs, zj_init):
             else: 
                 df.ix[i, 'sk总手数'] = df.ix[i-1, 'sk总手数'] 
                 df.ix[i, '可用余额'] = df.ix[i-1, '可用余额']
-                df.ix[i, 's保证金'] = df.ix[i-1, 's保证金']
+                #df.ix[i, 's保证金'] = df.ix[i-1, 's保证金']
                 if df.ix[i, 'sk总手数'] == 0:
                     df.ix[i, 's止损'] = new_low = 999999
                 else:
@@ -165,17 +145,26 @@ def run1(df,zs, zj_init):
                     #print(df.ix[i, 's止损'],  i)
                 old_change = (last_row.c - row.c) * df.ix[i-1, 'sk总手数'] *10# 旧开仓价格变化
                 df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + old_change
+
+        # 处理止损
+        if df.ix[i, 'bk总手数'] != 0: 
+            if row.l <= df.ix[i, 'b止损'] and df.ix[i, 'bk总手数'] !=0:
+                df.ix[i, '是b止损'] = 1
+                change = (df.ix[i, 'b止损'] - last_row.c - feiyong)  * df.ix[i-1, 'bk总手数']* 10
+                df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + change
+                df.ix[i, 'bk总手数'] = 0
+                #df.ix[i, 'b保证金'] = 0
+                df.ix[i, '可用余额'] = df.ix[i, '总金额']
+        if df.ix[i, 'sk总手数'] != 0: 
             if row.h >= df.ix[i, 's止损'] and df.ix[i, 'sk总手数'] !=0:
                 df.ix[i, '是s止损'] = 1
-                #change = (last_row.c - df.ix[i, 's止损'] )  * df.ix[i-1, 'sk总手数']* 10
                 change = (last_row.c - df.ix[i, 's止损'] -feiyong)  * df.ix[i-1, 'sk总手数']* 10
-                #print(change,  i)
                 df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + change
-                #df.ix[i, 's止损'] = 0
                 df.ix[i, 'sk总手数'] = 0
-                df.ix[i, 's保证金'] = 0
+                #df.ix[i, 's保证金'] = 0
                 df.ix[i, '可用余额'] = df.ix[i, '总金额']
-        df.ix[i,'余额占比'] = df.ix[i, '可用余额'] / df.ix[i, '总金额']
+
+        #df.ix[i,'余额占比'] = df.ix[i, '可用余额'] / df.ix[i, '总金额']
 
     df.to_csv('tmp1.csv')
     plt.plot(df['总金额'])
@@ -185,15 +174,15 @@ def run1(df,zs, zj_init):
     plt.title(title)
     plt.show()
 
-#run1(df, 3, 100000)
+run1(df, 3, 100000)
 
 
 
-def run2(df,zs, zj_init):
+def run2(df,zs, zj_init, f=0.01, maxcw=0.3):
     '''
-
-    每次只开一手， 三天低点开仓止损和移动止损（先统一止损点跑，简单）
-    
+    有资金管理
+    每次开仓允许的损失，f（当前总金额的百分比）
+    maxcw, 允许最大仓位（当前总金额的百分比）
     '''
     arr = np.zeros(df.shape[0])
     arr[0] = zj_init  # 
@@ -201,7 +190,7 @@ def run2(df,zs, zj_init):
     df['总金额'] = arr
     df = get_nhhzs(df, zs)  # 做空止损
     df = get_nllzs(df, zs)  # 做多止损
-
+    yue = 1 - maxcw # 反过来就是余额允许的最小比例
     feiyong = 3 # 每次两个滑点， 再用一个滑点代替费用，共3点
     new_high = 0
     new_low = 99999
@@ -209,33 +198,22 @@ def run2(df,zs, zj_init):
     for i in rows_index:
         row = df.iloc[i]  # 不变动的值判断用row， 赋值用df.ix
         last_row = df.iloc[i-1] if i > 0 else row
-        #ss = min(int(df.ix[i-1, '可用余额'] / 40000), 100)
         if i == 0:
             continue
-        if i<500:
-            ss=1
-        elif i<1000:
-            ss=2
-        elif i<1500:
-            ss=3
-        elif i<2000:
-            ss=4
+        ss = 1 # 每次新开仓手数
+        if df.ix[i, 'sk总手数'] == 0: # 多空只能做一个方向
+            if row['开仓'] == 'bk' and (df.ix[i-1, '可用余额'] / df.ix[i-1, '总金额']) > yue:
+                # 根据f算开几手
+                loss  = df.ix[i-1, '总金额'] * f
+                zsrange = row.nhh2 - row.nll2
+                ss = int(loss / (zsrange * 10))
+                #print(loss,zsrange,ss)
 
-        elif i<2500:
-            ss=5
-        else:
-            ss = 6
-        if df.ix[i, 'sk总手数'] == 0 :
-            if row['开仓'] == 'bk' and df.ix[i-1, 'bk总手数'] < 5*ss: # 最多持仓5*ss手:
-                #ss = 9 # 每次新开仓手数
-                #ss = min(int(df.ix[i-1, '可用余额'] / 40000), 50)
-                #print(ss,'bk')
-                #df.ix[i, 'bkprice'] = bkprice = row.o if row.o>row.nhh2 else row.nhh2 
                 df.ix[i, 'bkprice'] = bkprice = row.o + feiyong if row.o>row.nhh2 else row.nhh2 + feiyong
                 df.ix[i, 'bk总手数'] = df.ix[i-1, 'bk总手数'] + ss  # 等于上一日的bk总手数加1
                 df.ix[i, 'b止损'] = row.nll_zs
                 df.ix[i, '可用余额'] = df.ix[i-1, '可用余额'] - bkprice * ss
-                df.ix[i, 'b保证金'] = df.ix[i-1, 'b保证金'] + bkprice * ss
+                #df.ix[i, 'b保证金'] = df.ix[i-1, 'b保证金'] + bkprice * ss
                 new_change = (row.c - bkprice) * ss * 10 # 新开仓价格变化
                 old_change = (row.c - last_row.c) * df.ix[i-1, 'bk总手数'] *10# 旧开仓价格变化
                 #print(new_change, old_change)
@@ -243,36 +221,26 @@ def run2(df,zs, zj_init):
             else: 
                 df.ix[i, 'bk总手数'] = df.ix[i-1, 'bk总手数'] 
                 df.ix[i, '可用余额'] = df.ix[i-1, '可用余额']
-                df.ix[i, 'b保证金'] = df.ix[i-1, 'b保证金']
+                #df.ix[i, 'b保证金'] = df.ix[i-1, 'b保证金']
                 if df.ix[i, 'bk总手数'] == 0:
                     df.ix[i, 'b止损'] = new_high = 0
                 else:
                     df.ix[i, 'b止损'] = new_high = max(df.ix[i, 'nll_zs'],  new_high)
                 old_change = (row.c - last_row.c) * df.ix[i-1, 'bk总手数']*10# 旧开仓价格变化
                 df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + old_change
-            if row.l <= df.ix[i, 'b止损'] and df.ix[i, 'bk总手数'] !=0:
-                df.ix[i, '是b止损'] = 1
-                #change = (df.ix[i, 'b止损'] - last_row.c)  * df.ix[i-1, 'bk总手数']* 10
-                change = (df.ix[i, 'b止损'] - last_row.c - feiyong)  * df.ix[i-1, 'bk总手数']* 10
-                
-                #print(change,  i)
-                df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + change
-                df.ix[i, 'b止损'] = 0
-                df.ix[i, 'bk总手数'] = 0
-                df.ix[i, 'b保证金'] = 0
-                df.ix[i, '可用余额'] = df.ix[i, '总金额']
 
-        if df.ix[i, 'bk总手数'] == 0 :
-            if row['开仓'] == 'sk' and df.ix[i-1, 'bk总手数'] < 5*ss: # 最多持仓5*ss手:
-                #ss = 9 # 每次新开仓手数
-                
-                #print(ss,'sk')
-                #df.ix[i, 'skprice'] = skprice = row.o if row.o<row.nll2 else row.nll2 
+        if df.ix[i, 'bk总手数'] == 0: # 多空只能做一个方向
+            if row['开仓'] == 'sk'and (df.ix[i-1, '可用余额'] / df.ix[i-1, '总金额']) > yue:
+                # 根据f算开几手
+                loss  = df.ix[i-1, '总金额'] * f
+                zsrange = row.nhh2 - row.nll2
+                ss = int(loss / (zsrange * 10))
+                #print(loss,zsrange,ss)
                 df.ix[i, 'skprice'] = skprice = row.o -feiyong if row.o<row.nll2 else row.nll2 - feiyong
                 df.ix[i, 'sk总手数'] = df.ix[i-1, 'sk总手数'] + ss  # 等于上一日的sk总手数加1
                 df.ix[i, 's止损'] = row.nhh_zs
                 df.ix[i, '可用余额'] = df.ix[i-1, '可用余额'] - skprice * ss
-                df.ix[i, 's保证金'] = df.ix[i-1, 's保证金'] + skprice * ss
+                #df.ix[i, 's保证金'] = df.ix[i-1, 's保证金'] + skprice * ss
                 new_change = (skprice - row.c) * ss * 10 # 新开仓价格变化
                 old_change = (last_row.c - row.c) * df.ix[i-1, 'sk总手数'] *10# 旧开仓价格变化
                 #print(new_change, old_change)
@@ -280,7 +248,7 @@ def run2(df,zs, zj_init):
             else: 
                 df.ix[i, 'sk总手数'] = df.ix[i-1, 'sk总手数'] 
                 df.ix[i, '可用余额'] = df.ix[i-1, '可用余额']
-                df.ix[i, 's保证金'] = df.ix[i-1, 's保证金']
+                #df.ix[i, 's保证金'] = df.ix[i-1, 's保证金']
                 if df.ix[i, 'sk总手数'] == 0:
                     df.ix[i, 's止损'] = new_low = 999999
                 else:
@@ -288,19 +256,28 @@ def run2(df,zs, zj_init):
                     #print(df.ix[i, 's止损'],  i)
                 old_change = (last_row.c - row.c) * df.ix[i-1, 'sk总手数'] *10# 旧开仓价格变化
                 df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + old_change
+
+        # 处理止损
+        if df.ix[i, 'bk总手数'] != 0: 
+            if row.l <= df.ix[i, 'b止损'] and df.ix[i, 'bk总手数'] !=0:
+                df.ix[i, '是b止损'] = 1
+                change = (df.ix[i, 'b止损'] - last_row.c - feiyong)  * df.ix[i-1, 'bk总手数']* 10
+                df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + change
+                df.ix[i, 'bk总手数'] = 0
+                #df.ix[i, 'b保证金'] = 0
+                df.ix[i, '可用余额'] = df.ix[i, '总金额']
+        if df.ix[i, 'sk总手数'] != 0: 
             if row.h >= df.ix[i, 's止损'] and df.ix[i, 'sk总手数'] !=0:
                 df.ix[i, '是s止损'] = 1
-                #change = (last_row.c - df.ix[i, 's止损'] )  * df.ix[i-1, 'sk总手数']* 10
                 change = (last_row.c - df.ix[i, 's止损'] -feiyong)  * df.ix[i-1, 'sk总手数']* 10
-                #print(change,  i)
                 df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + change
-                #df.ix[i, 's止损'] = 0
                 df.ix[i, 'sk总手数'] = 0
-                df.ix[i, 's保证金'] = 0
+                #df.ix[i, 's保证金'] = 0
                 df.ix[i, '可用余额'] = df.ix[i, '总金额']
 
-        df.ix[i,'余额占比'] = df.ix[i, '可用余额'] / df.ix[i, '总金额']
-
+        #df.ix[i,'余额占比'] = df.ix[i, '可用余额'] / df.ix[i, '总金额']
+        #if i > 100:
+        #    break
     df.to_csv('tmp2.csv')
     plt.plot(df['总金额'])
     plt.plot(df['可用余额'])
@@ -309,4 +286,4 @@ def run2(df,zs, zj_init):
     plt.title(title)
     plt.show()
 
-run2(df, 3, 100000)
+#run2(df, 3, 100000, f=0.01, maxcw=0.33)
