@@ -6,10 +6,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from common import get_DKX, get_nhh, get_nll, get_ma, avg,get_nhhzs,get_nllzs
+from common import get_DKX, get_nhh, get_nll, get_ma, avg,get_nhhzs,get_nllzs,get_atr
 plt.rcParams['font.sans-serif'] = ['SimHei'] # 正常显示中文
 df = pd.read_csv(r'..\data\rb\zs.csv')
-#df = pd.read_csv(r'..\data\jd.csv')
+#df = pd.read_csv(r'..\data\ma.csv')
 df = get_DKX(df)
 df = get_nhh(df, 2)
 df = get_nll(df, 2)
@@ -174,13 +174,14 @@ def run1(df,zs, zj_init):
     plt.title(title)
     plt.show()
 
-run1(df, 3, 100000)
+#run1(df, 3, 100000)
 
 
 
 def run2(df,zs, zj_init, f=0.01, maxcw=0.3):
     '''
     有资金管理
+    zs 指前 zs 天的最低（高）点
     每次开仓允许的损失，f（当前总金额的百分比）
     maxcw, 允许最大仓位（当前总金额的百分比）
     '''
@@ -211,7 +212,7 @@ def run2(df,zs, zj_init, f=0.01, maxcw=0.3):
 
                 df.ix[i, 'bkprice'] = bkprice = row.o + feiyong if row.o>row.nhh2 else row.nhh2 + feiyong
                 df.ix[i, 'bk总手数'] = df.ix[i-1, 'bk总手数'] + ss  # 等于上一日的bk总手数加1
-                df.ix[i, 'b止损'] = row.nll_zs
+                df.ix[i, 'b止损'] = row.nll_zs  ##############################-10
                 df.ix[i, '可用余额'] = df.ix[i-1, '可用余额'] - bkprice * ss
                 #df.ix[i, 'b保证金'] = df.ix[i-1, 'b保证金'] + bkprice * ss
                 new_change = (row.c - bkprice) * ss * 10 # 新开仓价格变化
@@ -238,7 +239,7 @@ def run2(df,zs, zj_init, f=0.01, maxcw=0.3):
                 #print(loss,zsrange,ss)
                 df.ix[i, 'skprice'] = skprice = row.o -feiyong if row.o<row.nll2 else row.nll2 - feiyong
                 df.ix[i, 'sk总手数'] = df.ix[i-1, 'sk总手数'] + ss  # 等于上一日的sk总手数加1
-                df.ix[i, 's止损'] = row.nhh_zs
+                df.ix[i, 's止损'] = row.nhh_zs ################################+ 10
                 df.ix[i, '可用余额'] = df.ix[i-1, '可用余额'] - skprice * ss
                 #df.ix[i, 's保证金'] = df.ix[i-1, 's保证金'] + skprice * ss
                 new_change = (skprice - row.c) * ss * 10 # 新开仓价格变化
@@ -280,10 +281,14 @@ def run2(df,zs, zj_init, f=0.01, maxcw=0.3):
         #    break
     df.to_csv('tmp2.csv')
     plt.plot(df['总金额'])
-    plt.plot(df['可用余额'])
+    #plt.plot(df['可用余额'])
     plt.legend()
-    title = 'run2'
+    title = 'run2 zs={}   f={}  maxcw={}'.format(zs, f,maxcw)
     plt.title(title)
     plt.show()
 
-#run2(df, 3, 100000, f=0.01, maxcw=0.33)
+#run2(df, 2, 100000, f=0.02, maxcw=0.3)
+#run2(df, 2, 100000, f=0.02, maxcw=0.4)
+run2(df, 2, 100000, f=0.02, maxcw=0.5)
+
+
