@@ -9,7 +9,7 @@ import seaborn as sns
 from common import get_DKX, get_nhh, get_nll, get_ma, avg,get_nhhzs,get_nllzs,get_atr
 plt.rcParams['font.sans-serif'] = ['SimHei'] # 正常显示中文
 df = pd.read_csv(r'..\data\rb\zs.csv')
-#df = pd.read_csv(r'..\data\ma.csv')
+#df = pd.read_csv(r'..\data\dy.csv')
 df = get_DKX(df)
 df = get_nhh(df, 2)
 df = get_nll(df, 2)
@@ -20,17 +20,22 @@ df = get_ma(df, 20)
 --------------------------趋势判断1---------------------------------
 '''
 # 趋势判断，DKXb方向，1 向上   0向下  当天参照前两天
-df['DKXb方向'] = np.where(df.b.shift(1)>df.b.shift(2), 1, 0) 
+df['condition'] = np.where(df.b.shift(1)>df.b.shift(2), 1, 0) 
+# 趋势2   DKXb线在d线上做多，反之空
+#df['condition'] = np.where(df.b.shift(1)>df.d.shift(1), 1, 0) 
+
+
+
 # 开仓条件
 df = df.dropna(axis=0)
 df['高于前两天高点'] = np.where(df.h > df.nhh2, 1, None)   # 看当天 
 df['低于前两天低点'] = np.where(df.l < df.nll2, 1, None)
 # 开仓  bk开多  sk开空
-df['开仓'] = np.where((df['高于前两天高点'] == 1) & (df['DKXb方向']==1), 'bk', None)
-df['开仓'] = np.where((df['低于前两天低点'] == 1) & (df['DKXb方向']==0), 'sk', df['开仓'] )
+df['开仓'] = np.where((df['高于前两天高点'] == 1) & (df['condition']==1), 'bk', None)
+df['开仓'] = np.where((df['低于前两天低点'] == 1) & (df['condition']==0), 'sk', df['开仓'] )
 # 平仓 趋势反转 'bp' 平多  'sp' 平空
-df['平仓'] = np.where((df.DKXb方向.shift(2) == 1) & (df.DKXb方向.shift(1) == 0), 'bp', None)
-df['平仓'] = np.where((df.DKXb方向.shift(2) == 0) & (df.DKXb方向.shift(1) == 1), 'sp', df['平仓'])
+df['平仓'] = np.where((df.condition.shift(2) == 1) & (df.condition.shift(1) == 0), 'bp', None)
+df['平仓'] = np.where((df.condition.shift(2) == 0) & (df.condition.shift(1) == 1), 'sp', df['平仓'])
 #df['平仓'] = None # 没有平仓信号， 只用止损平仓
 
 '''
@@ -289,6 +294,6 @@ def run2(df,zs, zj_init, f=0.01, maxcw=0.3):
 
 #run2(df, 2, 100000, f=0.02, maxcw=0.3)
 #run2(df, 2, 100000, f=0.02, maxcw=0.4)
-run2(df, 2, 100000, f=0.02, maxcw=0.5)
+run2(df, 2, 100000, f=0.02, maxcw=0.3)
 
 

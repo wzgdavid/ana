@@ -16,7 +16,7 @@ def get_DKX(df, n=10):
     sum_ = '+'.join(['{}*df.a.shift({})'.format(20-i, i) for i in range(0, 20)]) 
     eval_str = '({})/210'.format(sum_)
     df['b'] = eval(eval_str)
-    #df['d'] = df.b.rolling(n).mean()
+    df['d'] = df.b.rolling(n).mean()
     return df.drop(['a'], axis=1)
 
 def get_nhh(df, n):
