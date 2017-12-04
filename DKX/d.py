@@ -33,6 +33,12 @@ df['低于前两天低点'] = np.where(df.l < df.nll2, 1, None)
 # 开仓  bk开多  sk开空
 df['开仓'] = np.where((df['高于前两天高点'] == 1) & (df['condition']==1), 'bk', None)
 df['开仓'] = np.where((df['低于前两天低点'] == 1) & (df['condition']==0), 'sk', df['开仓'] )
+
+# 开仓  bk开多  sk开空
+# 多一个条件前一次开仓的止损移动过了，才能开仓
+#df['开仓'] = np.where((df['高于前两天高点'] == 1) & (df['condition']==1) & (df.l.shift(1) > df.l.shift(2)), 'bk', None)
+#df['开仓'] = np.where((df['低于前两天低点'] == 1) & (df['condition']==0) & (df.h.shift(1) < df.h.shift(2)), 'sk', df['开仓'] )
+
 # 平仓 趋势反转 'bp' 平多  'sp' 平空
 df['平仓'] = np.where((df.condition.shift(2) == 1) & (df.condition.shift(1) == 0), 'bp', None)
 df['平仓'] = np.where((df.condition.shift(2) == 0) & (df.condition.shift(1) == 1), 'sp', df['平仓'])
@@ -82,6 +88,12 @@ df['s持仓均价'] = 0  #
 df['s合约金额'] = 0
 df['是s止损'] = None
 df['余额占比'] = 0
+
+def result(df):
+    
+
+    print(df['开仓'].value_counts())
+
 
 def run1(df,zs, zj_init):
     '''
@@ -284,6 +296,7 @@ def run2(df,zs, zj_init, f=0.01, maxcw=0.3):
         #df.ix[i,'余额占比'] = df.ix[i, '可用余额'] / df.ix[i, '总金额']
         #if i > 100:
         #    break
+    result(df)
     df.to_csv('tmp2.csv')
     plt.plot(df['总金额'])
     #plt.plot(df['可用余额'])
@@ -295,5 +308,4 @@ def run2(df,zs, zj_init, f=0.01, maxcw=0.3):
 #run2(df, 2, 100000, f=0.02, maxcw=0.3)
 #run2(df, 2, 100000, f=0.02, maxcw=0.4)
 run2(df, 2, 100000, f=0.02, maxcw=0.3)
-
 
