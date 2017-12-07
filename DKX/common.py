@@ -38,7 +38,16 @@ def get_nllzs(df, n):
     '''前n天最低点（不包含当天）止损用'''
     df['nll_zs'] = df.l.shift(1).rolling(window=n, center=False).min()
     return df
+def get_nhhzs2(df, n):
+    '''前n天最高点（不包含当天） 止损用'''
+    df['nhh_zs2'] = df.h.shift(1).rolling(window=n, center=False).max()
+    return df
 
+def get_nllzs2(df, n):
+    '''前n天最低点（不包含当天）止损用'''
+    df['nll_zs2'] = df.l.shift(1).rolling(window=n, center=False).min()
+    return df
+    
 def get_ma(df, n):
     df['ma{}'.format(n)] = df.c.rolling(window=n, center=False).mean()
     return df
