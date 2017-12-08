@@ -77,21 +77,21 @@ df = df.drop('date', axis=1)
 
 df['bk总手数'] = 0
 df['bkprice'] = 0
-df['b持仓均价'] = 0  # 
-df['b保证金'] = 0  #
-df['b合约金额'] = 0  # 比如3000点买的螺纹， 实际合约价值是10吨，3万元
+#df['b持仓均价'] = 0  # 
+#df['b保证金'] = 0  #
+#df['b合约金额'] = 0  # 比如3000点买的螺纹， 实际合约价值是10吨，3万元
 df['是b止损'] = None
 df['sk总手数'] = 0
 df['skprice'] = 0 
-df['s保证金'] = 0
-df['s持仓均价'] = 0  #
-df['s合约金额'] = 0
+#df['s保证金'] = 0
+#df['s持仓均价'] = 0  #
+#df['s合约金额'] = 0
 df['是s止损'] = None
 df['余额占比'] = 0
 
 def result(df):
     
-
+    print(df['是b止损'].count(), df['是b止损2'].count())
     print(df['开仓'].value_counts())
 
 
@@ -175,7 +175,7 @@ def run1(df,zs, zj_init):
         if df.ix[i, 'sk总手数'] != 0: 
             if row.h >= df.ix[i, 's止损'] and df.ix[i, 'sk总手数'] !=0:
                 df.ix[i, '是s止损'] = 1
-                change = (last_row.c - df.ix[i, 's止损'] -feiyong)  * df.ix[i-1, 'sk总手数']* 10
+                change = (last_row.c - df.ix[i, 's止损'] - feiyong)  * df.ix[i-1, 'sk总手数']* 10
                 df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + change
                 df.ix[i, 'sk总手数'] = 0
                 #df.ix[i, 's保证金'] = 0
@@ -305,7 +305,7 @@ def run2(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
         if df.ix[i, 'sk总手数'] != 0: 
             if row.h >= df.ix[i, 's止损']:
                 df.ix[i, '是s止损'] = 1
-                change = (last_row.c - df.ix[i, 's止损'] -feiyong)  * df.ix[i-1, 'sk总手数']* 10
+                change = (last_row.c - df.ix[i, 's止损'] - feiyong)  * df.ix[i-1, 'sk总手数']* 10
                 df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + change
                 df.ix[i, 'sk总手数'] = 0
                 #df.ix[i, 's保证金'] = 0
@@ -359,7 +359,6 @@ def run3(df,zs, zs2, zj_init, f=0.02, maxcw=0.3, jiange=0):
         last_row = df.iloc[i-1] if i > 0 else row
         if i == 0:
             continue
-        
 
         if df.ix[i, 'sk总手数'] == 0: # 多空只能做一个方向
             bk_conditions = [
@@ -450,7 +449,7 @@ def run3(df,zs, zs2, zj_init, f=0.02, maxcw=0.3, jiange=0):
                 df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + change
                 df.ix[i, 'bk总手数'] = zs2持仓手数
                 #df.ix[i, 'b保证金'] = 0
-                df.ix[i, '可用余额'] = df.ix[i, '总金额']
+                df.ix[i, '可用余额'] = df.ix[i-1, '可用余额'] + (df.ix[i, 'b止损']) * zs持仓手数
                 df.ix[i, '是b止损'] = 1
             if row.l <= df.ix[i, 'b止损2']:
                 change = (df.ix[i, 'b止损2'] - last_row.c - feiyong)  * zs2持仓手数* 10
@@ -479,6 +478,7 @@ def run3(df,zs, zs2, zj_init, f=0.02, maxcw=0.3, jiange=0):
         #if i > 100:
         #    break
     result(df)
+
     df.to_csv('tmp3.csv')
     plt.plot(df['总金额'])
     #plt.plot(df['可用余额'])
@@ -486,5 +486,5 @@ def run3(df,zs, zs2, zj_init, f=0.02, maxcw=0.3, jiange=0):
     title = 'run3 zs={}  zs2={}, 开仓间隔={} f={}  maxcw={}'.format(zs, zs2, jiange,f, maxcw)
     plt.title(title)
     plt.show()
-
+    
 run3(df, 2, 3, 100000, f=0.02, maxcw=0.3, jiange=0)
