@@ -14,7 +14,7 @@ df['returns'] = df.c.pct_change()
 df['ret_index'] = (1 + df['returns']).cumprod()
 df['ret_index'][0] = 1  # 每日收益
 df['month_returns'] = df.ret_index.resample('M').last().pct_change()
-#print(df.tail(10))
+print(df.tail(10))
 #print(df.m_returns.dropna()) # 月收益变化
 
-df.to_csv('tmp.csv')
+#df.to_csv('tmp.csv')

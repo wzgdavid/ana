@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from common import *#get_DKX, get_nhh, get_nll, get_ma, avg,get_nhhzs,get_nllzs,get_atr
 plt.rcParams['font.sans-serif'] = ['SimHei'] # 正常显示中文
-df = pd.read_csv(r'..\data\rb\zs.csv')
-#df = pd.read_csv(r'..\data\au.csv')
+#df = pd.read_csv(r'..\data\rb\zs.csv')
+df = pd.read_csv(r'..\data\ma.csv')
 df = get_DKX(df)
 df = get_nhh(df, 2)
 df = get_nll(df, 2)
@@ -89,9 +89,16 @@ df['skprice'] = 0
 df['是s止损'] = None
 df['余额占比'] = 0
 
-def result(df):
+def result(df, title):
     
-    print(df['是b止损'].count(), df['是b止损2'].count())
+    df['returns'] = df['总金额'].pct_change()
+    df['ret_index'] = (1 + df['returns']).cumprod()
+    df.ret_index.plot()
+    #
+    df['ret_index_log'] = np.log(df['ret_index'])
+    df.ret_index_log.plot()
+    plt.title('收益倍数: '+title)
+    plt.show()
     print(df['开仓'].value_counts())
 
 
@@ -314,18 +321,18 @@ def run2(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
         #df.ix[i,'余额占比'] = df.ix[i, '可用余额'] / df.ix[i, '总金额']
         #if i > 100:
         #    break
-    result(df)
     #df.to_csv('tmp2.csv')
-    plt.plot(df['总金额'])
-    #plt.plot(df['可用余额'])
-    plt.legend()
+    #plt.plot(df['总金额'])
+    ##plt.plot(df['可用余额'])
+    #plt.legend()
     title = 'run2 zs={}  开仓间隔={} f={}  maxcw={}'.format(zs, jiange,f, maxcw)
-    plt.title(title)
-    plt.show()
+    #plt.title(title)
+    #plt.show()
+    result(df,title=title)
 
 #run2(df, 2, 100000, f=0.02, maxcw=0.3)
 #run2(df, 2, 100000, f=0.02, maxcw=0.4)
-#run2(df, 3, 100000, f=0.02, maxcw=0.3, jiange=0)
+run2(df, 3, 100000, f=0.02, maxcw=0.3, jiange=0)
 
 
 def run3(df,zs, zs2, zj_init, f=0.02, maxcw=0.3, jiange=0):
@@ -449,7 +456,7 @@ def run3(df,zs, zs2, zj_init, f=0.02, maxcw=0.3, jiange=0):
                 df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + change
                 df.ix[i, 'bk总手数'] = zs2持仓手数
                 #df.ix[i, 'b保证金'] = 0
-                df.ix[i, '可用余额'] = df.ix[i-1, '可用余额'] + (df.ix[i, 'b止损']) * zs持仓手数
+                df.ix[i, '可用余额'] = df.ix[i-1, '可用余额'] + (df.ix[i, 'b止损']) * zs持仓手数* 10
                 df.ix[i, '是b止损'] = 1
             if row.l <= df.ix[i, 'b止损2']:
                 change = (df.ix[i, 'b止损2'] - last_row.c - feiyong)  * zs2持仓手数* 10
@@ -464,7 +471,7 @@ def run3(df,zs, zs2, zj_init, f=0.02, maxcw=0.3, jiange=0):
                 df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + change
                 df.ix[i, 'sk总手数'] = zs2持仓手数
                 #df.ix[i, 's保证金'] = 0
-                df.ix[i, '可用余额'] = df.ix[i, '总金额']
+                df.ix[i, '可用余额'] = df.ix[i-1, '可用余额'] + (df.ix[i, 's止损']) * zs持仓手数* 10
                 df.ix[i, '是s止损'] = 1
             if row.h >= df.ix[i, 's止损2']:
                 change = (last_row.c - df.ix[i, 's止损2'] -feiyong)  * zs持仓手数* 10
@@ -477,14 +484,15 @@ def run3(df,zs, zs2, zj_init, f=0.02, maxcw=0.3, jiange=0):
         #df.ix[i,'余额占比'] = df.ix[i, '可用余额'] / df.ix[i, '总金额']
         #if i > 100:
         #    break
-    result(df)
+    
 
     df.to_csv('tmp3.csv')
-    plt.plot(df['总金额'])
-    #plt.plot(df['可用余额'])
-    plt.legend()
+    #plt.plot(df['总金额'])
+    #plt.legend()
     title = 'run3 zs={}  zs2={}, 开仓间隔={} f={}  maxcw={}'.format(zs, zs2, jiange,f, maxcw)
-    plt.title(title)
-    plt.show()
+    #plt.title(title)
+    #plt.show()
+
+    result(df,title=title)
     
-run3(df, 2, 3, 100000, f=0.02, maxcw=0.3, jiange=0)
+#run3(df, 2, 3, 100000, f=0.02, maxcw=0.3, jiange=0)
