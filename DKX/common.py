@@ -63,6 +63,20 @@ def get_atr(df, n):
     df = df.drop(['hl', 'ch', 'cl', 'tr'], axis=1)
     return df
 
+def result(df, title):
+    #print(df['开仓'].value_counts())
+    df['returns'] = df['总金额'].pct_change()
+    df['ret_index'] = (1 + df['returns']).cumprod()
+    #df.ret_index.plot()
+    #print(df.returns.values.size)
+    print('标准差：', round(df.returns[-700:].std(), 5))
+    df['ret_index_log'] = np.log(df['ret_index'])
+    df.ret_index_log.plot()
+    plt.title('收益倍数: '+title)
+    plt.show()
+
+
+
 #[(3542.0, 6)]
 #[(3538, 6)]
 #[(3105.0, 6)]

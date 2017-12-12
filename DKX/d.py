@@ -7,7 +7,7 @@ import seaborn as sns
 from common import *#get_DKX, get_nhh, get_nll, get_ma, avg,get_nhhzs,get_nllzs,get_atr
 plt.rcParams['font.sans-serif'] = ['SimHei'] # 正常显示中文
 df = pd.read_csv(r'..\data\rb\zs.csv')
-#df = pd.read_csv(r'..\data\ta.csv')
+#df = pd.read_csv(r'..\data\sr.csv')
 df = get_DKX(df)
 df = get_nhh(df, 2)
 df = get_nll(df, 2)
@@ -88,19 +88,6 @@ df['skprice'] = 0
 #df['s合约金额'] = 0
 df['是s止损'] = None
 df['余额占比'] = 0
-
-def result(df, title):
-    #print(df['开仓'].value_counts())
-    df['returns'] = df['总金额'].pct_change()
-    df['ret_index'] = (1 + df['returns']).cumprod()
-    #df.ret_index.plot()
-    #print(df.returns.values.size)
-    print('标准差：', round(df.returns[-700:].std(), 5))
-    df['ret_index_log'] = np.log(df['ret_index'])
-    df.ret_index_log.plot()
-    plt.title('收益倍数: '+title)
-    plt.show()
-    
 
 
 def run1(df,zs, zj_init):
@@ -339,7 +326,7 @@ def run2(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
 
 #run2(df, 2, 100000, f=0.02, maxcw=0.3)
 #run2(df, 2, 100000, f=0.02, maxcw=0.4)
-#run2(df, 2, 100000, f=0.02, maxcw=0.3, jiange=0)
+run2(df, 2, 100000, f=0.02, maxcw=0.3, jiange=0)
 
 '''
 参数： run2 zs=2  开仓间隔=0 f=0.02  maxcw=0.3
@@ -354,7 +341,7 @@ def run2(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
 做多次数:269 做空次数:260
 标准差： 0.02893
 
-参数： run2 zs=2  开仓间隔=1 f=0.02  maxcw=0.3
+参数： run2 zs=2  开仓间隔=1 f=0.02  maxcw=0.3   11
 资金增长倍数：74
 做多次数:213 做空次数:212
 标准差： 0.02075
@@ -537,7 +524,7 @@ def run3(df,zs, zj_init, f=0.02, maxcw=0.3):
     print('做多次数:{} 做空次数:{}'.format(做多次数, 做空次数))
     result(df,title=title)
 
-run3(df, 2, 100000, maxcw=0.3)
+#run3(df, 2, 100000, maxcw=0.3)
 '''
 参数： run3 zs=2  f=0.02  maxcw=0.3
 总金额增长间隔：0   总金额减少间隔：0
