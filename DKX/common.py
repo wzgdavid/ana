@@ -63,18 +63,46 @@ def get_atr(df, n):
     df = df.drop(['hl', 'ch', 'cl', 'tr'], axis=1)
     return df
 
-def result(df, title):
+def result(df, params):
+    '''
+    df  run 处理后的df
+    parms  run 函数 的参数
+    '''
     #print(df['开仓'].value_counts())
-    df['returns'] = df['总金额'].pct_change()
-    df['ret_index'] = (1 + df['returns']).cumprod()
+    title = 'run2 zs={}  开仓间隔={} f={}  maxcw={}'.format(params['zs'], 
+                                                            params['jiange'],
+                                                            params['f'],
+                                                            params['maxcw'])
+    #plt.title(title)
+    #plt.show()
+    print('参数：', title)
+    倍数 = int(df.ix[-1, '总金额']/params['zj_init'])
+    print('资金增长倍数：{}'.format( 倍数 ))
+    print('做多次数:{} 做空次数:{}'.format(params['做多次数'], params['做空次数']))
+    
+    df['returns'] = df['总金额'].pct_change() # 日收益变动
+    df['ret_index'] = (1 + df['returns']).cumprod() # 资金曲线
     #df.ret_index.plot()
-    #print(df.returns.values.size)
-    print('标准差：', round(df.returns[-700:].std(), 5))
+    # 最后700天的日收益标准差，越小表示越稳
+    ret_std = round(df.returns[-700:].std(), 5)
+    print('标准差：', ret_std)
     df['ret_index_log'] = np.log(df['ret_index'])
-    df.ret_index_log.plot()
-    plt.title('收益倍数: '+title)
-    plt.show()
 
+    # 定义顺序，参照totalrun.py的 文件起始的几行
+    from d import pinzhong
+    result_row = (
+        pinzhong,
+        params['zj_init'], params['zs'], params['f'], params['jiange'],params['maxcw'],
+        倍数, params['做多次数'], params['做空次数'], ret_std
+        )
+        
+    print(result_row)
+    return result_row
+
+    # 显示曲线
+    #df.ret_index_log.plot()
+    #plt.title('收益倍数: '+title)
+    #plt.show()
 
 
 #[(3542.0, 6)]

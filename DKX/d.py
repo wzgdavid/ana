@@ -6,8 +6,13 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from common import *#get_DKX, get_nhh, get_nll, get_ma, avg,get_nhhzs,get_nllzs,get_atr
 plt.rcParams['font.sans-serif'] = ['SimHei'] # 正常显示中文
-df = pd.read_csv(r'..\data\rb\zs.csv')
-#df = pd.read_csv(r'..\data\sr.csv')
+pinzhong = 'dy' # 跑的时候注意是不是要改一下这个变量
+if pinzhong == 'rb':
+    df = pd.read_csv(r'..\data\rb\zs.csv')
+else:
+    df = pd.read_csv(r'..\data\{}.csv'.format(pinzhong))
+
+
 df = get_DKX(df)
 df = get_nhh(df, 2)
 df = get_nll(df, 2)
@@ -316,17 +321,18 @@ def run2(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
     #plt.plot(df['总金额'])
     ##plt.plot(df['可用余额'])
     #plt.legend()
-    title = 'run2 zs={}  开仓间隔={} f={}  maxcw={}'.format(zs, jiange,f, maxcw)
-    #plt.title(title)
-    #plt.show()
-    print('参数：', title)
-    print('资金增长倍数：{}'.format( int(df.ix[-1, '总金额']/zj_init) ))
-    print('做多次数:{} 做空次数:{}'.format(做多次数, 做空次数))
-    result(df,title=title)
+    params = {
+        'zj_init': zj_init,
+        'zs': zs,
+        'f': f,
+        'maxcw': maxcw,
+        'jiange': jiange,
+        '做多次数': 做多次数,
+        '做空次数': 做空次数,
+    }
+    result_row = result(df, params)
+    return result_row
 
-#run2(df, 2, 100000, f=0.02, maxcw=0.3)
-#run2(df, 2, 100000, f=0.02, maxcw=0.4)
-run2(df, 2, 100000, f=0.02, maxcw=0.3, jiange=0)
 
 '''
 参数： run2 zs=2  开仓间隔=0 f=0.02  maxcw=0.3
@@ -547,3 +553,9 @@ def run3(df,zs, zj_init, f=0.02, maxcw=0.3):
 做多次数:211 做空次数:207
 标准差： 0.0247
 '''
+
+
+if __name__ == '__main__':
+    #run2(df, 2, 100000, f=0.02, maxcw=0.3)
+    #run2(df, 2, 100000, f=0.02, maxcw=0.4)
+    run2(df, 2, 100000, f=0.02, maxcw=0.3, jiange=0)
