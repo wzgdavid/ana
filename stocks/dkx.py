@@ -2,31 +2,19 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from common import get_DKX, result
+
 daima = '000001'
 df = pd.read_csv(r'..\data\stocks\{}.csv'.format(daima))
+#df = pd.read_csv(r'..\data\rb\zs.csv')
 
-
-
-def get_DKX(df, n=10):
-    df['a'] = (df.c * 3 + df.l + df.o + df.h)/6
-    #df['b'] = (20*df.a + 19*df.a.shift(1) + 18*df.a.shift(2) + 17*df.a.shift(3) + 
-    #    16*df.a.shift(4) + 15*df.a.shift(5) + 14*df.a.shift(6) + 
-    #    13*df.a.shift(7) + 12*df.a.shift(8) + 11*df.a.shift(9) + 
-    #    10*df.a.shift(10) + 9*df.a.shift(11) + 8*df.a.shift(12) + 7*df.a.shift(13) + 
-    #    6*df.a.shift(14) + 5*df.a.shift(15) + 4*df.a.shift(16) + 
-    #    3*df.a.shift(17) + 2*df.a.shift(18) + 1*df.a.shift(19))/210
-    sum_ = '+'.join(['{}*df.a.shift({})'.format(20-i, i) for i in range(0, 20)]) 
-    eval_str = '({})/210'.format(sum_)
-    df['b'] = eval(eval_str)
-    df['d'] = df.b.rolling(n).mean()
-    return df.drop(['a'], axis=1)
 df = get_DKX(df)
 df['dkx金叉'] = np.where( (df['b'].shift(2)<df['d'].shift(2)) & (df['b'].shift(1)>df['d'].shift(1)), df.o , None )
-df['dkx死叉'] = np.where( (df['b'].shift(2)>df['d'].shift(2)) & (df['b'].shift(1)<df['d'].shift(1)), df.o , None )
-df['b向上'] = np.where( (df['b'].shift(3)>df['b'].shift(2)) & (df['b'].shift(1)>df['b'].shift(2)), df.o , None )
-df['b向下'] = np.where( (df['b'].shift(3)<df['b'].shift(2)) & (df['b'].shift(1)<df['b'].shift(2)), df.o , None )
-df['d向上'] = np.where( (df['d'].shift(3)>df['d'].shift(2)) & (df['d'].shift(1)>df['d'].shift(2)), df.o , None )
-df['d向下'] = np.where( (df['d'].shift(3)<df['d'].shift(2)) & (df['d'].shift(1)<df['d'].shift(2)), df.o , None )
+df['dkx死叉'] = np.where( (df['b'].shift(2)>df['d'].shift(2)) & (df['b'].shift(1)<df['d'].shift(1)), df.o , None )   # 这里好像买用c ，卖用o效果好点 
+df['b向上'] = np.where( (df['b'].shift(3)>df['b'].shift(2)) & (df['b'].shift(1)>df['b'].shift(2)),   df.o , None )
+df['b向下'] = np.where( (df['b'].shift(3)<df['b'].shift(2)) & (df['b'].shift(1)<df['b'].shift(2)),   df.c , None )
+df['d向上'] = np.where( (df['d'].shift(3)>df['d'].shift(2)) & (df['d'].shift(1)>df['d'].shift(2)),   df.o , None )
+df['d向下'] = np.where( (df['d'].shift(3)<df['d'].shift(2)) & (df['d'].shift(1)<df['d'].shift(2)),   df.c , None )
 
 
 def jiaocha(df):
@@ -47,12 +35,9 @@ def jiaocha(df):
             rates.append(df.ix[i, 'dkx死叉']/buy)
             hold = 0
     
-    df = pd.DataFrame(rates, columns=['rates'])
-    df['ret_index'] = (df['rates']).cumprod() # 曲线
-    print(df.describe())
-    df.to_csv('tmp.csv')
+    result(df, rates)
 
-def xielvb(df):
+def xielv_b(df):
     rows_index = range(df.shape[0])
     rates = []
     hold = 0
@@ -69,13 +54,60 @@ def xielvb(df):
         if df.ix[i, 'b向下'] != None and hold==1:
             rates.append(df.ix[i, 'b向下']/buy)
             hold = 0
-    
-    df = pd.DataFrame(rates, columns=['rates'])
-    df['ret_index'] = (df['rates']).cumprod() # 曲线
-    print(df.describe())
-    df.to_csv('tmp.csv')
+    result(df, rates)
 
-def xielvd(df):
+
+def xielv_d(df):
+    rows_index = range(df.shape[0])
+    rates = []
+    hold = 0
+    for i in rows_index:
+        if i == 0:
+            continue
+        if df.ix[i, 'd向上'] != None and hold==0:
+    
+            buy = df.ix[i, 'o']
+            hold = 1
+        #else:
+        #    buy = df.ix[i-1, 'macd金叉']
+    
+        if df.ix[i, 'd向下'] != None and hold==1:
+            rates.append(df.ix[i, 'o']/buy)
+            hold = 0
+    
+    result(df, rates)
+
+
+def xielv_bd(df):
+    '''快买 慢卖
+    这个平均来说最好， 收益和盈利比例都位于这几个的前列
+    单次最大亏损在这几个里最大，
+
+    计算股票的策略
+    b转向上时，买入
+    b转向下时，卖出一半
+    d转向下时，卖出另一半
+    '''
+    rows_index = range(df.shape[0])
+    rates = []
+    hold = 0
+    for i in rows_index:
+        if i == 0:
+            continue
+        if df.ix[i, 'b向上'] != None and hold==0:
+    
+            buy = df.ix[i, 'b向上']
+            hold = 1
+        #else:
+        #    buy = df.ix[i-1, 'macd金叉']
+    
+        if df.ix[i, 'd向下'] != None and hold==1:
+            rates.append(df.ix[i, 'd向下']/buy)
+            hold = 0
+    result(df, rates)
+
+def xielv_db(df):
+    '''慢买  快卖'''
     rows_index = range(df.shape[0])
     rates = []
     hold = 0
@@ -89,16 +121,13 @@ def xielvd(df):
         #else:
         #    buy = df.ix[i-1, 'macd金叉']
     
-        if df.ix[i, 'd向下'] != None and hold==1:
-            rates.append(df.ix[i, 'd向下']/buy)
+        if df.ix[i, 'b向下'] != None and hold==1:
+            rates.append(df.ix[i, 'b向下']/buy)
             hold = 0
-    
-    df = pd.DataFrame(rates, columns=['rates'])
-    df['ret_index'] = (df['rates']).cumprod() # 曲线
-    print(df.describe())
-    df.to_csv('tmp.csv')
-
+    result(df, rates)
 if __name__ == '__main__':
-    #jiaocha(df)
-    xielvb(df)
-    xielvd(df)
+    jiaocha(df)
+    xielv_b(df)
+    xielv_d(df)
+    xielv_bd(df)
+    xielv_db(df)
