@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from common import get_DKX
+from common import get_DKX,result
 
 
 daima = '000001'
@@ -23,6 +23,8 @@ def jiaocha(df):
     rows_index = range(df.shape[0])
     rates = []
     hold = 0
+    金叉日期 = []
+    死叉日期 = []
     for i in rows_index:
         if i == 0:
             continue
@@ -30,17 +32,17 @@ def jiaocha(df):
         if df.ix[i, 'macd金叉'] != None and hold==0:
             buy = df.ix[i, 'macd金叉']
             hold = 1
+            金叉日期.append(df.ix[i, 'date'])
         #else:
         #    buy = df.ix[i-1, 'macd金叉']
     
         if df.ix[i, 'macd死叉'] != None and hold==1:
             rates.append(df.ix[i, 'macd死叉']/buy)
             hold = 0
-    
-    df = pd.DataFrame(rates, columns=['rates'])
-    df['ret_index'] = (df['rates']).cumprod() # 曲线
-    print(df.describe())
-    df.to_csv('tmp.csv')  
+            死叉日期.append(df.ix[i, 'date'])
+    print(金叉日期)
+    print(死叉日期)
+    result(df, rates)
 
 def xielv(df):
     rows_index = range(df.shape[0])
@@ -60,11 +62,8 @@ def xielv(df):
             rates.append(df.ix[i, 'DIF向下']/buy)
             hold = 0
     
-    df = pd.DataFrame(rates, columns=['rates'])
-    df['ret_index'] = (df['rates']).cumprod() # 曲线
-    print(df.describe())
-    df.to_csv('tmp.csv')
+    result(df, rates)
 
 if __name__ == '__main__':
-    #jiaocha(df)
+    jiaocha(df)
     xielv(df)   # 效果不好

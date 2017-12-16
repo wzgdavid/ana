@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from common import get_DKX, result
 
-daima = '000001'
+daima = '600096'
 df = pd.read_csv(r'..\data\stocks\{}.csv'.format(daima))
 #df = pd.read_csv(r'..\data\rb\zs.csv')
 
@@ -21,6 +21,8 @@ def jiaocha(df):
     rows_index = range(df.shape[0])
     rates = []
     hold = 0
+    金叉日期 = []
+    死叉日期 = []
     for i in rows_index:
         if i == 0:
             continue
@@ -28,36 +30,45 @@ def jiaocha(df):
         #if df.ix[i, 'macd金叉'] != None and hold==0:
             buy = df.ix[i, 'dkx金叉']
             hold = 1
+            金叉日期.append(df.ix[i, 'date'])
         #else:
         #    buy = df.ix[i-1, 'macd金叉']
     
         if df.ix[i, 'dkx死叉'] != None and hold==1:
             rates.append(df.ix[i, 'dkx死叉']/buy)
             hold = 0
+            死叉日期.append(df.ix[i, 'date'])
     
+    #print(金叉日期)
+    #print(死叉日期)
     result(df, rates)
 
 def xielv_b(df):
+    print('--------------------bb-----------------')
     rows_index = range(df.shape[0])
     rates = []
     hold = 0
+    买入日期 = []
+    卖出日期 = []
     for i in rows_index:
         if i == 0:
             continue
         if df.ix[i, 'b向上'] != None and hold==0:
-    
             buy = df.ix[i, 'b向上']
             hold = 1
-        #else:
-        #    buy = df.ix[i-1, 'macd金叉']
+            买入日期.append(df.ix[i, 'date'])
     
         if df.ix[i, 'b向下'] != None and hold==1:
             rates.append(df.ix[i, 'b向下']/buy)
             hold = 0
+            卖出日期.append(df.ix[i, 'date'])
+    #print(买入日期)
+    #print(卖出日期)
     result(df, rates)
 
 
 def xielv_d(df):
+    print('--------------------dd-----------------')
     rows_index = range(df.shape[0])
     rates = []
     hold = 0
@@ -65,7 +76,6 @@ def xielv_d(df):
         if i == 0:
             continue
         if df.ix[i, 'd向上'] != None and hold==0:
-    
             buy = df.ix[i, 'o']
             hold = 1
         #else:
@@ -79,15 +89,7 @@ def xielv_d(df):
 
 
 def xielv_bd(df):
-    '''快买 慢卖
-    这个平均来说最好， 收益和盈利比例都位于这几个的前列
-    单次最大亏损在这几个里最大，
-
-    计算股票的策略
-    b转向上时，买入
-    b转向下时，卖出一半
-    d转向下时，卖出另一半
-    '''
+    print('--------------------bd-----------------')
     rows_index = range(df.shape[0])
     rates = []
     hold = 0
@@ -95,7 +97,6 @@ def xielv_bd(df):
         if i == 0:
             continue
         if df.ix[i, 'b向上'] != None and hold==0:
-    
             buy = df.ix[i, 'b向上']
             hold = 1
         #else:
@@ -108,6 +109,7 @@ def xielv_bd(df):
 
 def xielv_db(df):
     '''慢买  快卖'''
+    print('--------------------db-----------------')
     rows_index = range(df.shape[0])
     rates = []
     hold = 0
@@ -115,7 +117,6 @@ def xielv_db(df):
         if i == 0:
             continue
         if df.ix[i, 'd向上'] != None and hold==0:
-    
             buy = df.ix[i, 'd向上']
             hold = 1
         #else:
@@ -125,9 +126,37 @@ def xielv_db(df):
             rates.append(df.ix[i, 'b向下']/buy)
             hold = 0
     result(df, rates)
+
+def xielv_b_reversed(df):
+    
+    print('--------------------b_reversed-----------------')
+    rows_index = range(df.shape[0])
+    rates = []
+    hold = 0
+    for i in rows_index:
+        if i == 0:
+            continue
+        if df.ix[i, 'd向下'] != None and hold==0:
+            buy = df.ix[i, 'd向下']
+            hold = 1
+    
+        if df.ix[i, 'b向上'] != None and hold==1:
+            rates.append(df.ix[i, 'b向上']/buy)
+            hold = 0
+    result(df, rates)
+
+
+    '''
+    计算股票的策略
+    b转向上时，买入
+    每次b转向下时，卖出一半
+    d转向下时，卖出剩下的
+    '''
+
 if __name__ == '__main__':
     jiaocha(df)
     xielv_b(df)
     xielv_d(df)
     xielv_bd(df)
     xielv_db(df)
+    xielv_b_reversed(df)

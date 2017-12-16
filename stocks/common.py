@@ -21,7 +21,7 @@ def get_DKX(df, n=10):
 
 
 def result(df,rates):
-    print('-----------------------------------')
+    #print('-----------------------------------')
     df = pd.DataFrame(rates, columns=['rates'])
     df['ret_index'] = (df['rates']).cumprod() # 曲线
     #print(df.describe())
@@ -30,9 +30,11 @@ def result(df,rates):
     win_loss = df['每次盈亏'].value_counts()
     wl_pct = win_loss['盈利'] / df.shape[0]
     #print(win_loss)
+
     print('盈利比例{:.2f}'.format(wl_pct))
     final_return = df.ix[df.shape[0]-1, 'ret_index']
     print('最后收益{}'.format(final_return))
     max_loss = 1 - df.rates.min()
     print('单次最大亏损{}'.format(max_loss))
+    print('交易次数{}'.format(len(rates)))
     df.to_csv('tmp.csv')
