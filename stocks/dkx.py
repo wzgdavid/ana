@@ -3,19 +3,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from common import get_DKX, result
+from functools import reduce
 
-daima = '600096'
-df = pd.read_csv(r'..\data\stocks\{}.csv'.format(daima))
-#df = pd.read_csv(r'..\data\rb\zs.csv')
-
-df = get_DKX(df)
-df['dkx金叉'] = np.where( (df['b'].shift(2)<df['d'].shift(2)) & (df['b'].shift(1)>df['d'].shift(1)), df.o , None )
-df['dkx死叉'] = np.where( (df['b'].shift(2)>df['d'].shift(2)) & (df['b'].shift(1)<df['d'].shift(1)), df.o , None )   # 这里好像买用c ，卖用o效果好点 
-df['b向上'] = np.where( (df['b'].shift(3)>df['b'].shift(2)) & (df['b'].shift(1)>df['b'].shift(2)),   df.o , None )
-df['b向下'] = np.where( (df['b'].shift(3)<df['b'].shift(2)) & (df['b'].shift(1)<df['b'].shift(2)),   df.c , None )
-df['d向上'] = np.where( (df['d'].shift(3)>df['d'].shift(2)) & (df['d'].shift(1)>df['d'].shift(2)),   df.o , None )
-df['d向下'] = np.where( (df['d'].shift(3)<df['d'].shift(2)) & (df['d'].shift(1)<df['d'].shift(2)),   df.c , None )
-
+def ready(daima):
+    df = pd.read_csv(r'..\data\stocks\{}.csv'.format(daima))
+    df = get_DKX(df)
+    df['b向上'] = np.where( (df['b'].shift(3)>df['b'].shift(2)) & (df['b'].shift(1)>df['b'].shift(2)),   df.o , None )
+    df['b向下'] = np.where( (df['b'].shift(3)<df['b'].shift(2)) & (df['b'].shift(1)<df['b'].shift(2)),   df.c , None )
+    return df
 
 def jiaocha(df):
     rows_index = range(df.shape[0])
@@ -145,18 +140,53 @@ def xielv_b_reversed(df):
             hold = 0
     result(df, rates)
 
-
-    '''
-    计算股票的策略
-    b转向上时，买入
-    每次b转向下时，卖出一半
-    d转向下时，卖出剩下的
-    '''
+# 验证收益大于一定幅度的年度是不是和指数有关
+# 是有关， 所以要在大环境好的时候入市做股票，选股不是最重要
+def xielv_b_look_date(df):
+    print('--------------------bb-----------------')
+    rows_index = range(df.shape[0])
+    rates = []
+    hold = 0
+    
+    for i in rows_index:
+        if i == 0:
+            continue
+        if df.ix[i, 'b向上'] != None and hold==0:
+            buy = df.ix[i, 'b向上']
+            buy_date = df.ix[i, 'date']
+            hold = 1
+           
+    
+        if df.ix[i, 'b向下'] != None and hold==1:
+            if df.ix[i, 'b向下']/buy > 1.05:
+                rates.append(buy_date.split('/')[0])
+            hold = 0
+    rates = pd.Series(rates).value_counts()
+    rates = rates.sort_index()
+    #rates.plot()
+    #plt.show()
+    #print(rates)
+    return rates
+    #result(df, rates)
 
 if __name__ == '__main__':
-    jiaocha(df)
-    xielv_b(df)
-    xielv_d(df)
-    xielv_bd(df)
-    xielv_db(df)
-    xielv_b_reversed(df)
+    #jiaocha(df)
+    #xielv_b(df)
+    #xielv_d(df)
+    #xielv_bd(df)
+    #xielv_db(df)
+    #xielv_b_reversed(df)
+    a = xielv_b_look_date(ready('000001'))
+    b = xielv_b_look_date(ready('000002'))
+    c = xielv_b_look_date(ready('000004'))
+    d = xielv_b_look_date(ready('600096'))
+    e = xielv_b_look_date(ready('600361'))
+    f = xielv_b_look_date(ready('600712'))
+    #help(a.add)
+    total = a.add(b, fill_value=0).add(c, fill_value=0).add(c, fill_value=0).add(d, fill_value=0).add(e, fill_value=0).add(f, fill_value=0)
+    #total = reduce(pd.Series.add, [a,b,c,d,e,f])
+    total.plot(kind='bar')
+    #print(total)
+    plt.show()
+    
+
