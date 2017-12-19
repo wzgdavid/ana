@@ -76,7 +76,7 @@ def result(df, params):
     #plt.title(title)
     #plt.show()
     print('参数：', title)
-    倍数 = int(df.ix[-1, '总金额']/params['zj_init'])
+    倍数 = round( (df.ix[-1, '总金额']/params['zj_init']),  1)
     print('资金增长倍数：{}'.format( 倍数 ))
     print('做多次数:{} 做空次数:{}'.format(params['做多次数'], params['做空次数']))
     
@@ -89,9 +89,8 @@ def result(df, params):
     df['ret_index_log'] = np.log(df['ret_index'])
 
     # 定义顺序，参照totalrun.py的 文件起始的几行
-    from d import pinzhong
     result_row = (
-        pinzhong,
+        params['pinzhong'],
         params['zj_init'], params['zs'], params['f'], params['jiange'],params['maxcw'],
         倍数, params['做多次数'], params['做空次数'], ret_std
         )
