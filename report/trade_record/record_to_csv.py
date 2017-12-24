@@ -4,8 +4,8 @@
 from lxml import etree
 import pandas as pd
 
-#with open('zxjt.html', 'r') as file:
-with open('shzq.html', 'r') as file:
+#with open('zxjt.html', 'r') as file:  # 中信建投
+with open('shzq.html', 'r') as file: # 上海中期
     html = file.read()
 
 
@@ -69,4 +69,4 @@ for b1, b2 in zip(billclr1s, billclr2s):
 
 columns = ['交易所','合约','手数','开仓日期','开仓方向','开仓价格','平仓日期','平仓价格','逐笔平仓盈亏']
 data = pd.DataFrame(rows,columns=columns)
-#data.to_csv('tracd_record.csv', mode='a')
+#data.to_csv('trade_record.csv', mode='a')
