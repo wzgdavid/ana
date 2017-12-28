@@ -292,25 +292,30 @@ print(feature_results)
 然后  同样的  看下 DKX的斜率
 '''
 print('---------------------DKX的斜率------------------------')
+print(feature_data)
 feature_results2 = []
 for i in range(feature_data.shape[0]):
     row = feature_data.iloc[i]
+    print(row)
     name = row['品种'].lower()
     pdata = pd.read_csv(r'..\..\data\{}.csv'.format(name)) # 对应品种的数据
     pdata = get_DKX(pdata)
     pdata.index = pd.DatetimeIndex(pdata['date'])
     # 求KDX斜率
-    
+    #pdata['last_b'] = pdata.d.shift(1)
+    pdata['斜率'] = (pdata.b / pdata.d.shift(1))
+    #print(pdata) 
 
     #print(name,'---------------aa')
     thatk = pdata.loc[row.name]  # 那一天的日K线
     feature_results2.append( (
-             'b在d上' if thatk['b'] > thatk['d'] else 'b在d下',
+             pdata.ix[row.name, '斜率'] if pdata.ix[row.name, '斜率'] else None,
+
              row['开仓方向'],
              row.name,    # 开仓日期
              row['品种']
         ) )
-    break
+    
 feature_results2 = pd.DataFrame(feature_results2, columns=['DKX', '方向','开仓日期','品种'])
 
 
