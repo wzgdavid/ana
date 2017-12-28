@@ -3,9 +3,7 @@
 时间段 20150331 到 20171220  共356次交易
 无关策略，策略中间有小的变化
 
-看是什么原因导致连续的亏损
-1   交易密集时？
-2   交易品种太多？
+
 '''
 import pandas as pd
 import numpy as np
@@ -227,13 +225,13 @@ feature_results = []
 for i in range(feature_data.shape[0]):
     row = feature_data.iloc[i]
     name = row['品种'].lower()
-    pdata = pd.read_csv(r'..\..\data\{}.csv'.format(name)) # 对应品种的数据
-    pdata = get_DKX(pdata)
-    pdata.index = pd.DatetimeIndex(pdata['date'])
-    #print(pdata.tail())
+    kdata = pd.read_csv(r'..\..\data\{}.csv'.format(name)) # 对应品种的数据
+    kdata = get_DKX(kdata)
+    kdata.index = pd.DatetimeIndex(kdata['date'])
+    #print(kdata.tail())
     # 看DKX b 在 d 的上 还是 下
     #print(name,'---------------aa')
-    thatk = pdata.loc[row.name]  # 那一天的日K线
+    thatk = kdata.loc[row.name]  # 那一天的日K线
     feature_results.append( (
              'b在d上' if thatk['b'] > thatk['d'] else 'b在d下',
              row['开仓方向'],
@@ -296,20 +294,20 @@ print(feature_data)
 feature_results2 = []
 for i in range(feature_data.shape[0]):
     row = feature_data.iloc[i]
-    print(row)
+    #print(row)
     name = row['品种'].lower()
-    pdata = pd.read_csv(r'..\..\data\{}.csv'.format(name)) # 对应品种的数据
-    pdata = get_DKX(pdata)
-    pdata.index = pd.DatetimeIndex(pdata['date'])
+    kdata = pd.read_csv(r'..\..\data\{}.csv'.format(name)) # 对应品种的数据
+    kdata = get_DKX(kdata)
+    kdata.index = pd.DatetimeIndex(kdata['date'])
     # 求KDX斜率
-    #pdata['last_b'] = pdata.d.shift(1)
-    pdata['斜率'] = (pdata.b / pdata.d.shift(1))
-    #print(pdata) 
+    #kdata['last_b'] = kdata.d.shift(1)
+    kdata['斜率'] = (kdata.b / kdata.d.shift(1))
+    #print(kdata) 
 
     #print(name,'---------------aa')
-    thatk = pdata.loc[row.name]  # 那一天的日K线
+    thatk = kdata.loc[row.name]  # 那一天的日K线
     feature_results2.append( (
-             pdata.ix[row.name, '斜率'] if pdata.ix[row.name, '斜率'] else None,
+             kdata.ix[row.name, '斜率'] if kdata.ix[row.name, '斜率'] else None,
 
              row['开仓方向'],
              row.name,    # 开仓日期
@@ -320,3 +318,87 @@ feature_results2 = pd.DataFrame(feature_results2, columns=['DKX', '方向','开�
 
 
 print(feature_results2)
+
+
+
+'''
+由此可见  最赚钱的几次交易有一个共同特征， 就是日线和周线都是顺势的仓位
+
+接着用这个思路到我的历史交易记录里去区分顺势的和非顺势的，看看这两者的结果是否有明显差异 
+'''
+print('-------------------5675----------------')
+#print(df.head())
+# 分品种看   
+name = 'rb' # name换一个可看其他品种
+dff = df_dateidx[df_dateidx['品种'] == name].copy()   # 对应品种的交易记录
+
+kdata = pd.read_csv(r'..\..\data\{}.csv'.format(name)) # 对应品种的数据
+kdata = get_DKX(kdata)
+kdata.index = pd.DatetimeIndex(kdata['date'])
+kdata['斜率'] = (kdata.b / kdata.d.shift(1))  # 斜率指DKX的斜率
+kdata = kdata.dropna(axis=0)
+# 开仓当天的斜率
+
+dff['斜率'] = kdata.loc[dff.index,:]['斜率']
+
+dff['斜率上下'] = np.where(dff['斜率']>1, 'up', 'down')
+# 斜率向上买， 向下卖是顺势
+dff['顺势'] = np.where( (dff['斜率']>1) & (dff['开仓方向'] == 'buy' ), True, False)
+dff['顺势'] = np.where( (dff['斜率']<1) & (dff['开仓方向'] == 'sell' ), True, dff['顺势'])
+#print(dff.head(30))
+print(dff[['开仓方向','斜率','顺势','逐笔平仓盈亏']] )
+syk = dff.groupby('顺势').sum()['逐笔平仓盈亏']  #  顺势和逆势的盈亏
+ccs = dff['顺势'].value_counts()           #  顺势和逆势交易次数
+print(syk)
+print(ccs)  #
+
+print('--------------------顺势平均单次盈亏------------')
+print(syk[True]/ccs[True])  
+print('--------------------逆势平均单次盈亏------------')   
+print(syk[False]/ccs[False]) 
+'''
+看下来也是顺势比逆势要好， 但这里还没看周线的DKX是否顺势， 这个不太好弄，
+但数据好在不多，我看了2017年下半年的交易，周线DKX都是向上的，也就是说下半年不能做空
+如果过滤掉那些做空的单子，也要好很多啊
+而且这段时间螺纹开仓有点多啊，特别是11月，和刚开始的几个月没区别，不应该
+2017-07-12   buy  1.045487   True     -20
+2017-07-17   buy  1.046790   True    -740
+2017-07-19   buy  1.045078   True    -790
+2017-07-31   buy  1.015143   True    4570
+2017-07-31   buy  1.015143   True    3620
+2017-08-10   buy  1.044014   True    -950
+2017-08-17   buy  1.026456   True    -480
+2017-09-04   buy  1.011099   True   -1920
+2017-09-20  sell  0.987730   True    -430
+2017-09-28  sell  0.968292   True   -2080
+2017-10-11  sell  0.969961   True    -360
+2017-10-19  sell  0.993141   True    -720
+2017-10-19  sell  0.993141   True     350
+2017-10-24   buy  1.001397   True    -370
+2017-10-30  sell  0.999227   True    -540
+2017-11-01   buy  0.996555  False    -580
+2017-11-02   buy  0.996296  False     -10
+2017-11-03   buy  0.996018  False    -570
+2017-11-09   buy  1.004089   True    -590
+2017-11-10   buy  1.006797   True    -760
+2017-11-17  sell  1.012169  False    -720
+2017-11-23   buy  1.013196   True    -700
+2017-11-27   buy  1.014959   True    1830
+2017-11-29   buy  1.019361   True     610
+2017-12-05   buy  1.028482   True   -1610
+2017-12-07   buy  1.022841   True    -430
+2017-12-08   buy  1.019055   True     -40
+2017-12-11   buy  1.016326   True    -870
+2017-12-12   buy  1.013517   True    -980
+2017-12-20  sell  0.993370   True   -1020
+以上是部分数据，以周线来说应该是只能buy的，sell是逆势
+sell的单子亏了5520  一共8单   平均一次亏690  
+buy的单子亏了1780  一共22单  平均一次亏81  也不好，因为做的太频繁了， 但还是比sell的好多了
+
+
+然后用其他品种看下来也是顺势比逆势好多了，所以以后一定要坚定
+（也不是说我不坚定，之前方法不完善，没有好的方法来对趋势做判断，开仓点位也不好吧，）
+
+结论就是以后一定要用和里的方法去判断趋势，要顺大势，具体用什么指标，我也试过，
+不管用均线，MACD，JDK，不管是趋势指标还是震荡指标，只要按照一定的规则去做。效果差不多。
+'''
