@@ -156,9 +156,9 @@ print('c', df1['逐笔平仓盈亏']['c']/df1['手数']['c'])
 
 
 '''
-看一段时间内的盈亏是否和交易频繁相关
-
-以季度看下来关系应该不大，交易还是要看时机
+看一段时间内的盈亏是否和交易频率相关
+                是否和交易的品种数量相关
+以季度看下来和交易频率关系不大
 '''
 print('-------------------------------------')
 def readyto_date(date):
@@ -169,19 +169,20 @@ def readyto_date(date):
     day = date[6:]
     return '/'.join([year, month, day])
 
-df_alldate = df.copy()
-df_alldate['开仓日期'] = df_alldate['开仓日期'].apply(readyto_date)
-df_alldate.index = pd.DatetimeIndex(df_alldate['开仓日期'])
-df_alldate = df_alldate.drop('开仓日期', axis=1)
-#print(df_alldate.index)
-#df_alldate.to_csv('df_alldate.csv')
+df_dateidx = df.copy()
+df_dateidx['开仓日期'] = df_dateidx['开仓日期'].apply(readyto_date)
+df_dateidx.index = pd.DatetimeIndex(df_dateidx['开仓日期'])
+df_dateidx = df_dateidx.drop('开仓日期', axis=1)
+#print(df_dateidx.index)
+#df_dateidx.to_csv('df_dateidx.csv')
 #print( df['逐笔平仓盈亏'].resample('B') )
 
+zb = df_dateidx['逐笔平仓盈亏']
 # 逐月盈亏
-zb = df_alldate['逐笔平仓盈亏']
 #yk = zb.resample('M').sum()
 #yk.plot(kind='bar')
 #plt.show()    
+
 
 # 逐季度作图
 # 逐季度盈亏   
@@ -193,14 +194,124 @@ zb = df_alldate['逐笔平仓盈亏']
 #注意， 现在的资金比初期多, 如果按百分比算的话，应该是比初期要好的
 #'''
 ## 逐季度交易次数
-#kc = df_alldate['开仓方向']
+#kc = df_dateidx['开仓方向']
 #kcq = kc.resample('Q').count()
 #plt.subplot(212)
 #plt.title('季度交易次数')
 #kcq.plot(kind='bar')
-#plt.show()  
+#plt.show()
+
+
+print('--------------收益共性------------------')
+'''
+分析收益最高的交易前13条，看看他们的共性（
+  比如做多时是不是都是DKX b线在d线上
+   也拿周线的比较，是不是日线和周线的DKX同向
+'''
+feature_data = df_dateidx.sort_values(by='逐笔平仓盈亏')[-12:]  # [-12:]表示盈利的前12个  [:12] 是最大亏的前12个
+#print(feature_data)
+
+rb_test = feature_data.iloc[-1]
+#print(type(rb_test.name))
+#print(rb_test)
+def get_DKX(df, n=10):
+    df['a'] = (df.c * 3 + df.l + df.o + df.h)/6
+    sum_ = '+'.join(['{}*df.a.shift({})'.format(20-i, i) for i in range(0, 20)]) 
+    eval_str = '({})/210'.format(sum_)
+    df['b'] = eval(eval_str)
+    df['d'] = df.b.rolling(n).mean()
+    return df.drop(['a'], axis=1)
+print('-----------------for loop----------------------')
+
+feature_results = []
+for i in range(feature_data.shape[0]):
+    row = feature_data.iloc[i]
+    name = row['品种'].lower()
+    pdata = pd.read_csv(r'..\..\data\{}.csv'.format(name)) # 对应品种的数据
+    pdata = get_DKX(pdata)
+    pdata.index = pd.DatetimeIndex(pdata['date'])
+    #print(pdata.tail())
+    # 看DKX b 在 d 的上 还是 下
+    #print(name,'---------------aa')
+    thatk = pdata.loc[row.name]  # 那一天的日K线
+    feature_results.append( (
+             'b在d上' if thatk['b'] > thatk['d'] else 'b在d下',
+             row['开仓方向'],
+             row.name,    # 开仓日期
+             row['品种']
+        ) )
+feature_results = pd.DataFrame(feature_results, columns=['DKX', '方向','开仓日期','品种'])
+
+
+print(feature_results)
+
+
+
+'''
+盈利的前12个
+     DKX    方向       开仓日期  品种    周线DKX方向（自己看的）  开仓方向和日周DKX    开仓和周DKX
+                                        b在d
+0   b在d下  sell 2015-06-04   c           下                        同                    同
+1   b在d下   buy 2017-01-12  MA           上                                              同                         
+2   b在d下   buy 2016-01-15  TA           下                                                                
+3   b在d下   buy 2017-01-12   c           上                                               同                             
+4   b在d下   buy 2015-11-23   y           下                                                              
+5   b在d下   buy 2016-06-06  hc           上                                               同             
+6   b在d上   buy 2016-01-26  rb           下                                                                
+7   b在d下  sell 2015-05-27   c           下                        同                     同                                     
+8   b在d上   buy 2017-07-31  rb           上                        同                     同                                    
+9   b在d上   buy 2017-07-31  rb           上                        同                     同                                    
+10  b在d上   buy 2016-05-25   m           上                        同                     同                                    
+11  b在d上   buy 2016-10-14  rb           上                        同                     同                                      
+'''
+'''
+最大亏的前12个
+     DKX    方向       开仓日期  品种     周线DKX方向（自己看的）   开仓方向和日周DKX   开仓和周DKX
+                                            b在d
+0   b在d下  sell 2017-09-28  rb             上     
+1   b在d上   buy 2017-09-04  rb             上                        同                 同
+2   b在d下   buy 2015-11-12   i             下                        
+3   b在d下   buy 2015-06-19  ag             上                                           同
+4   b在d上   buy 2017-12-05  rb             上                         同                同
+5   b在d下  sell 2015-12-22   y             上                         
+6   b在d下   buy 2016-07-14   m             上                                           同
+7   b在d下   buy 2015-06-18   y             上                                           同
+8   b在d下   buy 2015-06-02  ag             上                                           同
+9   b在d下  sell 2016-08-25  ag             下                         同                同
+10  b在d下  sell 2017-10-12  MA             上                         
+11  b在d上  sell 2015-05-04  TA             上                         
+
+
+亏损中  同  的也很多 ， 说明开仓点位不好
+'''
 
 
 
 
+'''
+然后  同样的  看下 DKX的斜率
+'''
+print('---------------------DKX的斜率------------------------')
+feature_results2 = []
+for i in range(feature_data.shape[0]):
+    row = feature_data.iloc[i]
+    name = row['品种'].lower()
+    pdata = pd.read_csv(r'..\..\data\{}.csv'.format(name)) # 对应品种的数据
+    pdata = get_DKX(pdata)
+    pdata.index = pd.DatetimeIndex(pdata['date'])
+    # 求KDX斜率
+    
 
+    #print(name,'---------------aa')
+    thatk = pdata.loc[row.name]  # 那一天的日K线
+    feature_results2.append( (
+             'b在d上' if thatk['b'] > thatk['d'] else 'b在d下',
+             row['开仓方向'],
+             row.name,    # 开仓日期
+             row['品种']
+        ) )
+    break
+feature_results2 = pd.DataFrame(feature_results2, columns=['DKX', '方向','开仓日期','品种'])
+
+
+print(feature_results2)

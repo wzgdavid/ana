@@ -225,11 +225,11 @@ def run2(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
     print('参数：', title)
     print('资金增长倍数：{}'.format( int(df.ix[-1, '总金额']/zj_init) ))
     print('做多次数:{} 做空次数:{}'.format(做多次数, 做空次数))
-    result(df,title=title)
+    result(df)
 
 #run2(df, 2, 100000, f=0.02, maxcw=0.3)
 #run2(df, 2, 100000, f=0.02, maxcw=0.4)
-run2(df, 1, 100000, f=0.02, maxcw=0.3, jiange=0)
+run2(df, 4, 100000, f=0.02, maxcw=0.3, jiange=0)  # rb是2atr最好   接着是3 4 1
 
 '''
 参数： run2 zs=2ATR  开仓间隔=0 f=0.02  maxcw=0.3
