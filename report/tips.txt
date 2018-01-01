@@ -1,0 +1,4 @@
+1 配置自己的工作目录
+2 进入notebook（自定义工作目录）的方式
+    打开Anaconda Prompt 
+    输入jupyter notebook
