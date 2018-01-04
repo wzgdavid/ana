@@ -346,7 +346,7 @@ dff['斜率上下'] = np.where(dff['斜率']>1, 'up', 'down')
 # 日线顺势
 dff['日线顺势'] = np.where( (dff['斜率']>1) & (dff['开仓方向'] == 'buy' ), True, False)
 dff['日线顺势'] = np.where( (dff['斜率']<1) & (dff['开仓方向'] == 'sell' ), True, dff['日线顺势'])
-#print(dff.head(30))
+print(dff.head(30))
 print('-------------------周线--------------------')
 # 周线顺势
 kdata_week = kdata.c.resample('W').ohlc()
@@ -367,27 +367,31 @@ dff['周线顺势'] = np.where( (dff['周线斜率']<1) & (dff['开仓方向'] =
 
 
 dff['日周都顺势'] = np.where( (dff['周线顺势']==True) & (dff['日线顺势']==True), True, False)
-
-print(dff[['日线顺势','周线顺势','日周都顺势']] )
-
+dff['一手逐笔平仓盈亏'] = dff['逐笔平仓盈亏'] / dff['手数'] 
+#print(dff[['日线顺势','周线顺势','日周都顺势']] )
+#dff.to_csv('tmp.csv')
 # 光日线顺势
-#syk = dff.groupby('日线顺势').sum()['逐笔平仓盈亏']  #  顺势和逆势的盈亏
+#syk = dff.groupby('日线顺势').sum()['一手逐笔平仓盈亏']  #  顺势和逆势的盈亏
 #ccs = dff['日线顺势'].value_counts()           #  顺势和逆势交易次数
 # 光周线顺势
-#syk = dff.groupby('周线顺势').sum()['逐笔平仓盈亏']  #  顺势和逆势的盈亏
+#syk = dff.groupby('周线顺势').sum()['一手逐笔平仓盈亏']  #  顺势和逆势的盈亏
 #ccs = dff['周线顺势'].value_counts()           #  顺势和逆势交易次数
 # 日周都顺势
-syk = dff.groupby('日周都顺势').sum()['逐笔平仓盈亏']  #  顺势和逆势的盈亏
+syk = dff.groupby('日周都顺势').sum()['一手逐笔平仓盈亏']  #  顺势和逆势的盈亏
 ccs = dff['日周都顺势'].value_counts()           #  顺势和逆势交易次数
+mean = dff.groupby('日周都顺势').mean()['一手逐笔平仓盈亏']  #  顺势和逆势的一手平均盈亏
 '''
 
 '''
-print(syk)
-print(ccs)  #
-print('--------------------顺势平均单次盈亏------------')
-print(syk[True]/ccs[True])  
-print('--------------------逆势平均单次盈亏------------')   
-print(syk[False]/ccs[False]) 
+#print(syk)
+#print(ccs)  #
+#print('--------------------顺势平均单次盈亏------------')
+#print(syk[True]/ccs[True])  
+#print('--------------------逆势平均单次盈亏------------')   
+#print(syk[False]/ccs[False]) 
+print(mean)
+#std = dff.groupby('日周都顺势').std()['逐笔平仓盈亏']
+#print(std)
 '''
 基本结果是日周都顺势，结果最好
 
