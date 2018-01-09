@@ -1,5 +1,7 @@
 
-
+'''
+在d_atr.py的基础上，再加上周线DKX顺势的过滤
+'''
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -21,20 +23,32 @@ df = get_atr(df, 50)
 '''
 --------------------------趋势判断1---------------------------------
 '''
-# 趋势判断，DKXb方向，1 向上   0向下  当天参照前两天
-df['condition'] = np.where(df.b.shift(1)>df.b.shift(2), 1, 0) 
-# 趋势2   DKXb线在d线上做多，反之空
-#df['condition'] = np.where(df.b.shift(1)>=df.d.shift(1), 1, 0) 
 
+df['日线DKX斜率'] = df.b.shift(1) / df.b.shift(2) 
 
+df.index = pd.DatetimeIndex(df['date'])
+
+# 周线顺势
+kdata_week = df.c.resample('W').ohlc()
+kdata_week.columns=list('ohlc')
+kdata_week = kdata_week.dropna(axis=0) # 国庆长假啥的没数据，会出NaN
+kdata_week = get_DKX(kdata_week).dropna(axis=0)
+kdata_week['周线DKX斜率'] = (kdata_week.b.shift(1) / kdata_week.d.shift(2))  # 斜率指DKX的斜率
+kdata_week = kdata_week.dropna(axis=0)
+kdata_week_today = kdata_week.resample('D').ffill() # 把计算出来的周线的数据映射到日线上
+#print(kdata_week_today)
+df['周线DKX斜率'] = kdata_week_today.loc[df.index,:]['周线DKX斜率']
 
 # 开仓条件
 df = df.dropna(axis=0)
+#print(df.head())
 df['高于前两天高点'] = np.where(df.h > df.nhh2, 1, None)   # 看当天 
 df['低于前两天低点'] = np.where(df.l < df.nll2, 1, None)
 # 开仓  bk开多  sk开空
-df['开仓'] = np.where((df['高于前两天高点'] == 1) & (df['condition']==1), 'bk', None)
-df['开仓'] = np.where((df['低于前两天低点'] == 1) & (df['condition']==0), 'sk', df['开仓'] )
+多顺势 = (df['日线DKX斜率']>1) & (df['周线DKX斜率']>1)
+空顺势 = (df['日线DKX斜率']<1) & (df['周线DKX斜率']<1)
+df['开仓'] = np.where((df['高于前两天高点'] == 1) & 多顺势, 'bk', None)
+df['开仓'] = np.where((df['低于前两天低点'] == 1) & 空顺势, 'sk', df['开仓'] )
 
 # 开仓  bk开多  sk开空
 # 多一个条件前一次开仓的止损移动过了，才能开仓(或者说，前一天低点比前两天低点高（做多）)
@@ -48,28 +62,7 @@ df['开仓'] = np.where((df['低于前两天低点'] == 1) & (df['condition']==0
 #df['平仓'] = np.where((df.condition.shift(2) == 0) & (df.condition.shift(1) == 1), 'sp', df['平仓'])
 #df['平仓'] = None # 没有平仓信号， 只用止损平仓
 
-'''
---------------------------趋势判断2---------------------------------
-'''
-# 趋势判断，K线在ma20上下，1 上   0下  当天参照前一天
-#df['condition'] = np.where(df.l.shift(1)>df.ma20.shift(1), 1, None) 
-#df['condition'] = np.where(df.h.shift(1)<df.ma20.shift(1), 0, df['condition']) 
-## 开仓条件
-#df = df.dropna(axis=0)
-#df['高于前两天高点'] = np.where(df.h > df.nhh2, 1, None)   # 看当天 
-#df['低于前两天低点'] = np.where(df.l < df.nll2, 1, None)
-## 开仓  bk开多  sk开空
-#df['开仓'] = np.where((df['高于前两天高点'] == 1) & (df['condition']==1), 'bk', None)
-#df['开仓'] = np.where((df['低于前两天低点'] == 1) & (df['condition']==0), 'sk', df['开仓'] )
-## 平仓 趋势反转 'bp' 平多  'sp' 平空
-##df['平仓'] = np.where((df['condition']==1, 'bp', None)
-##df['平仓'] = np.where((df['低于前两天低点'] == 1) & (df['condition']==0), 'sp', df['平仓'])
-#df['平仓'] = None
 
-
-'''
---------------------------趋势判断end---------------------------------
-'''
 
 #平仓的同时不反向开仓
 #df['开仓'] = np.where(df['平仓'].isnull(), df['开仓'], None)
@@ -97,13 +90,9 @@ df['余额占比'] = 0
 
 
 
-def run2(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
+def run2b(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
     '''
-    d 中 run2 的atr止损版本
-    有资金管理
-    zs 指n个ATR
-    每次开仓允许的损失，f（当前总金额的百分比）
-    maxcw, 允许最大仓位（当前总金额的百分比）
+    在run2的基础上，加上对周线的过滤
     '''
     arr = np.zeros(df.shape[0])
     arr[0] = zj_init  # 
@@ -233,47 +222,10 @@ def run2(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
     result_row = result(df, params)
     return result_row
 
-#run2(df, 2, 100000, f=0.02, maxcw=0.3)
-#run2(df, 2, 100000, f=0.02, maxcw=0.4)
-run2(df, 2, 100000, f=0.02, maxcw=0.3, jiange=0)  # rb是2atr最好 资金增长倍数：146.3   接着是3  资金增长倍数：106.7
-
+run2b(df, 2, 100000, f=0.02, maxcw=0.3, jiange=0)  # rb是2atr最好 资金增长倍数：146.3   接着是3  资金增长倍数：106.7
 '''
-参数： run2 zs=2ATR  开仓间隔=0 f=0.02  maxcw=0.3
-资金增长倍数：147
-做多次数:174 做空次数:188
-标准差： 0.03159
-
-zs
-参数： run2 zs=1ATR  开仓间隔=0 f=0.02  maxcw=0.3  11
-资金增长倍数：68
-做多次数:287 做空次数:303
-标准差： 0.0219
-
-a
-参数： run2 zs=3  开仓间隔=0 f=0.02  maxcw=0.3
-资金增长倍数：5
-做多次数:497 做空次数:411
-标准差： 0.01927
-
 参数： run2 zs=2  开仓间隔=0 f=0.02  maxcw=0.3
-资金增长倍数：4
-做多次数:562 做空次数:474
-标准差： 0.01712
-
-参数： run2 zs=2ATR  开仓间隔=0 f=0.02  maxcw=0.3
-资金增长倍数：3
-做多次数:390 做空次数:304
-标准差： 0.02195
-
-参数： run2 zs=1ATR  开仓间隔=0 f=0.02  maxcw=0.3
-资金增长倍数：2
-做多次数:641 做空次数:495
-标准差： 0.0141
-
-m
-参数： run2 zs=3  开仓间隔=0 f=0.02  maxcw=0.3
-资金增长倍数：18
-做多次数:499 做空次数:468
-标准差： 0.02236
+资金增长倍数：12.8
+做多次数:454 做空次数:394
+标准差： 0.02582
 '''
-
