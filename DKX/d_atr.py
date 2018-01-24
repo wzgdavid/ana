@@ -22,7 +22,8 @@ df = get_atr(df, 50)
 --------------------------趋势判断1---------------------------------
 '''
 # 趋势判断，DKXb方向，1 向上   0向下  当天参照前两天
-df['condition'] = np.where(df.b.shift(1)>df.b.shift(2), 1, 0) 
+#df['condition'] = np.where(df.b.shift(1)>df.b.shift(2), 1, 0) 
+df['condition'] = df.b.shift(1) / df.b.shift(2) 
 # 趋势2   DKXb线在d线上做多，反之空
 #df['condition'] = np.where(df.b.shift(1)>=df.d.shift(1), 1, 0) 
 
@@ -33,8 +34,8 @@ df = df.dropna(axis=0)
 df['高于前两天高点'] = np.where(df.h > df.nhh2, 1, None)   # 看当天 
 df['低于前两天低点'] = np.where(df.l < df.nll2, 1, None)
 # 开仓  bk开多  sk开空
-df['开仓'] = np.where((df['高于前两天高点'] == 1) & (df['condition']==1), 'bk', None)
-df['开仓'] = np.where((df['低于前两天低点'] == 1) & (df['condition']==0), 'sk', df['开仓'] )
+df['开仓'] = np.where((df['高于前两天高点'] == 1) & (df['condition']>1), 'bk', None)
+df['开仓'] = np.where((df['低于前两天低点'] == 1) & (df['condition']<1), 'sk', df['开仓'] )
 
 # 开仓  bk开多  sk开空
 # 多一个条件前一次开仓的止损移动过了，才能开仓(或者说，前一天低点比前两天低点高（做多）)
@@ -101,7 +102,7 @@ def run2(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
     '''
     d 中 run2 的atr止损版本
     有资金管理
-    zs 指n个ATR
+    zs 指n个ATR移动止损
     每次开仓允许的损失，f（当前总金额的百分比）
     maxcw, 允许最大仓位（当前总金额的百分比）
     '''
@@ -109,6 +110,8 @@ def run2(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
     arr[0] = zj_init  # 
     df['可用余额'] = arr # 初始化可用余额
     df['总金额'] = arr
+
+    开仓止损 = 0.5
 
     yue = 1 - maxcw # 反过来就是余额允许的最小比例
     feiyong = 3 # 每次两个滑点， 再用一个滑点代替费用，共3点
@@ -135,13 +138,14 @@ def run2(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
                 # 根据f算开几手
                 bk_idx = i
                 loss  = df.ix[i-1, '总金额'] * f
-                zsrange = row.nhh2 - row.nll2
+                #zsrange = row.nhh2 - row.nll2
+                zsrange = row.atr*开仓止损
                 ss = int(loss / (zsrange * 10))
                 #print(loss,zsrange,ss)
 
                 df.ix[i, 'bkprice'] = bkprice = row.o + feiyong if row.o>row.nhh2 else row.nhh2 + feiyong
                 df.ix[i, 'bk总手数'] = df.ix[i-1, 'bk总手数'] + ss  # 等于上一日的bk总手数加1
-                df.ix[i, 'b止损'] = int(row.nhh2 - row.atr*zs)  ##############################-10
+                df.ix[i, 'b止损'] = int(row.nhh2 - zsrange)  ##############################-10  开仓止损 1atr
                 df.ix[i, '可用余额'] = df.ix[i-1, '可用余额'] - bkprice * ss
                 #df.ix[i, 'b保证金'] = df.ix[i-1, 'b保证金'] + bkprice * ss
                 new_change = (row.c - bkprice) * ss * 10 # 新开仓价格变化
@@ -156,7 +160,8 @@ def run2(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
                 if df.ix[i, 'bk总手数'] == 0:
                     df.ix[i, 'b止损'] = new_high = 0
                 else:
-                    df.ix[i, 'b止损'] = new_high = max(int(row.nhh2 - row.atr*zs),  new_high)
+                    
+                    df.ix[i, 'b止损'] = max(int(row.nhh2 - row.atr*zs),  df.ix[i-1, 'b止损'])
                 old_change = (row.c - last_row.c) * df.ix[i-1, 'bk总手数']*10# 旧开仓价格变化
                 df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + old_change
 
@@ -171,12 +176,13 @@ def run2(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
                 # 根据f算开几手
                 sk_idx = i
                 loss  = df.ix[i-1, '总金额'] * f
-                zsrange = row.nhh2 - row.nll2
+                #zsrange = row.nhh2 - row.nll2
+                zsrange = row.atr*开仓止损
                 ss = int(loss / (zsrange * 10))
                 #print(loss,zsrange,ss)
                 df.ix[i, 'skprice'] = skprice = row.o -feiyong if row.o<row.nll2 else row.nll2 - feiyong
                 df.ix[i, 'sk总手数'] = df.ix[i-1, 'sk总手数'] + ss  # 等于上一日的sk总手数加1
-                df.ix[i, 's止损'] = int(row.nll2 + row.atr*zs) ################################+ 10
+                df.ix[i, 's止损'] = int(row.nll2 + zsrange) ################################+ 10  开仓止损 1atr
                 df.ix[i, '可用余额'] = df.ix[i-1, '可用余额'] - skprice * ss
                 #df.ix[i, 's保证金'] = df.ix[i-1, 's保证金'] + skprice * ss
                 new_change = (skprice - row.c) * ss * 10 # 新开仓价格变化
@@ -191,7 +197,7 @@ def run2(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
                 if df.ix[i, 'sk总手数'] == 0:
                     df.ix[i, 's止损'] = new_low = 999999
                 else:
-                    df.ix[i, 's止损'] = new_low = min(int(row.nll2 + row.atr*zs),  new_low)
+                    df.ix[i, 's止损'] = min(int(row.nll2 + row.atr*zs),  df.ix[i-1, 's止损'])
                     #print(df.ix[i, 's止损'],  i)
                 old_change = (last_row.c - row.c) * df.ix[i-1, 'sk总手数'] *10# 旧开仓价格变化
                 df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + old_change
@@ -236,44 +242,3 @@ def run2(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
 #run2(df, 2, 100000, f=0.02, maxcw=0.3)
 #run2(df, 2, 100000, f=0.02, maxcw=0.4)
 run2(df, 2, 100000, f=0.02, maxcw=0.3, jiange=0)  # rb是2atr最好 资金增长倍数：146.3   接着是3  资金增长倍数：106.7
-
-'''
-参数： run2 zs=2ATR  开仓间隔=0 f=0.02  maxcw=0.3
-资金增长倍数：147
-做多次数:174 做空次数:188
-标准差： 0.03159
-
-zs
-参数： run2 zs=1ATR  开仓间隔=0 f=0.02  maxcw=0.3  11
-资金增长倍数：68
-做多次数:287 做空次数:303
-标准差： 0.0219
-
-a
-参数： run2 zs=3  开仓间隔=0 f=0.02  maxcw=0.3
-资金增长倍数：5
-做多次数:497 做空次数:411
-标准差： 0.01927
-
-参数： run2 zs=2  开仓间隔=0 f=0.02  maxcw=0.3
-资金增长倍数：4
-做多次数:562 做空次数:474
-标准差： 0.01712
-
-参数： run2 zs=2ATR  开仓间隔=0 f=0.02  maxcw=0.3
-资金增长倍数：3
-做多次数:390 做空次数:304
-标准差： 0.02195
-
-参数： run2 zs=1ATR  开仓间隔=0 f=0.02  maxcw=0.3
-资金增长倍数：2
-做多次数:641 做空次数:495
-标准差： 0.0141
-
-m
-参数： run2 zs=3  开仓间隔=0 f=0.02  maxcw=0.3
-资金增长倍数：18
-做多次数:499 做空次数:468
-标准差： 0.02236
-'''
-

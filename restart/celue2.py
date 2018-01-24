@@ -18,8 +18,8 @@ class Celue(GeneralIndex):
         '''主动止损主动止盈
         ydzs 是否有移动止损，结果显示，不要移动止损 好
         '''
-        self.get_nhh(2)
-        self.get_nll(2)
+        self.get_nhh(2,)
+        self.get_nll(2,)
         self.get_nlh(2)
         self.get_nhl(2)
         self.get_nch(2)
@@ -30,10 +30,10 @@ class Celue(GeneralIndex):
         self.get_mhh(7)
         self.get_mll(7)
         self.get_atr(50)
-        #zy = 2
-        #zs = 2
-        zy = 0.02
-        zs = 0.02 
+        zy = 2
+        zs = 2
+        #zy = 0.01
+        #zs = 0.01 
         ma = 20
         ma_name = 'ma'+str(ma)
         ma2 = 5
@@ -97,8 +97,8 @@ class Celue(GeneralIndex):
             'duo_huitiao': (df.c < df[ma2_name]),         
             'kong_huitiao': (df.c > df[ma2_name]),  
                   }
-        df['higher'] = option['tupo_high']  & option['higher_than_ma_lastday'] #& option['last_yin']
-        df['lower'] = option['tupo_low'] & option['lower_than_ma_lastday']  #& option['last_yang'] 
+        df['higher'] = option['tupo_high']  & option['higher_than_ma_lastday'] #& option['last_yang']
+        df['lower'] = option['tupo_low'] & option['lower_than_ma_lastday']  #& option['last_yin'] 
         #df['higher'] = option['tupo_high'] & option['close_bigger_than_nch_lastday'] #& option['close_higher_than_ma_lastday']
         #df['lower'] = option['tupo_low'] & option['close_lower_than_ncl_lastday'] #& option['close_lower_than_ma_lastday']
         df['bksk'] = np.where(df['higher'] & df.atr, 'bk', None)
@@ -453,16 +453,16 @@ if __name__ == '__main__':
     
     #test()
     #run_ev_tupohl('ta')
-    g = Celue('rb') # ta rb c m a ma jd dy sr cs 999999
+    g = Celue('m') # ta rb c m a ma jd dy sr cs 999999
     #g.tupohl(3, 7, 1)
     #g.ev_ma(20,0.03)
     #g.ev_tupohl(3, 7, 0.01)
-    g.ev_tupohl(3, 17, 1) 
+    #g.ev_tupohl(3, 17, 1) 
     #g.ev_tupohl(3, 17, 1)
 
     #g.zhisungailv()
 
-    #g.zdzy_hl(ydzs=0)
+    g.zdzy_hl(ydzs=0)
    
     
 

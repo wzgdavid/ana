@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from common import *#get_DKX, get_nhh, get_nll, get_ma, avg,get_nhhzs,get_nllzs,get_atr
 
-pinzhong = 'y'
+pinzhong = 'm'
 plt.rcParams['font.sans-serif'] = ['SimHei'] # 正常显示中文
 if pinzhong == 'rb':
     df = pd.read_csv(r'..\data\rb\zs.csv')
@@ -45,11 +45,11 @@ df = df.dropna(axis=0)
 df['高于前两天高点'] = np.where(df.h > df.nhh2, 1, None)   # 看当天 
 df['低于前两天低点'] = np.where(df.l < df.nll2, 1, None)
 
-#多顺势 = (df['日线DKX斜率']>1) & (df['周线DKX斜率']<1)
-#空顺势 = (df['日线DKX斜率']<1) & (df['周线DKX斜率']>1)
+多顺势 = (df['日线DKX斜率']>1) & (df['周线DKX斜率']>1)
+空顺势 = (df['日线DKX斜率']<1) & (df['周线DKX斜率']<1)
 # 只考虑周
-多顺势 = (df['周线DKX斜率']>1)
-空顺势 = (df['周线DKX斜率']<1)
+#多顺势 = (df['周线DKX斜率']>1)
+#空顺势 = (df['周线DKX斜率']<1)
 
 # 开仓  bk开多  sk开空
 df['开仓'] = np.where((df['高于前两天高点'] == 1) & 多顺势, 'bk', None)
@@ -104,6 +104,8 @@ def run2b(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
     df['可用余额'] = arr # 初始化可用余额
     df['总金额'] = arr
 
+    开仓止损 = 0.5
+
     yue = 1 - maxcw # 反过来就是余额允许的最小比例
     feiyong = 3 # 每次两个滑点， 再用一个滑点代替费用，共3点
     new_high = 0
@@ -129,13 +131,14 @@ def run2b(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
                 # 根据f算开几手
                 bk_idx = i
                 loss  = df.ix[i-1, '总金额'] * f
-                zsrange = row.nhh2 - row.nll2
+                #zsrange = row.nhh2 - row.nll2
+                zsrange = row.atr*开仓止损
                 ss = int(loss / (zsrange * 10))
                 #print(loss,zsrange,ss)
 
                 df.ix[i, 'bkprice'] = bkprice = row.o + feiyong if row.o>row.nhh2 else row.nhh2 + feiyong
                 df.ix[i, 'bk总手数'] = df.ix[i-1, 'bk总手数'] + ss  # 等于上一日的bk总手数加1
-                df.ix[i, 'b止损'] = int(row.nhh2 - row.atr*zs)  ##############################-10
+                df.ix[i, 'b止损'] = int(row.nhh2 - zsrange)  ##############################-10  开仓止损 1atr
                 df.ix[i, '可用余额'] = df.ix[i-1, '可用余额'] - bkprice * ss
                 #df.ix[i, 'b保证金'] = df.ix[i-1, 'b保证金'] + bkprice * ss
                 new_change = (row.c - bkprice) * ss * 10 # 新开仓价格变化
@@ -150,7 +153,8 @@ def run2b(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
                 if df.ix[i, 'bk总手数'] == 0:
                     df.ix[i, 'b止损'] = new_high = 0
                 else:
-                    df.ix[i, 'b止损'] = new_high = max(int(row.nhh2 - row.atr*zs),  new_high)
+                    
+                    df.ix[i, 'b止损'] = max(int(row.nhh2 - row.atr*zs),  df.ix[i-1, 'b止损'])
                 old_change = (row.c - last_row.c) * df.ix[i-1, 'bk总手数']*10# 旧开仓价格变化
                 df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + old_change
 
@@ -165,12 +169,13 @@ def run2b(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
                 # 根据f算开几手
                 sk_idx = i
                 loss  = df.ix[i-1, '总金额'] * f
-                zsrange = row.nhh2 - row.nll2
+                #zsrange = row.nhh2 - row.nll2
+                zsrange = row.atr*开仓止损
                 ss = int(loss / (zsrange * 10))
                 #print(loss,zsrange,ss)
                 df.ix[i, 'skprice'] = skprice = row.o -feiyong if row.o<row.nll2 else row.nll2 - feiyong
                 df.ix[i, 'sk总手数'] = df.ix[i-1, 'sk总手数'] + ss  # 等于上一日的sk总手数加1
-                df.ix[i, 's止损'] = int(row.nll2 + row.atr*zs) ################################+ 10
+                df.ix[i, 's止损'] = int(row.nll2 + zsrange) ################################+ 10  开仓止损 1atr
                 df.ix[i, '可用余额'] = df.ix[i-1, '可用余额'] - skprice * ss
                 #df.ix[i, 's保证金'] = df.ix[i-1, 's保证金'] + skprice * ss
                 new_change = (skprice - row.c) * ss * 10 # 新开仓价格变化
@@ -185,7 +190,7 @@ def run2b(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
                 if df.ix[i, 'sk总手数'] == 0:
                     df.ix[i, 's止损'] = new_low = 999999
                 else:
-                    df.ix[i, 's止损'] = new_low = min(int(row.nll2 + row.atr*zs),  new_low)
+                    df.ix[i, 's止损'] = min(int(row.nll2 + row.atr*zs),  df.ix[i-1, 's止损'])
                     #print(df.ix[i, 's止损'],  i)
                 old_change = (last_row.c - row.c) * df.ix[i-1, 'sk总手数'] *10# 旧开仓价格变化
                 df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + old_change
@@ -228,146 +233,4 @@ def run2b(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
     return result_row
 
 run2b(df, 2, 100000, f=0.02, maxcw=0.3, jiange=0)  # rb是2atr最好 资金增长倍数：146.3   接着是3  资金增长倍数：106.7
-'''
-参数： run2 zs=2  开仓间隔=0 f=0.02  maxcw=0.3
-资金增长倍数：12.8
-做多次数:454 做空次数:394
-标准差： 0.02582
-'''
 
-'''
-几个品种结果都是日周都顺最好
-参数： run2 zs=2  开仓间隔=0 f=0.02  maxcw=0.3
-
-m
-日周都顺势
-多顺势 = (df['日线DKX斜率']>1) & (df['周线DKX斜率']>1)
-空顺势 = (df['日线DKX斜率']<1) & (df['周线DKX斜率']<1)
-资金增长倍数：2.9
-做多次数:270 做空次数:201
-标准差： 0.02016
-
-日逆周顺
-多顺势 = (df['日线DKX斜率']<1) & (df['周线DKX斜率']>1)
-空顺势 = (df['日线DKX斜率']>1) & (df['周线DKX斜率']<1)
-资金增长倍数：0.6
-做多次数:204 做空次数:198
-标准差： 0.0176
-
-日顺周逆
-多顺势 = (df['日线DKX斜率']>1) & (df['周线DKX斜率']<1)
-空顺势 = (df['日线DKX斜率']<1) & (df['周线DKX斜率']>1)
-资金增长倍数：2.3
-做多次数:220 做空次数:206
-标准差： 0.01852
-
-都逆
-多顺势 = (df['日线DKX斜率']<1) & (df['周线DKX斜率']<1)
-空顺势 = (df['日线DKX斜率']>1) & (df['周线DKX斜率']>1)
-资金增长倍数：0.6
-做多次数:257 做空次数:263
-标准差： 0.01864
-
-只考虑日顺势
-资金增长倍数：6.6
-做多次数:459 做空次数:389
-标准差： 0.02628
-
-只考虑周顺势
-资金增长倍数：1.3
-做多次数:397 做空次数:313
-标准差： 0.02351
-
-
-rb
-日周都顺势
-资金增长倍数：12.5
-做多次数:115 做空次数:136
-标准差： 0.028
-
-日逆周顺
-资金增长倍数：1.4
-做多次数:82 做空次数:115
-标准差： 0.01995
-
-日顺周逆
-资金增长倍数：5.1
-做多次数:106 做空次数:81
-标准差： 0.01922
-
-都逆
-资金增长倍数：1.5
-做多次数:136 做空次数:104
-标准差： 0.01874
-
-只考虑日顺势
-资金增长倍数：54.3
-做多次数:201 做空次数:206
-标准差： 0.03333
-只考虑周顺势
-资金增长倍数：6.3
-做多次数:171 做空次数:205
-标准差： 0.03057
-
-c
-日周都顺势
-资金增长倍数：1.5
-做多次数:163 做空次数:96
-标准差： 0.01884
-
-日逆周顺
-资金增长倍数：0.1
-做多次数:158 做空次数:97
-标准差： 0.0099
-
-日顺周逆
-资金增长倍数：0.2
-做多次数:109 做空次数:156
-标准差： 0.01283
-
-都逆
-资金增长倍数：0.1
-做多次数:112 做空次数:182
-标准差： 0.01372
-
-只考虑日顺势
-资金增长倍数：0.4
-做多次数:258 做空次数:236
-标准差： 0.02212
-
-只考虑周顺势
-资金增长倍数：0.2
-做多次数:260 做空次数:180
-标准差： 0.01794
-
-y
-日周都顺势
-资金增长倍数：2.5
-做多次数:202 做空次数:140
-标准差： 0.0178
-
-日逆周顺
-资金增长倍数：2.0
-做多次数:165 做空次数:118
-标准差： 0.01672
-
-日顺周逆
-资金增长倍数：0.6
-做多次数:158 做空次数:175
-标准差： 0.01226
-
-都逆
-资金增长倍数：0.6
-做多次数:158 做空次数:220
-标准差： 0.0174
-
-只考虑日顺势
-资金增长倍数：1.6
-做多次数:332 做空次数:251
-标准差： 0.02191
-
-只考虑周顺势
-资金增长倍数：1.6
-做多次数:300 做空次数:228
-标准差： 0.0227
-'''

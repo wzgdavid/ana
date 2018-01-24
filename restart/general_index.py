@@ -1778,9 +1778,11 @@ class GeneralIndex(General):
         self.df['tr'] = self.df.loc[:, ['hl','ch', 'cl']].apply(lambda x: x.max(), axis=1)
         self.df['atr'] = self.df.tr.rolling(window=n, center=False).mean()
 
-    def get_nhh(self, n):
-        '''前n天最高价最高点（不包含当天）'''
-        self.df['nhh'] = self.df.h.shift(1).rolling(window=n, center=False).max()
+    def get_nhh(self, n, m=0):
+        '''前n天最高价最高点（不包含当天）
+        提前m跳
+        '''
+        self.df['nhh'] = self.df.h.shift(1).rolling(window=n, center=False).max() - m
 
     def get_nlh(self, n):
         '''前n天最低价最高点（不包含当天）'''
@@ -1813,9 +1815,11 @@ class GeneralIndex(General):
     def get_nhh_ma(self, n):
         self.df['nhh_ma']  = self.df.nhh.rolling(window=n, center=False).mean()
 
-    def get_nll(self, n):
-        '''前n天最低价最低点（不包含当天）'''
-        self.df['nll'] = self.df.l.shift(1).rolling(window=n, center=False).min()
+    def get_nll(self, n,m=0):
+        '''前n天最低价最低点（不包含当天）
+        提前m跳
+        '''
+        self.df['nll'] = self.df.l.shift(1).rolling(window=n, center=False).min()+m
     def get_nhl(self, n):
         '''前n天最高价最低点（不包含当天）'''
         self.df['nhl'] = self.df.h.shift(1).rolling(window=n, center=False).min()
