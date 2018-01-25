@@ -145,7 +145,7 @@ def run2(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
 
                 df.ix[i, 'bkprice'] = bkprice = row.o + feiyong if row.o>row.nhh2 else row.nhh2 + feiyong
                 df.ix[i, 'bk总手数'] = df.ix[i-1, 'bk总手数'] + ss  # 等于上一日的bk总手数加1
-                df.ix[i, 'b止损'] = int(row.nhh2 - zsrange)  ##############################-10  开仓止损 1atr
+                df.ix[i, 'b止损'] = int(bkprice - zsrange)  ##############################-10  开仓止损 1atr
                 df.ix[i, '可用余额'] = df.ix[i-1, '可用余额'] - bkprice * ss
                 #df.ix[i, 'b保证金'] = df.ix[i-1, 'b保证金'] + bkprice * ss
                 new_change = (row.c - bkprice) * ss * 10 # 新开仓价格变化
@@ -182,7 +182,7 @@ def run2(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
                 #print(loss,zsrange,ss)
                 df.ix[i, 'skprice'] = skprice = row.o -feiyong if row.o<row.nll2 else row.nll2 - feiyong
                 df.ix[i, 'sk总手数'] = df.ix[i-1, 'sk总手数'] + ss  # 等于上一日的sk总手数加1
-                df.ix[i, 's止损'] = int(row.nll2 + zsrange) ################################+ 10  开仓止损 1atr
+                df.ix[i, 's止损'] = int(skprice + zsrange) ################################+ 10  开仓止损 1atr
                 df.ix[i, '可用余额'] = df.ix[i-1, '可用余额'] - skprice * ss
                 #df.ix[i, 's保证金'] = df.ix[i-1, 's保证金'] + skprice * ss
                 new_change = (skprice - row.c) * ss * 10 # 新开仓价格变化

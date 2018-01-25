@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from common import *#get_DKX, get_nhh, get_nll, get_ma, avg,get_nhhzs,get_nllzs,get_atr
 
-pinzhong = 'm'
+pinzhong = 'sr'
 plt.rcParams['font.sans-serif'] = ['SimHei'] # 正常显示中文
 if pinzhong == 'rb':
     df = pd.read_csv(r'..\data\rb\zs.csv')
@@ -104,7 +104,7 @@ def run2b(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
     df['可用余额'] = arr # 初始化可用余额
     df['总金额'] = arr
 
-    开仓止损 = 0.5
+    开仓止损 = 0.6
 
     yue = 1 - maxcw # 反过来就是余额允许的最小比例
     feiyong = 3 # 每次两个滑点， 再用一个滑点代替费用，共3点
@@ -138,7 +138,7 @@ def run2b(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
 
                 df.ix[i, 'bkprice'] = bkprice = row.o + feiyong if row.o>row.nhh2 else row.nhh2 + feiyong
                 df.ix[i, 'bk总手数'] = df.ix[i-1, 'bk总手数'] + ss  # 等于上一日的bk总手数加1
-                df.ix[i, 'b止损'] = int(row.nhh2 - zsrange)  ##############################-10  开仓止损 1atr
+                df.ix[i, 'b止损'] = int(bkprice - zsrange)  ##############################-10  开仓止损 1atr
                 df.ix[i, '可用余额'] = df.ix[i-1, '可用余额'] - bkprice * ss
                 #df.ix[i, 'b保证金'] = df.ix[i-1, 'b保证金'] + bkprice * ss
                 new_change = (row.c - bkprice) * ss * 10 # 新开仓价格变化
@@ -153,8 +153,8 @@ def run2b(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
                 if df.ix[i, 'bk总手数'] == 0:
                     df.ix[i, 'b止损'] = new_high = 0
                 else:
-                    
-                    df.ix[i, 'b止损'] = max(int(row.nhh2 - row.atr*zs),  df.ix[i-1, 'b止损'])
+                    new_high = max(int(row.h - row.atr*zs), new_high)
+                    df.ix[i, 'b止损'] = max(new_high,  df.ix[i-1, 'b止损'])
                 old_change = (row.c - last_row.c) * df.ix[i-1, 'bk总手数']*10# 旧开仓价格变化
                 df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + old_change
 
@@ -175,7 +175,7 @@ def run2b(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
                 #print(loss,zsrange,ss)
                 df.ix[i, 'skprice'] = skprice = row.o -feiyong if row.o<row.nll2 else row.nll2 - feiyong
                 df.ix[i, 'sk总手数'] = df.ix[i-1, 'sk总手数'] + ss  # 等于上一日的sk总手数加1
-                df.ix[i, 's止损'] = int(row.nll2 + zsrange) ################################+ 10  开仓止损 1atr
+                df.ix[i, 's止损'] = int(skprice + zsrange) ################################+ 10  开仓止损 1atr
                 df.ix[i, '可用余额'] = df.ix[i-1, '可用余额'] - skprice * ss
                 #df.ix[i, 's保证金'] = df.ix[i-1, 's保证金'] + skprice * ss
                 new_change = (skprice - row.c) * ss * 10 # 新开仓价格变化
@@ -190,7 +190,8 @@ def run2b(df,zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
                 if df.ix[i, 'sk总手数'] == 0:
                     df.ix[i, 's止损'] = new_low = 999999
                 else:
-                    df.ix[i, 's止损'] = min(int(row.nll2 + row.atr*zs),  df.ix[i-1, 's止损'])
+                    new_low = min(int(row.l + row.atr*zs), new_low)
+                    df.ix[i, 's止损'] = min(new_low,  df.ix[i-1, 's止损'])
                     #print(df.ix[i, 's止损'],  i)
                 old_change = (last_row.c - row.c) * df.ix[i-1, 'sk总手数'] *10# 旧开仓价格变化
                 df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + old_change
