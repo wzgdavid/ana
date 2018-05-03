@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from common import *#get_DKX, get_nhh, get_nll, get_ma, avg,get_nhhzs,get_nllzs,get_atr
 
-pinzhong = 'sr'
+pinzhong = 'rb'
 plt.rcParams['font.sans-serif'] = ['SimHei'] # 正常显示中文
 if pinzhong == 'rb':
     df = pd.read_csv(r'..\data\rb\zs.csv')
