@@ -1,76 +1,44 @@
+'''
+从d_atr.py 拷贝过来改动的，只不过不是突破前几天高低点开仓 
+而是突破前几天收盘价的一个距离atr开仓，
+'''
+
 
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from common import *#get_DKX, get_nhh, get_nll, get_ma, avg,get_nhhzs,get_nllzs,get_atr
+from common import *#get_DKX, get_n_atr_up_l, get_n_atr_down_h, get_ma, avg,get_n_atr_up_lzs,get_n_atr_down_hzs,get_atr
 
-pinzhong = 'rb'
+pinzhong = 'ma'
 plt.rcParams['font.sans-serif'] = ['SimHei'] # 正常显示中文
 df = pd.read_csv(r'..\data\{}.csv'.format(pinzhong))
-df = get_DKX(df)
 
-nn = 2
-df = get_nhh(df, nn)
-df = get_nll(df, nn)
 df = get_ma(df, 20)
-
+df = get_nhh(df, 3)
+df = get_nll(df, 3)
 df = get_atr(df, 50)
-'''
---------------------------趋势判断1---------------------------------
-'''
-# 趋势判断，DKXb方向，1 向上   0向下  当天参照前两天
-#df['condition'] = df.b.shift(1) / df.b.shift(2) 
-# 趋势2   DKXb线在d线上做多，反之空
-#df['condition'] = np.where(df.b.shift(1)>=df.d.shift(1), 1, 0) 
 
+df['atr_up'] = df.c + df.atr
+df['atr_down'] = df.c - df.atr
 
-
-# 开仓条件
-#df = df.dropna(axis=0)
-#
-#df['高于前两天高点'] = np.where(df.h >= df.nhh, 1, None)   # 看当天 
-#df['低于前两天低点'] = np.where(df.l <= df.nll, 1, None)
-
-# 前两天高低点提前一跳
-#df['高于前两天高点'] = np.where(df.h >= df.nhh-1, 1, None)   # 看当天 
-#df['低于前两天低点'] = np.where(df.l <= df.nll+1, 1, None)
-
-# 距前一天收盘价一个atr
-#df['高于前两天高点'] = np.where(df.h > df.c.shift(1) + df.atr.shift(1), 1, None)   # 看当天 
-#df['低于前两天低点'] = np.where(df.l < df.c.shift(1) - df.atr.shift(1), 1, None)
-
-# 开仓  bk开多  sk开空
-#df['开仓'] = np.where((df['高于前两天高点'] == 1) & (df['condition']>1), 'bk', None)
-#df['开仓'] = np.where((df['低于前两天低点'] == 1) & (df['condition']<1), 'sk', df['开仓'] )
-
-# 开仓  bk开多  sk开空
-# 多一个条件前一次开仓的止损移动过了，才能开仓(或者说，前一天低点比前两天低点高（做多）)
-# 这个开仓的次数少了，收益曲线的标准差小了
-# 起个名字，叫 渐进式开仓
-#df['开仓'] = np.where((df['高于前两天高点'] == 1) & (df['condition']==1) & (df.l.shift(1) > df.l.shift(2)), 'bk', None)
-#df['开仓'] = np.where((df['低于前两天低点'] == 1) & (df['condition']==0) & (df.h.shift(1) < df.h.shift(2)), 'sk', df['开仓'] )
-
-# 平仓 趋势反转 'bp' 平多  'sp' 平空
-#df['平仓'] = np.where((df.condition.shift(2) == 1) & (df.condition.shift(1) == 0), 'bp', None)
-#df['平仓'] = np.where((df.condition.shift(2) == 0) & (df.condition.shift(1) == 1), 'sp', df['平仓'])
-#df['平仓'] = None # 没有平仓信号， 只用止损平仓
-
+nn = 3
+# 前几天c加一个atr的最低值 开多用
+df['n_atr_up_l'] = df.atr_up.shift(1).rolling(window=nn, center=False).min()
+# 前几天c减一个atr的最高值  开空用
+df['n_atr_down_h'] = df.atr_down.shift(1).rolling(window=nn, center=False).max()
+df.to_csv('tmp.csv')
 '''
 --------------------------趋势判断  用ma---------------------------------
 '''
 
 df['condition'] = np.where(df.c.shift(1)>df.ma.shift(1), 1, None) 
-df['condition'] = np.where(df.c.shift(1)<df.ma.shift(1), 0, df['condition'])
-
-
- 
-
+df['condition'] = np.where(df.c.shift(1)<df.ma.shift(1), 0, df['condition']) 
 ## 开仓条件
 df = df.dropna(axis=0)
-df['高于前两天高点'] = np.where(df.h > df.nhh, 1, None)   # 看当天 
-df['低于前两天低点'] = np.where(df.l < df.nll, 1, None)
+df['高于前两天高点'] = np.where(df.h > df.n_atr_up_l, 1, None)   # 看当天 
+df['低于前两天低点'] = np.where(df.l < df.n_atr_down_h, 1, None)
 ## 开仓  bk开多  sk开空
 df['开仓'] = np.where((df['高于前两天高点'] == 1) & (df['condition']==1), 'bk', None)
 df['开仓'] = np.where((df['低于前两天低点'] == 1) & (df['condition']==0), 'sk', df['开仓'] )
@@ -83,8 +51,8 @@ df['开仓'] = np.where((df['低于前两天低点'] == 1) & (df['condition']==0
  
 # 开仓条件
 #df = df.dropna(axis=0)
-#df['高于前两天高点'] = np.where(df.h > df.nhh, 1, None)   # 看当天 
-#df['低于前两天低点'] = np.where(df.l < df.nll, 1, None)
+#df['高于前两天高点'] = np.where(df.h > df.n_atr_up_l, 1, None)   # 看当天 
+#df['低于前两天低点'] = np.where(df.l < df.n_atr_down_h, 1, None)
 ### 开仓  bk开多  sk开空
 #df['开仓'] = np.where(df['高于前两天高点'] == 1, 'bk', None)
 #df['开仓'] = np.where(df['低于前两天低点'] == 1, 'sk', df['开仓'] )
@@ -160,12 +128,12 @@ def run2(df,kczs, zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
                 # 根据f算开几手
                 bk_idx = i
                 loss  = df.ix[i-1, '总金额'] * f
-                #zsrange = row.nhh - row.nll
+                #zsrange = row.n_atr_up_l - row.n_atr_down_h
                 zsrange = row.atr*开仓止损
                 ss = int(loss / (zsrange * 10))
                 #print(loss,zsrange,ss)
-                bkj = row.nhh # 前两天高低点
-                #bkj = row.nhh-1 # 前两天高低点提前一跳
+                bkj = row.n_atr_up_l 
+                #bkj = row.n_atr_up_l-1 # 前两天高低点提前一跳
                 #bkj = df.ix[i-1, 'c'] + df.ix[i-1, 'atr']  # 距前一天收盘价一个atr
                 df.ix[i, 'bkprice'] = bkprice = row.o + feiyong if row.o>bkj else bkj + feiyong
                 df.ix[i, 'bk总手数'] = df.ix[i-1, 'bk总手数'] + ss  # 等于上一日的bk总手数加1
@@ -184,8 +152,7 @@ def run2(df,kczs, zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
                 if df.ix[i, 'bk总手数'] == 0:
                     df.ix[i, 'b止损'] = new_high = 0
                 else:
-                    # 这样不对吧，这就等于用的是前面的止损而不是当天的
-                    # 但当天的最高价在当天是不会知道的
+                    
                     df.ix[i, 'b止损'] = max(int(row.nhh - row.atr*zs),  df.ix[i-1, 'b止损'])
                 old_change = (row.c - last_row.c) * df.ix[i-1, 'bk总手数']*10# 旧开仓价格变化
                 df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + old_change
@@ -201,12 +168,12 @@ def run2(df,kczs, zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
                 # 根据f算开几手
                 sk_idx = i
                 loss  = df.ix[i-1, '总金额'] * f
-                #zsrange = row.nhh - row.nll
+                #zsrange = row.n_atr_up_l - row.n_atr_down_h
                 zsrange = row.atr*开仓止损
                 ss = int(loss / (zsrange * 10))
                 #print(loss,zsrange,ss)
-                skj = row.nll # 前两天高低点
-                #skj = row.nll+1 # 前两天高低点提前一跳
+                skj = row.n_atr_down_h 
+                #skj = row.n_atr_down_h+1 # 前两天高低点提前一跳
                 #skj = df.ix[i-1, 'c'] - df.ix[i-1, 'atr']  # 距前一天收盘价一个atr
                 df.ix[i, 'skprice'] = skprice = row.o - feiyong if row.o<skj else skj - feiyong
                 df.ix[i, 'sk总手数'] = df.ix[i-1, 'sk总手数'] + ss  # 等于上一日的sk总手数加1
@@ -249,7 +216,7 @@ def run2(df,kczs, zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
                 df.ix[i, 'sk总手数'] = 0
                 #df.ix[i, 's保证金'] = 0
                 df.ix[i, '可用余额'] = df.ix[i, '总金额']
-
+    df.to_csv('tmp.csv')
         #df.ix[i,'余额占比'] = df.ix[i, '可用余额'] / df.ix[i, '总金额']
         #if i > 100:
         #    break
@@ -271,7 +238,7 @@ def run2(df,kczs, zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
 
 #run2(df, 2, 100000, f=0.02, maxcw=0.3)
 #run2(df, 2, 100000, f=0.02, maxcw=0.4)
-run2(df, 1, 2, 100000, f=0.01, maxcw=0.3, jiange=0)  
+run2(df, 0.5, 2, 100000, f=0.01, maxcw=0.3, jiange=0)  
 '''
 
 '''

@@ -21,12 +21,12 @@ def get_DKX(df, n=10):
 
 def get_nhh(df, n):
     '''前n天最高点（不包含当天）'''
-    df['nhh{}'.format(n)] = df.h.shift(1).rolling(window=n, center=False).max() #- 2 # 提前几点
+    df['nhh'] = df.h.shift(1).rolling(window=n, center=False).max() #- 2 # 提前几点
     return df
 
 def get_nll(df, n):
     '''前n天最低点（不包含当天）'''
-    df['nll{}'.format(n)] = df.l.shift(1).rolling(window=n, center=False).min() #+ 2 # 提前几点
+    df['nll'] = df.l.shift(1).rolling(window=n, center=False).min() #+ 2 # 提前几点
     return df
 
 def get_nhhzs(df, n):
@@ -49,7 +49,7 @@ def get_nllzs2(df, n):
     return df
     
 def get_ma(df, n):
-    df['ma{}'.format(n)] = df.c.rolling(window=n, center=False).mean()
+    df['ma'] = df.c.rolling(window=n, center=False).mean()
     return df
 
 def get_atr(df, n):
@@ -69,8 +69,8 @@ def result(df, params):
     parms  run 函数 的参数
     '''
     #print(df['开仓'].value_counts())
-    title = 'run2 zs={}  开仓间隔={} f={}  maxcw={}'.format(params['zs'], 
-                                                            params['jiange'],
+    title = 'run2 开仓止损={} zs={}  f={}  maxcw={}'.format(params['开仓止损'], 
+                                                            params['zs'],
                                                             params['f'],
                                                             params['maxcw'])
     #plt.title(title)
@@ -79,7 +79,7 @@ def result(df, params):
     倍数 = round( (df.ix[-1, '总金额']/params['zj_init']),  1)
     print('资金增长倍数：{}'.format( 倍数 ))
     print('做多次数:{} 做空次数:{}'.format(params['做多次数'], params['做空次数']))
-    
+    print('开仓总次数:{}'.format(params['做多次数']+params['做空次数']))
     df['returns'] = df['总金额'].pct_change() # 日收益变动
     df['ret_index'] = (1 + df['returns']).cumprod() # 资金曲线
     #df.ret_index.plot()
@@ -91,13 +91,15 @@ def result(df, params):
     # 定义顺序，参照totalrun.py的 文件起始的几行
     result_row = (
         params['pinzhong'],
-        params['zj_init'], params['zs'], params['f'], params['jiange'],params['maxcw'],
+        params['zj_init'], params['开仓止损'],
+        params['zs'], params['f'], params['jiange'],params['maxcw'],
         倍数, params['做多次数'], params['做空次数'], ret_std
         )
     # 显示曲线
-    df.ret_index_log.plot()
+    df.ret_index.plot()
+    #df.ret_index_log.plot()
     plt.title('收益倍数: '+title)
-    #plt.show()
+    plt.show()
         
     #print(result_row)
     return result_row
