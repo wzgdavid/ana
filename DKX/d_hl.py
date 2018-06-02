@@ -1,12 +1,12 @@
 
-
+'''用高低点做移动止损'''
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from common import *#get_DKX, get_nhh, get_nll, get_ma, avg,get_nhhzs,get_nllzs,get_atr
 
-pinzhong = 'm'
+pinzhong = 'a'
 plt.rcParams['font.sans-serif'] = ['SimHei'] # 正常显示中文
 df = pd.read_csv(r'..\data\{}.csv'.format(pinzhong))
 df = get_DKX(df)
@@ -55,7 +55,7 @@ df = get_atr(df, 50)
 #df['低于前两天低点'] = np.where(df.l < df.nll, 1, None)
 #
 #df['开仓'] = np.where((df['高于前两天高点'] == 1) & (df['condition']==1), 'bk', None)
-#df['开仓'] = np.where((df['低于前两天低点'] == 1) & (df['condition']==0), 's1k', df['开仓'] )
+#df['开仓'] = np.where((df['低于前两天低点'] == 1) & (df['condition']==0), 'sk', df['开仓'] )
 
 '''
 --------------------------趋势判断  DKX 或 ma ---------------------------------
@@ -72,41 +72,19 @@ df = get_atr(df, 50)
 #df['开仓'] = np.where((df['高于前两天高点'] == 1) & ((df['condition2']==1) | (df['condition1']>1)), 'bk', None)
 #df['开仓'] = np.where((df['低于前两天低点'] == 1) & ((df['condition2']==0) | (df['condition1']<1)), 'sk', df['开仓'] )
 
+
 '''
---------------------------判断  阴阳---------------------------------
+--------------------------趋势判断  无过滤---------------------------------
 '''
 
+ 
 # 开仓条件
 df = df.dropna(axis=0)
 df['高于前两天高点'] = np.where(df.h > df.nhh, 1, None)   # 看当天 
 df['低于前两天低点'] = np.where(df.l < df.nll, 1, None)
-
-df['阴1'] = np.where(df.o.shift(1) > df.c.shift(1), 1, None)
-df['阳1'] = np.where(df.o.shift(1) < df.c.shift(1), 1, None)
-
-df['阴2'] = np.where(df.o.shift(2) > df.c.shift(2), 1, None)
-df['阳2'] = np.where(df.o.shift(2) < df.c.shift(2), 1, None)
-
-#df['前两天至少有一个阴'] = df['阴1'] | df['阴2']
-#df['前两天至少有一个阳'] = df['阳1'] | df['阳2']
-
-df['前两天都是阴'] = df['阴1'] & df['阴2']
-df['前两天都是阳'] = df['阳1'] & df['阳2']
-
 ## 开仓  bk开多  sk开空
-df['开仓'] = np.where((df['高于前两天高点'] == 1) & (df['前两天都是阳'] == 1), 'bk', None)
-df['开仓'] = np.where((df['低于前两天低点'] == 1) & (df['前两天都是阳'] == 1), 's1k', df['开仓'] )
-
-'''
---------------------------判断  无过滤---------------------------------
-'''
-
-# 开仓条件
-#df = df.dropna(axis=0)
-#df['高于前两天高点'] = np.where(df.h > df.nhh, 1, None)   # 看当天 
-#df['低于前两天低点'] = np.where(df.l < df.nll, 1, None)
-#df['开仓'] = np.where(df['高于前两天高点'] == 1, 'bk', None)
-#df['开仓'] = np.where(df['低于前两天低点'] == 1, 'sk', df['开仓'] )
+df['开仓'] = np.where(df['高于前两天高点'] == 1, 'bk', None)
+df['开仓'] = np.where(df['低于前两天低点'] == 1, 'sk', df['开仓'] )
 
 '''
 --------------------------趋势判断end---------------------------------
@@ -172,13 +150,13 @@ def run2(df,kczs, zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
                 row['开仓'] == 'bk',
                 (df.ix[i-1, '可用余额'] / df.ix[i-1, '总金额']) > yue,
                 i > (bk_idx + b间隔),
-                有持仓 == 0 # 不加仓
+                有持仓 == 0
             ]
             #print('bk_idx',bk_idx, i)
             if all(bk_conditions):
             #if row['开仓'] == 'bk' and (df.ix[i-1, '可用余额'] / df.ix[i-1, '总金额']) > yue and i > bk_idx+b间隔:
                 # 根据f算开几手
-                有持仓 = 1 # 不加仓
+                #有持仓 = 1 # 不加仓
                 bk_idx = i
                 loss  = df.ix[i-1, '总金额'] * f
                 #zsrange = row.nhh - row.nll
@@ -206,9 +184,7 @@ def run2(df,kczs, zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
                 if df.ix[i, 'bk总手数'] == 0:
                     df.ix[i, 'b止损'] = new_high = 0
                 else:
-                    # 这样不对吧，这就等于用的是前面的止损而不是当天的
-                    # 但当天的最高价在当天是不会知道的,所以也只能用前几天的高点算止损点
-                    df.ix[i, 'b止损'] = max(int(row.nhh - row.atr*zs),  df.ix[i-1, 'b止损'])
+                    df.ix[i, 'b止损'] = new_high = max(df.ix[i, 'nll'],  new_high)
                 old_change = (row.c - last_row.c) * df.ix[i-1, 'bk总手数']*10# 旧开仓价格变化
                 df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + old_change
 
@@ -217,12 +193,12 @@ def run2(df,kczs, zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
                 row['开仓'] == 'sk',
                 (df.ix[i-1, '可用余额'] / df.ix[i-1, '总金额']) > yue,
                 i > (sk_idx + s间隔),
-                有持仓 == 0 # 不加仓
+                有持仓 == 0
             ]
             if all(sk_conditions):
             #if row['开仓'] == 'sk'and (df.ix[i-1, '可用余额'] / df.ix[i-1, '总金额']) > yue:
                 # 根据f算开几手
-                有持仓 = 1 # 不加仓策略
+                #有持仓 = 1 # 不加仓策略
                 sk_idx = i
                 loss  = df.ix[i-1, '总金额'] * f
                 #zsrange = row.nhh - row.nll
@@ -250,7 +226,7 @@ def run2(df,kczs, zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
                 if df.ix[i, 'sk总手数'] == 0:
                     df.ix[i, 's止损'] = new_low = 999999
                 else:
-                    df.ix[i, 's止损'] = min(int(row.nll + row.atr*zs),  df.ix[i-1, 's止损'])
+                    df.ix[i, 's止损'] = new_low = min(df.ix[i, 'nhh'],  new_low)
                     #print(df.ix[i, 's止损'],  i)
                 old_change = (last_row.c - row.c) * df.ix[i-1, 'sk总手数'] *10# 旧开仓价格变化
                 df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + old_change
@@ -300,7 +276,7 @@ def run2(df,kczs, zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
 
 #run2(df, 2, 100000, f=0.02, maxcw=0.3)
 #run2(df, 2, 100000, f=0.02, maxcw=0.4)
-run2(df, 2, 3, 1000000, f=0.01, maxcw=0.3, jiange=0)  
+run2(df, 0.5, 1, 1000000, f=0.01, maxcw=0.3, jiange=0)  
 '''
 
 

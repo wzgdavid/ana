@@ -76,7 +76,7 @@ def result(df, params):
     #plt.title(title)
     #plt.show()
     print('参数：', title)
-    倍数 = round( (df.ix[-1, '总金额']/params['zj_init']),  1)
+    倍数 = round( (df.ix[-1, '总金额']/params['zj_init']),  2)
     print('资金增长倍数：{}'.format( 倍数 ))
     print('做多次数:{} 做空次数:{}'.format(params['做多次数'], params['做空次数']))
     print('开仓总次数:{}'.format(params['做多次数']+params['做空次数']))
@@ -96,10 +96,10 @@ def result(df, params):
         倍数, params['做多次数'], params['做空次数'], ret_std
         )
     # 显示曲线
-    df.ret_index.plot()
+    #df.ret_index.plot()
     #df.ret_index_log.plot()
-    plt.title('收益倍数: '+title)
-    plt.show()
+    #plt.title('收益倍数: '+title)
+    #plt.show()
         
     #print(result_row)
     return result_row
