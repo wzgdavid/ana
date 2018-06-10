@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from common import *#get_DKX, get_nhh, get_nll, get_ma, avg,get_nhhzs,get_nllzs,get_atr
 
-pinzhong = 'sr'
+pinzhong = 'm'
 plt.rcParams['font.sans-serif'] = ['SimHei'] # 正常显示中文
 df = pd.read_csv(r'..\data\{}.csv'.format(pinzhong))
 df = get_DKX(df)
@@ -263,7 +263,7 @@ def run2(df,kczs, zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
 
 #run2(df, 2, 100000, f=0.02, maxcw=0.3)
 #run2(df, 2, 100000, f=0.02, maxcw=0.4)
-run2(df, 0.5, 1, 100000, f=0.01, maxcw=0.3, jiange=0)  
+run2(df, 1, 2, 100000, f=0.01, maxcw=0.3, jiange=0)  
 '''
 
 '''

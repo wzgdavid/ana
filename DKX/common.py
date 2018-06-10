@@ -21,12 +21,32 @@ def get_DKX(df, n=10):
 
 def get_nhh(df, n):
     '''前n天最高点（不包含当天）'''
-    df['nhh'] = df.h.shift(1).rolling(window=n, center=False).max() #- 2 # 提前几点
+    df['nhh'] = df.h.shift(1).rolling(window=n, center=False).max() 
     return df
 
 def get_nll(df, n):
     '''前n天最低点（不包含当天）'''
-    df['nll'] = df.l.shift(1).rolling(window=n, center=False).min() #+ 2 # 提前几点
+    df['nll'] = df.l.shift(1).rolling(window=n, center=False).min() 
+    return df
+
+def get_nhh2(df, n):
+    '''后n天最高点（不包含当天）'''
+    df['nhh2'] = df.h.shift(-1*n).rolling(window=n, center=False).max() 
+    return df
+
+def get_nll2(df, n):
+    '''后n天最低点（不包含当天）'''
+    df['nll2'] = df.l.shift(-1*n).rolling(window=n, center=False).min() 
+    return df
+
+def get_nhh3(df,m,n):
+    '''m天后，后n天最高点（不包含当天）'''
+    df['nhh3'] = df.h.shift(-m-n).rolling(window=n, center=False).max() 
+    return df
+
+def get_nll3(df,m, n):
+    '''m天后，后n天最低点（不包含当天）'''
+    df['nll3'] = df.l.shift(-m-n).rolling(window=n, center=False).min() 
     return df
 
 def get_nhhzs(df, n):

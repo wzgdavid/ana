@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from common import *#get_DKX, get_nhh, get_nll, get_ma, avg,get_nhhzs,get_nllzs,get_atr
 
-pinzhong = 'm'
+pinzhong = 'y'
 plt.rcParams['font.sans-serif'] = ['SimHei'] # 正常显示中文
 df = pd.read_csv(r'..\data\{}.csv'.format(pinzhong))
 df = get_DKX(df)
@@ -55,7 +55,7 @@ df = get_atr(df, 50)
 #df['低于前两天低点'] = np.where(df.l < df.nll, 1, None)
 #
 #df['开仓'] = np.where((df['高于前两天高点'] == 1) & (df['condition']==1), 'bk', None)
-#df['开仓'] = np.where((df['低于前两天低点'] == 1) & (df['condition']==0), 's4k', df['开仓'] )
+#df['开仓'] = np.where((df['低于前两天低点'] == 1) & (df['condition']==0), 'sk', df['开仓'] )
 
 '''
 --------------------------趋势判断  DKX 或 ma ---------------------------------
@@ -106,7 +106,7 @@ df = df.dropna(axis=0)
 df['高于前两天高点'] = np.where(df.h > df.nhh, 1, None)   # 看当天 
 df['低于前两天低点'] = np.where(df.l < df.nll, 1, None)
 df['开仓'] = np.where(df['高于前两天高点'] == 1, 'bk', None)
-df['开仓'] = np.where(df['低于前两天低点'] == 1, 's4k', df['开仓'] )
+df['开仓'] = np.where(df['低于前两天低点'] == 1, 'sk', df['开仓'] )
 
 '''
 --------------------------趋势判断end---------------------------------
@@ -211,7 +211,7 @@ def run2(df,kczs, zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
                     df.ix[i, 'b止损'] = max(int(row.nhh - row.atr*zs),  df.ix[i-1, 'b止损'])
                 old_change = (row.c - last_row.c) * df.ix[i-1, 'bk总手数']*10# 旧开仓价格变化
                 df.ix[i, '总金额'] = df.ix[i-1, '总金额'] + old_change
-
+          
         if df.ix[i, 'bk总手数'] == 0: # 多空只能做一个方向
             sk_conditions = [
                 row['开仓'] == 'sk',
@@ -300,7 +300,7 @@ def run2(df,kczs, zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
 
 #run2(df, 2, 100000, f=0.02, maxcw=0.3)
 #run2(df, 2, 100000, f=0.02, maxcw=0.4)
-run2(df, 1, 2, 1000000, f=0.02, maxcw=0.3, jiange=0)  
+run2(df, 1, 2, 1000000, f=0.01, maxcw=0.3, jiange=0)  
 '''
 
 
