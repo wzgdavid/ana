@@ -10,21 +10,23 @@ import seaborn as sns
 from common import *#get_DKX, get_nhh, get_nll, get_ma, avg,get_nhhzs,get_nllzs,get_atr
 
 def foo1():
-    pinzhong = 'y'
+    pinzhong = 'pp'
     plt.rcParams['font.sans-serif'] = ['SimHei']
     df = pd.read_csv(r'..\data\{}.csv'.format(pinzhong))
-    df = get_ma(df, 20)
-    #df['condition'] = np.where(df.c.shift(1)<df.ma.shift(1), 1, None) 
-    
+    df = get_ma(df, 10)
+    df['condition'] = np.where(df.c.shift(1)>df.ma.shift(1), 1, None) 
+    #mean      1.000254     0.008770     0.008966
+    #mean      1.000256     0.008764     0.009172
     df = df.dropna()
-    df['收盘的波幅'] = df.c/df.c.shift(1)
-    df['高价的波幅'] = df.h/df.c.shift(1)-1
+    df['收盘的波幅'] =   df.c/df.c.shift(1)
+    #df['收盘的波幅'] =   np.abs(df.c/df.c.shift(1)-1)
+    df['高价的波幅'] =   df.h/df.c.shift(1)-1
     df['低价的波幅'] = 1-df.l/df.c.shift(1)
 
-
+    
     print(df.describe()[['收盘的波幅','高价的波幅','低价的波幅']])
     df.to_csv('tmp.csv')
-foo1()
+#foo1()
 
 
 
@@ -53,3 +55,28 @@ def foo2():
     df.to_csv('tmp.csv')
     #df['aa'] = # 阳线高点到当天收盘价波幅
 #foo2()
+
+
+def foo3():
+    '''
+    之前是相对于前收的百分比，
+    这个是相对于前收的多少ATR
+    '''
+    pinzhong = 'y'
+    plt.rcParams['font.sans-serif'] = ['SimHei']
+    df = pd.read_csv(r'..\data\{}.csv'.format(pinzhong))
+    df = get_ma(df, 10)
+    df = get_atr(df, 50)
+    #df['condition'] = np.where(df.c.shift(1)>df.ma.shift(1), 1, None) 
+
+    df = df.dropna()
+    df['收盘的波幅'] =  ( df.c-df.c.shift(1))  / df.atr
+    #df['收盘的波幅'] =   np.abs(df.c/df.c.shift(1)-1)
+    df['高价的波幅'] =   (df.h-df.c.shift(1)) / df.atr
+    df['低价的波幅'] = (df.c.shift(1)-df.l) / df.atr
+
+    
+    print(df.describe()[['收盘的波幅','高价的波幅','低价的波幅']])
+    #df.to_csv('tmp.csv')
+foo3()
+
