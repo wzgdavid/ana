@@ -62,7 +62,7 @@ def foo3():
     之前是相对于前收的百分比，
     这个是相对于前收的多少ATR
     '''
-    pinzhong = 'y'
+    pinzhong = 'a'
     plt.rcParams['font.sans-serif'] = ['SimHei']
     df = pd.read_csv(r'..\data\{}.csv'.format(pinzhong))
     df = get_ma(df, 10)
@@ -78,5 +78,32 @@ def foo3():
     
     print(df.describe()[['收盘的波幅','高价的波幅','低价的波幅']])
     #df.to_csv('tmp.csv')
-foo3()
+#foo3()
 
+def foo4():
+    '''
+    之前是相对于前收的百分比，
+    这个是相对于前收的多少ATR
+    '''
+    pinzhong = 'a'
+    plt.rcParams['font.sans-serif'] = ['SimHei']
+    df = pd.read_csv(r'..\data\{}.csv'.format(pinzhong))
+    df = get_ma(df, 10)
+    df = get_atr(df, 50)
+
+    #df['condition'] = np.where(df.c.shift(1)>df.ma.shift(1), 1, None) # ma上下  目前效果最明显的还是这个
+    #df['condition'] = np.where( (df.l.shift(1)>df.l.shift(2)) & (df.h.shift(1)>df.h.shift(2)), 1, None)  #低点高于昨低且高点高于昨高
+    #df['condition'] = np.where( (df.h.shift(1)>df.h.shift(2)), 1, None)  # 高点高于前高
+    #df['condition'] = np.where( (df.c.shift(1)>df.c.shift(2)), 1, None)  # 收盘高于前收
+    df['condition'] = np.where( (df.c.shift(1)<df.ma.shift(1)) & (df.c.shift(1)<df.c.shift(2)), 1, None)  # ma上或下，且收盘高于前收 或低于前收
+
+    df['收盘的波幅'] =  ( df.c-df.c.shift(1))  / df.atr.shift(1)
+    df['收盘的波幅b'] =  np.abs( ( df.c-df.c.shift(1))  / df.atr.shift(1) )
+    df['高价的波幅'] =   (df.h-df.c.shift(1)) / df.atr.shift(1)
+    df['低价的波幅'] = (df.l-df.c.shift(1)) / df.atr.shift(1)
+    df = df.dropna()
+    
+    print(df.describe()[['收盘的波幅','高价的波幅','低价的波幅']])
+    #print('收盘标准差', df['收盘的波幅'].std())
+    df.to_csv('tmp.csv')
+foo4()
