@@ -88,7 +88,7 @@ def foo4():
     pinzhong = 'a'
     plt.rcParams['font.sans-serif'] = ['SimHei']
     df = pd.read_csv(r'..\data\{}.csv'.format(pinzhong))
-    df = get_ma(df, 10)
+    df = get_ma(df, 20)
     df = get_atr(df, 50)
 
     #df['condition'] = np.where(df.c.shift(1)>df.ma.shift(1), 1, None) # ma上下  目前效果最明显的还是这个
@@ -106,4 +106,28 @@ def foo4():
     print(df.describe()[['收盘的波幅','高价的波幅','低价的波幅']])
     #print('收盘标准差', df['收盘的波幅'].std())
     df.to_csv('tmp.csv')
-foo4()
+#foo4()
+
+def foo4b(n):
+    '''
+    和foo4一样，
+    只是不是相对于昨天，而是相对于前n天
+    '''
+    pinzhong = 'rb'
+    plt.rcParams['font.sans-serif'] = ['SimHei']
+    df = pd.read_csv(r'..\data\{}.csv'.format(pinzhong))
+    df = get_ma(df, 20)
+    df = get_atr(df, 50)
+
+    df['condition'] = np.where(df.c.shift(n)>df.ma.shift(n), 1, None) # ma上下  目前效果最明显的还是这个
+
+    df['收盘的波幅'] =  ( df.c-df.c.shift(n))  / df.atr.shift(n)
+    df['收盘的波幅b'] =  np.abs( ( df.c-df.c.shift(n))  / df.atr.shift(n) )
+    df['高价的波幅'] =   (df.h-df.c.shift(n)) / df.atr.shift(n)
+    df['低价的波幅'] = (df.l-df.c.shift(n)) / df.atr.shift(n)
+    df = df.dropna()
+    
+    print(df.describe()[['收盘的波幅','高价的波幅','低价的波幅']])
+    #print('收盘标准差', df['收盘的波幅'].std())
+    df.to_csv('tmp.csv')
+foo4b(2)
