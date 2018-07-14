@@ -238,7 +238,7 @@ def run2(df,kczs, zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
 
 #run2(df, 2, 100000, f=0.02, maxcw=0.3)
 #run2(df, 2, 100000, f=0.02, maxcw=0.4)
-run2(df, 0.5, 2, 100000, f=0.01, maxcw=0.3, jiange=0)  
+run2(df, 1, 2, 100000, f=0.01, maxcw=0.2, jiange=0)  
 '''
 
 '''

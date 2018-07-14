@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from common import *#get_DKX, get_nhh, get_nll, get_ma, avg,get_nhhzs,get_nllzs,get_atr
 
-pinzhong = 'y'
+pinzhong = 'sr'
 plt.rcParams['font.sans-serif'] = ['SimHei'] # 正常显示中文
 df = pd.read_csv(r'..\data\{}.csv'.format(pinzhong))
 df = get_DKX(df)
@@ -103,11 +103,11 @@ df = get_atr(df, 50)
 
 # 开仓条件
 df = df.dropna(axis=0)
-df['高于前两天高点'] = np.where(df.h > df.nhh, 1, None)   # 看当天 
-df['低于前两天低点'] = np.where(df.l < df.nll, 1, None)
+df['高于前两天高点'] = np.where(df.h >= df.nhh, 1, None)   # 看当天 
+df['低于前两天低点'] = np.where(df.l <= df.nll, 1, None)
 df['开仓'] = np.where(df['高于前两天高点'] == 1, 'bk', None)
 df['开仓'] = np.where(df['低于前两天低点'] == 1, 'sk', df['开仓'] )
-
+#
 '''
 --------------------------趋势判断end---------------------------------
 '''
@@ -300,7 +300,7 @@ def run2(df,kczs, zs, zj_init, f=0.01, maxcw=0.3, jiange=0):
 
 #run2(df, 2, 100000, f=0.02, maxcw=0.3)
 #run2(df, 2, 100000, f=0.02, maxcw=0.4)
-run2(df, 1, 2, 1000000, f=0.01, maxcw=0.3, jiange=0)  
+run2(df, 1, 2, 100000, f=0.01, maxcw=0.5, jiange=0)
 '''
 
 

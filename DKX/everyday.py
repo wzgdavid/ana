@@ -64,14 +64,14 @@ df = get_atr(df, 50)
 --------------------------趋势判断  用ma---------------------------------
 '''
 
-df['condition'] = np.where(df.c.shift(1) > df.c.shift(2), 1, None) 
-df['condition'] = np.where(df.c.shift(1) < df.c.shift(2), 0, df['condition']) 
-## 开仓条件
-df = df.dropna(axis=0)
-
-## 开仓  bk开多  sk开空
-df['开仓'] = np.where((df['condition']==1), 'bk', None)
-df['开仓'] = np.where((df['condition']==0), 'sk', df['开仓'] )
+#df['condition'] = np.where(df.c.shift(1) > df.c.shift(2), 1, None) 
+#df['condition'] = np.where(df.c.shift(1) < df.c.shift(2), 0, df['condition']) 
+### 开仓条件
+#df = df.dropna(axis=0)
+#
+### 开仓  bk开多  sk开空
+#df['开仓'] = np.where((df['condition']==1), 'bk', None)
+#df['开仓'] = np.where((df['condition']==0), 'sk', df['开仓'] )
 
 
 '''
@@ -80,13 +80,12 @@ df['开仓'] = np.where((df['condition']==0), 'sk', df['开仓'] )
 
  
 # 开仓条件
-#df = df.dropna(axis=0)
-#df['高于前两天高点'] = np.where(df.h > df.nhh, 1, None)   # 看当天 
-#df['低于前两天低点'] = np.where(df.l < df.nll, 1, None)
-### 开仓  bk开多  sk开空
-#df['开仓'] = np.where(df['高于前两天高点'] == 1, 'bk', None)
-#df['开仓'] = np.where(df['低于前两天低点'] == 1, 'sk', df['开仓'] )
-
+df = df.dropna(axis=0)
+df['高于前两天高点'] = np.where(df.h > df.nhh, 1, None)   # 看当天 
+df['低于前两天低点'] = np.where(df.l < df.nll, 1, None)
+## 开仓  bk开多  sk开空
+df['开仓'] = np.where(df['高于前两天高点'] == 1, 'bk', None)
+df['开仓'] = np.where(df['低于前两天低点'] == 1, 'sk', df['开仓'] )
 #df['开仓'] = np.where(df['低于前两天低点'] == 1, 'sk', None)
 '''
 --------------------------趋势判断end---------------------------------

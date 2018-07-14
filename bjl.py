@@ -22,39 +22,64 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-draws = np.random.randint(0,2,999)
-steps = np.where(draws>0, 1, -1)
+draws = np.random.randint(0,2,1000000)
+steps = np.where(draws>0, 1,0)
 df = pd.DataFrame()
 
 df['胜负'] = steps
 # df['一注的量']
-df['下几注'] = 1
-df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
-df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
-df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
-df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
-df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
-df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
-df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
-df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
-df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
-df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
-df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
-df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
-df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
-df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
-df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
-df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
-df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
-df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
-df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
-df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
-df['盈亏'] = df['胜负'] *df['下几注']
+#df['下几注'] = 1
+#df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
+#df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
+#df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
+#df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
+#df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
+#df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
+#df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
+#df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
+#df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
+#df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
+#df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
+#df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
+#df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
+#df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
+#df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
+#df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
+#df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
+#df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
+#df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
+#df['下几注'] =np.where( df['胜负'].shift(1)==-1,df['下几注'].shift(1)+1,df['下几注'])
+#df['盈亏'] = df['胜负'] *df['下几注']
 
 #df['盈亏'] = np.where( (df['胜负'].shift(1)==1) , 1*df['胜负'], df['盈亏'])
 #df['盈亏'] = np.where( (df['胜负'].shift(1)==-1) , 3*df['胜负'], df['盈亏'])
+
+df['b'] = 0
+rows_index = range(df.shape[0])
+
+
+nums = range(1,50)
+counter = dict.fromkeys(nums, 0)
+cnt = 1
+for i in rows_index:
+    row_last = df.iloc[i-1]
+    row = df.iloc[i]
+    if row['胜负'] == row_last['胜负']:
+        cnt +=1
+    else:
+        counter[cnt] += 1
+        cnt =1
+
+print(counter)
+
 df.to_csv('tmp.csv')
 
-print(df['盈亏'].sum())
+#print(df['盈亏'].sum())
+
+
+
+
+
+
 
 
