@@ -85,7 +85,7 @@ def foo4():
     之前是相对于前收的百分比，
     这个是相对于前收的多少ATR
     '''
-    pinzhong = 'ppl930m'
+    pinzhong = 'oil91h'
     plt.rcParams['font.sans-serif'] = ['SimHei']
     df = pd.read_csv(r'..\data\{}.csv'.format(pinzhong))
 
@@ -109,20 +109,27 @@ def foo4():
     #print('收盘标准差', df['收盘的波幅'].std())
     df.to_csv('tmp.csv')
     # 各比例  止损的期望 
-    print(0.1, 0.9*df['高价的波幅'].quantile(0.1))  # 10%的幅度，有90%概率止损 
-    print(0.2, 0.8*df['高价的波幅'].quantile(0.2)) 
-    print(0.25, 0.75*df['高价的波幅'].quantile(0.25)) 
-    print(0.3, 0.7*df['高价的波幅'].quantile(0.3)) 
-    print(0.4, 0.6*df['高价的波幅'].quantile(0.4)) 
-    print(0.5, 0.5*df['高价的波幅'].quantile(0.5)) 
-    print(0.6, 0.4*df['高价的波幅'].quantile(0.6)) 
-    print(0.7, 0.3*df['高价的波幅'].quantile(0.7)) 
-    print(0.75, 0.25*df['高价的波幅'].quantile(0.75)) 
-    print(0.8, 0.2*df['高价的波幅'].quantile(0.8)) 
-    print(0.9, 0.1*df['高价的波幅'].quantile(0.9)) 
-    print(0.95, 0.05*df['高价的波幅'].quantile(0.95)) 
-    print(0.98, 0.02*df['高价的波幅'].quantile(0.98)) 
-    print(0.99, 0.01*df['高价的波幅'].quantile(0.99)) 
+    #print(0.9, 0.9*df['高价的波幅'].quantile(0.1)    )  # 10%的幅度，有90%概率止损 
+    #print(0.8, 0.8*df['高价的波幅'].quantile(0.2)    ) 
+    #print(0.75, 0.75*df['高价的波幅'].quantile(0.25)  ) 
+    #print(0.7, 0.7*df['高价的波幅'].quantile(0.3)    ) 
+    #print(0.6, 0.6*df['高价的波幅'].quantile(0.4)    ) 
+    #print(0.5, 0.5*df['高价的波幅'].quantile(0.5)    ) 
+    #print(0.4, 0.4*df['高价的波幅'].quantile(0.6)    ) 
+    #print(0.3, 0.3*df['高价的波幅'].quantile(0.7)    ) 
+    #print(0.25, 0.25*df['高价的波幅'].quantile(0.75)  ) 
+    #print(0.2, 0.2*df['高价的波幅'].quantile(0.8)    ) 
+    #print(0.1,0.1*df['高价的波幅'].quantile(0.9)    ) 
+    #print(0.05, 0.05*df['高价的波幅'].quantile(0.95)  ) 
+    #print(0.02, 0.02*df['高价的波幅'].quantile(0.98)  ) 
+    print(0.01, 0.01*df['高价的波幅'].quantile(0.99)  )
+    step = 0.03 
+    for n in range(1,34):
+        f = n*step # 分位数
+        r = df['高价的波幅'].quantile(f)# 波幅范围
+        gl = 1 - f  # 触发概率
+
+        print("分位数:{:.3f}  波幅:{:.3f}  触发概率:{:.3f}  期望:{:.3f}".format(f, r,gl, r*gl)) 
 foo4()
 
 def foo4c(n):
