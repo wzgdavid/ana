@@ -62,21 +62,23 @@ def foo3():
     之前是相对于前收的百分比，
     这个是相对于前收的多少ATR
     '''
-    pinzhong = 'a'
+    pinzhong = 'ta'
     plt.rcParams['font.sans-serif'] = ['SimHei']
     df = pd.read_csv(r'..\data\{}.csv'.format(pinzhong))
     df = get_ma(df, 10)
     df = get_atr(df, 50)
     #df['condition'] = np.where(df.c.shift(1)>df.ma.shift(1), 1, None) 
-
+    #df['condition'] = np.where(df.h-df.c.shift(1) >= df.atr*0.5, 1, None)  #
     df = df.dropna()
     df['收盘的波幅'] =  ( df.c-df.c.shift(1))  / df.atr
     #df['收盘的波幅'] =   np.abs(df.c/df.c.shift(1)-1)
     df['高价的波幅'] =   (df.h-df.c.shift(1)) / df.atr
     df['低价的波幅'] = (df.c.shift(1)-df.l) / df.atr
-
+    
     
     print(df.describe()[['收盘的波幅','高价的波幅','低价的波幅']])
+
+    print(df['收盘的波幅'].quantile(0.67) )
     #df.to_csv('tmp.csv')
 #foo3()
 
@@ -85,7 +87,7 @@ def foo4():
     之前是相对于前收的百分比，
     这个是相对于前收的多少ATR
     '''
-    pinzhong = 'oil91h'
+    pinzhong = 'sr'
     plt.rcParams['font.sans-serif'] = ['SimHei']
     df = pd.read_csv(r'..\data\{}.csv'.format(pinzhong))
 
@@ -96,13 +98,14 @@ def foo4():
 
     df = get_atr(df, 50)
 
-    #df['condition'] = np.where(df.c.shift(1)<df.ma.shift(1), 1, None) # ma上下  
- 
+    #df['condition'] = np.where(df.c.shift(1)>df.ma.shift(1), 1, None) # ma上下  
+    #df['condition'] = np.where(df.h-df.c.shift(1) >= df.atr*0.5, 1, None)  #
     
     df['收盘的波幅'] =  ( df.c-df.c.shift(1))  / df.atr.shift(1)
     df['收盘的波幅b'] =  np.abs( ( df.c-df.c.shift(1))  / df.atr.shift(1) )
     df['高价的波幅'] =   (df.h-df.c.shift(1)) / df.atr.shift(1)
     df['低价的波幅'] = (df.l-df.c.shift(1)) / df.atr.shift(1)
+    df['低价的波幅abs'] = np.abs((df.l-df.c.shift(1)) / df.atr.shift(1))
     df = df.dropna()
     
     print(df.describe()[['收盘的波幅','高价的波幅','低价的波幅']])
@@ -122,14 +125,19 @@ def foo4():
     #print(0.1,0.1*df['高价的波幅'].quantile(0.9)    ) 
     #print(0.05, 0.05*df['高价的波幅'].quantile(0.95)  ) 
     #print(0.02, 0.02*df['高价的波幅'].quantile(0.98)  ) 
-    print(0.01, 0.01*df['高价的波幅'].quantile(0.99)  )
+    
     step = 0.03 
-    for n in range(1,34):
+    for n in range(11,34):
         f = n*step # 分位数
         r = df['高价的波幅'].quantile(f)# 波幅范围
         gl = 1 - f  # 触发概率
-
-        print("分位数:{:.3f}  波幅:{:.3f}  触发概率:{:.3f}  期望:{:.3f}".format(f, r,gl, r*gl)) 
+        print("分位数:{:.2f}  波幅:{:.3f}  触发概率:{:.3f}  期望:{:.3f}".format(f, r,gl, r*gl))
+    print('低价波幅')
+    for n in range(11,34):
+        f = n*step # 分位数
+        r = df['低价的波幅abs'].quantile(f)# 波幅范围
+        gl = 1 - f  # 触发概率
+        print("分位数:{:.2f}  波幅:{:.3f}  触发概率:{:.3f}  期望:{:.3f}".format(f, r,gl, r*gl))  
 foo4()
 
 def foo4c(n):
@@ -139,7 +147,7 @@ def foo4c(n):
     而是后n天内高低价的范围
     比如后10天的最高最低价，相对于这一天收盘价的波幅（ATR）
     '''
-    pinzhong = 'sr'
+    pinzhong = 'y'
     plt.rcParams['font.sans-serif'] = ['SimHei']
     df = pd.read_csv(r'..\data\{}.csv'.format(pinzhong))
     df = get_ma(df, 20)
@@ -153,9 +161,11 @@ def foo4c(n):
     df['低价的波幅abs'] = np.abs((df.nll2 -df.c) / df.atr)
     df['波幅大的一边'] = np.where(df['高价的波幅']>df['低价的波幅abs'],df['高价的波幅'],df['低价的波幅abs'])
     df['收盘的波幅'] = np.abs((df.c.shift(-n) - df.c) / df.atr)
-    df = df.dropna()
     
-    print(df.describe()[['高价的波幅','低价的波幅']])
+    df['condition'] = np.where(df['低价的波幅abs'] < 0.1, 1, None)  #做多，止损在0.1个ATR
+    df = df.dropna()
+
+    print(df.describe()[['收盘的波幅','高价的波幅','低价的波幅']])
     #print('收盘标准差', df['收盘的波幅'].std())
     print(df['高价的波幅'].quantile(0.5))
     print(df['低价的波幅'].quantile(0.5))
@@ -163,31 +173,19 @@ def foo4c(n):
     print(df['波幅大的一边'].quantile(0.85)) # 
     print(df['收盘的波幅'].quantile(0.5)) #
     df.to_csv('tmp.csv')
-#foo4c(10)
-
-def foo4b(n):
-    '''
-    和foo4一样，
-    只是不是相对于昨天，而是相对于前n天
-    '''
-    pinzhong = 'rb'
-    plt.rcParams['font.sans-serif'] = ['SimHei']
-    df = pd.read_csv(r'..\data\{}.csv'.format(pinzhong))
-    df = get_ma(df, 20)
-    df = get_atr(df, 50)
-
-    df['condition'] = np.where(df.c.shift(n)>df.ma.shift(n), 1, None) # ma上下  目前效果最明显的还是这个
-
-    df['收盘的波幅'] =  ( df.c-df.c.shift(n))  / df.atr.shift(n)
-    df['收盘的波幅b'] =  np.abs( ( df.c-df.c.shift(n))  / df.atr.shift(n) )
-    df['高价的波幅'] =   (df.h-df.c.shift(n)) / df.atr.shift(n)
-    df['低价的波幅'] = (df.l-df.c.shift(n)) / df.atr.shift(n)
-    df = df.dropna()
-    
-    print(df.describe()[['收盘的波幅','高价的波幅','低价的波幅']])
-    #print('收盘标准差', df['收盘的波幅'].std())
-    df.to_csv('tmp.csv')
-#foo4b(2)
+    step = 0.03 
+    for n in range(1,34):
+        f = n*step # 分位数
+        r = df['高价的波幅'].quantile(f)# 波幅范围
+        gl = 1 - f  # 触发概率
+        print("分位数:{:.2f}  波幅:{:.3f}  触发概率:{:.3f}  期望:{:.3f}".format(f, r,gl, r*gl))
+    print('低价波幅')
+    for n in range(1,34):
+        f = n*step # 分位数
+        r = df['低价的波幅abs'].quantile(f)# 波幅范围
+        gl = 1 - f  # 触发概率
+        print("分位数:{:.2f}  波幅:{:.3f}  触发概率:{:.3f}  期望:{:.3f}".format(f, r,gl, r*gl))  
+#foo4c(1)
 
 
 

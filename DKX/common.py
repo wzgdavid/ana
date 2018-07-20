@@ -115,11 +115,12 @@ def result(df, params):
         params['zs'], params['f'], params['jiange'],params['maxcw'],
         倍数, params['做多次数'], params['做空次数'], ret_std
         )
+    df.to_csv('tmp.csv')
     # 显示曲线
     df.ret_index.plot()
     #df.ret_index_log.plot()
     plt.title('收益倍数: '+title)
-    #plt.show()
+    plt.show()
         
     #print(result_row)
     return result_row
