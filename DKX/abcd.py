@@ -98,9 +98,12 @@ def foo4():
 
     df = get_atr(df, 50)
 
-    #df['condition'] = np.where(df.c.shift(1)>df.ma.shift(1), 1, None) # ma上下  
-    #df['condition'] = np.where(df.h-df.c.shift(1) >= df.atr*0.5, 1, None)  #
-    
+    #df['condition'] = np.where(df.c.shift(1)>df.ma.shift(1), 1, None) #  df.c.shift(1)>df.ma.shift(1)  在ma上
+    #df['condition1'] = np.where(df.ma.shift(1)<df.ma.shift(2), 1, None) # df.ma.shift(1)>df.ma.shift(2)  ma斜率向上
+    df['condition2'] = np.where(df.c.shift(1)-df.ma.shift(1) < df.atr.shift(1)*5, 1, None)  #  偏离ma远
+    df['condition3'] = np.where(df.c.shift(1)-df.ma.shift(1) > df.atr.shift(1)*2, 1, None)  #  偏离ma远
+    #df['test'] = df.c.shift(2)
+    #df.to_csv('tmp.csv')
     df['收盘的波幅'] =  ( df.c-df.c.shift(1))  / df.atr.shift(1)
     df['收盘的波幅b'] =  np.abs( ( df.c-df.c.shift(1))  / df.atr.shift(1) )
     df['高价的波幅'] =   (df.h-df.c.shift(1)) / df.atr.shift(1)
@@ -110,7 +113,7 @@ def foo4():
     
     print(df.describe()[['收盘的波幅','高价的波幅','低价的波幅']])
     #print('收盘标准差', df['收盘的波幅'].std())
-    df.to_csv('tmp.csv')
+    
     # 各比例  止损的期望 
     #print(0.9, 0.9*df['高价的波幅'].quantile(0.1)    )  # 10%的幅度，有90%概率止损 
     #print(0.8, 0.8*df['高价的波幅'].quantile(0.2)    ) 
@@ -126,18 +129,18 @@ def foo4():
     #print(0.05, 0.05*df['高价的波幅'].quantile(0.95)  ) 
     #print(0.02, 0.02*df['高价的波幅'].quantile(0.98)  ) 
     
-    step = 0.03 
-    for n in range(11,34):
-        f = n*step # 分位数
-        r = df['高价的波幅'].quantile(f)# 波幅范围
-        gl = 1 - f  # 触发概率
-        print("分位数:{:.2f}  波幅:{:.3f}  触发概率:{:.3f}  期望:{:.3f}".format(f, r,gl, r*gl))
-    print('低价波幅')
-    for n in range(11,34):
-        f = n*step # 分位数
-        r = df['低价的波幅abs'].quantile(f)# 波幅范围
-        gl = 1 - f  # 触发概率
-        print("分位数:{:.2f}  波幅:{:.3f}  触发概率:{:.3f}  期望:{:.3f}".format(f, r,gl, r*gl))  
+    #step = 0.03 
+    #for n in range(11,34):
+    #    f = n*step # 分位数
+    #    r = df['高价的波幅'].quantile(f)# 波幅范围
+    #    gl = 1 - f  # 触发概率
+    #    print("分位数:{:.2f}  波幅:{:.3f}  触发概率:{:.3f}  期望:{:.3f}".format(f, r,gl, r*gl))
+    #print('低价波幅')
+    #for n in range(11,34):
+    #    f = n*step # 分位数
+    #    r = df['低价的波幅abs'].quantile(f)# 波幅范围
+    #    gl = 1 - f  # 触发概率
+    #    print("分位数:{:.2f}  波幅:{:.3f}  触发概率:{:.3f}  期望:{:.3f}".format(f, r,gl, r*gl))  
 foo4()
 
 def foo4c(n):
