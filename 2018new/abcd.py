@@ -87,21 +87,33 @@ def foo4():
     之前是相对于前收的百分比，
     这个是相对于前收的多少ATR
     '''
-    pinzhong = 'rb'
+    pinzhong = 'rbl91h'
     plt.rcParams['font.sans-serif'] = ['SimHei']
     df = pd.read_csv(r'..\data\{}.csv'.format(pinzhong))
 
-    df = get_ma(df, 5)
+    df = get_ma(df, 26)
     df['ma短'] = df.ma
-    df = get_ma(df, 17)
+    df = get_ma(df, 180)
     df['ma长'] = df.ma
 
     df = get_atr(df, 50)
-
+    
     #df['condition'] = np.where(df.c.shift(1)>df.ma.shift(1), 1, None) #  df.c.shift(1)>df.ma.shift(1)  在ma上
-    #df['condition1'] = np.where(df.ma.shift(1)>df.ma.shift(2), 1, None) # df.ma.shift(1)>df.ma.shift(2)  ma斜率向上
+
+
+    #df['condition1'] = np.where(df.ma短.shift(1)>df.ma短.shift(2), 1, None) # df.ma.shift(1)>df.ma.shift(2)  ma斜率向上
+    #df['condition1b'] = np.where(df.ma长.shift(1)>df.ma长.shift(2), 1, None) # df.ma.shift(1)>df.ma.shift(2)  ma斜率向上
+
+
+
     #df['condition2'] = np.where(df.c.shift(1)-df.ma.shift(1) < df.atr.shift(1)*5, 1, None)  #  偏离ma远
     #df['condition3'] = np.where(df.c.shift(1)-df.ma.shift(1) > df.atr.shift(1)*2, 1, None)  #  偏离ma远
+
+    # 动量
+    #df['condition4'] = np.where(df.c.shift(1) > df.c.shift(9), 1, None)
+
+    #df['condition5'] = np.where(df.date.str.contains('10:00', regex=False), 1, None)
+
     #df['test'] = df.c.shift(2)
     #df.to_csv('tmp.csv')
     df['收盘的波幅'] =  ( df.c-df.c.shift(1))  / df.atr.shift(1)
@@ -141,7 +153,7 @@ def foo4():
     #    r = df['低价的波幅abs'].quantile(f)# 波幅范围
     #    gl = 1 - f  # 触发概率
     #    print("分位数:{:.2f}  波幅:{:.3f}  触发概率:{:.3f}  期望:{:.3f}".format(f, r,gl, r*gl))  
-#foo4()
+foo4()
 
 def foo4c(n):
     '''
@@ -170,8 +182,8 @@ def foo4c(n):
     #df['condition'] = np.where(df['低价的波幅abs'] < 0.1, 1, None)  #做多，止损在0.1个ATR
 
     #df['condition'] = np.where(df.c.shift(1)<df.ma1.shift(1), 1, None) #  df.c.shift(1)>df.ma.shift(1)  在ma上
-    df['condition1'] = np.where(df.ma1.shift(1)<df.ma1.shift(2), 1, None) # df.ma.shift(1)>df.ma.shift(2)  ma斜率向上
-    df['condition1b'] = np.where(df.ma2.shift(1)<df.ma2.shift(2), 1, None) # df.ma.shift(1)>df.ma.shift(2)  ma斜率向上
+    df['condition1'] = np.where(df.ma1.shift(1)>df.ma1.shift(2), 1, None) # df.ma.shift(1)>df.ma.shift(2)  ma斜率向上
+    df['condition1b'] = np.where(df.ma2.shift(1)>df.ma2.shift(2), 1, None) # df.ma.shift(1)>df.ma.shift(2)  ma斜率向上
 
     #df['condition2'] = np.where(df.c.shift(1)-df.ma.shift(1) < df.atr.shift(1)*5, 1, None)  #  偏离ma远
     #df['condition3'] = np.where(df.c.shift(1)-df.ma.shift(1) > df.atr.shift(1)*2, 1, None)  #  偏离ma远
@@ -200,7 +212,7 @@ def foo4c(n):
     #    r = df['低价的波幅abs'].quantile(f)# 波幅范围
     #    gl = 1 - f  # 触发概率
     #    print("分位数:{:.2f}  波幅:{:.3f}  触发概率:{:.3f}  期望:{:.3f}".format(f, r,gl, r*gl))  
-foo4c(20)
+#foo4c(1)
 
 
 
