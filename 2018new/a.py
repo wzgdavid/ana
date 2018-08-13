@@ -17,7 +17,7 @@ def foo():
     计算盈亏比，
     '''
  
-    pinzhong = 'rbl91h'
+    pinzhong = 'ml91h'
     plt.rcParams['font.sans-serif'] = ['SimHei']
     df = pd.read_csv(r'..\data\{}.csv'.format(pinzhong))
 
@@ -36,21 +36,24 @@ def foo():
     df = get_nhh2(df, 时长)  # 作为时长期内的止盈
     df['平仓价'] = df['c'].shift(-时长)
     df['winloss'] = (df['平仓价'] - df['c'])   # 不算止损止盈   盈亏
-    df['止损价'] = df.c - df.atr * 1 # 以多少倍的ATR作为止损
+    df['止损价'] = df.c - df.atr * 2 # 以多少倍的ATR作为止损
     df['止盈价'] = df.c + df.atr * 1 # 以多少倍的ATR作为止盈
-    df['winloss_zs'] = np.where(df.止损价 > df.平仓价, -df.atr, df.winloss)  #   算上止损  盈亏
-    df['winloss_zy'] = np.where(df.止盈价 < df.平仓价, df.atr, df.winloss)  #   算上止盈  盈亏
+    费用 = 4 # 考虑有滑点和手续费 平均算4点     能看出用的周期越大（盈亏幅度大），费用的影响越小
+    df['winloss_zs'] = np.where(df.nll2 < df.止损价, -(df.atr+费用), df.winloss)  #   算上止损  盈亏   
+    df['winloss_zy'] = np.where(df.nhh2 > df.止盈价, df.atr, df.winloss)  #   算上止盈  盈亏
     #df['winloss_atr'] = (df['平仓价'] - df['c']) / df.atr  # 盈亏占多少ATR
 
     df.to_csv('tmp.csv')
 
-    df = df.iloc[4000:,  :]  #选择部分
+    #df = df.iloc[4000:,  :]  #选择部分
+
     #df['condition'] = np.where(df.c.shift(1)>df.ma.shift(1), 1, None) #  df.c.shift(1)>df.ma.shift(1)  在ma上
     #df['condition1'] = np.where(df.ma.shift(1)>df.ma.shift(2), 1, None) # df.ma.shift(1)>df.ma.shift(2)  ma斜率向上
     #df['condition2'] = np.where(df.c.shift(1) < df.o.shift(1),1, None)   # 前一根是阴线
     #df['condition2b'] = np.where((df.c.shift(1) < df.o.shift(1))  & (df.c.shift(2) < df.o.shift(2)),1, None) #前面连着两根阴线
     #df['condition2c'] = np.where( ( df.c.shift(1) < df.o.shift(1)) & (df.c.shift(2) < df.o.shift(2)) & (df.c.shift(3) < df.o.shift(3)),1, None)  #前面连着3根阴线
     #df['condition3'] = np.where(df.c < df.c.shift(2)    ,1,None)  # 在前两周期内下跌超过一个ATR
+    #df['condition4'] = np.where(df.c.shift(1) - df.c.shift(7) > df.atr*0.2, 1, None)
     df = df.dropna()
 
     # 统计盈亏比
@@ -78,7 +81,7 @@ def foo():
     盈亏比 = df['win_zy'].sum() / abs(df['loss_zy'].sum())
     print('带止盈的盈亏比  ', 盈亏比)
     
-    print(df.describe()[['winloss','winloss_zs']])
+    #print(df.describe()[['winloss','winloss_zs']])
 foo()
 
 
@@ -90,7 +93,7 @@ def foo2():
     同foo， 不过是只看做空
     '''
  
-    pinzhong = 'rbl91h'
+    pinzhong = 'srl91h'
     plt.rcParams['font.sans-serif'] = ['SimHei']
     df = pd.read_csv(r'..\data\{}.csv'.format(pinzhong))
 
@@ -109,14 +112,16 @@ def foo2():
     df = get_nhh2(df, 时长)  # 作为时长期内的止盈
     df['平仓价'] = df['c'].shift(-时长)
     df['winloss'] = (df['c'] - df['平仓价'] )   # 不算止损止盈   盈亏
-    df['止损价'] = df.c + df.atr * 1 # 以多少倍的ATR作为止损
-    df['止盈价'] = df.c - df.atr * 1 # 以多少倍的ATR作为止盈
-    df['winloss_zs'] = np.where(df.止损价 < df.平仓价, -df.atr, df.winloss)  #   算上止损  盈亏
-    df['winloss_zy'] = np.where(df.止盈价 > df.平仓价, df.atr, df.winloss)  #   算上止盈  盈亏
+    df['止损价'] = df.c + df.atr * 2 # 以多少倍的ATR作为止损
+    df['止盈价'] = df.c - df.atr * 2 # 以多少倍的ATR作为止盈
+    #df['winloss_zs'] = np.where(df.止损价 < df.平仓价, -df.atr, df.winloss)  #   算上止损  盈亏
+    df['winloss_zs'] = np.where(df.nhh2 > df.止损价, -df.atr, df.winloss)
+    df['winloss_zy'] = np.where(df.nll2 < df.止盈价, df.atr, df.winloss)  #   算上止盈  盈亏
     #df['winloss_atr'] = (df['c'] - df['平仓价']) / df.atr  # 盈亏占多少ATR
 
     df.to_csv('tmp.csv')
-    df = df.iloc[4000:,  :]  #选择部分
+    #df = df.iloc[4000:,  :]  #选择部分
+
     #df['condition'] = np.where(df.c.shift(1)>df.ma.shift(1), 1, None) #  df.c.shift(1)>df.ma.shift(1)  在ma上
     #df['condition1'] = np.where(df.ma.shift(1)>df.ma.shift(2), 1, None) # df.ma.shift(1)>df.ma.shift(2)  ma斜率向上
     #df['condition2'] = np.where(df.c.shift(1) < df.o.shift(1),1, None)   # 前一根是阴线
