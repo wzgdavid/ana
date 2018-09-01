@@ -87,13 +87,13 @@ def foo4():
     之前是相对于前收的百分比，
     这个是相对于前收的多少ATR
     '''
-    pinzhong = 'rbl91h'
+    pinzhong = 'm'
     plt.rcParams['font.sans-serif'] = ['SimHei']
     df = pd.read_csv(r'..\data\{}.csv'.format(pinzhong))
 
     df = get_ma(df, 26)
     df['ma短'] = df.ma
-    df = get_ma(df, 180)
+    df = get_ma(df, 26)
     df['ma长'] = df.ma
 
     df = get_atr(df, 50)
@@ -110,7 +110,7 @@ def foo4():
     #df['condition3'] = np.where(df.c.shift(1)-df.ma.shift(1) > df.atr.shift(1)*2, 1, None)  #  偏离ma远
 
     # 动量
-    #df['condition4'] = np.where(df.c.shift(1) > df.c.shift(9), 1, None)
+    #df['condition4'] = np.where(df.c.shift(1) > df.c.shift(4), 1, None)
 
     #df['condition5'] = np.where(df.date.str.contains('10:00', regex=False), 1, None)
 

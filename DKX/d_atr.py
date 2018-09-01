@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from common import *#get_DKX, get_nhh, get_nll, get_ma, avg,get_nhhzs,get_nllzs,get_atr
 
-pinzhong = 'rb'
+pinzhong = 'rbl91h'
 plt.rcParams['font.sans-serif'] = ['SimHei'] # 正常显示中文
 df = pd.read_csv(r'..\data\{}.csv'.format(pinzhong))
 df = get_DKX(df)
@@ -14,7 +14,7 @@ df = get_DKX(df)
 nn = 2
 df = get_nhh(df, nn)
 df = get_nll(df, nn)
-df = get_ma(df, 20)
+df = get_ma(df, 30)
 
 df = get_atr(df, 50)
 '''
@@ -44,7 +44,7 @@ df = get_atr(df, 50)
 #df['平仓'] = None # 没有平仓信号， 只用止损平仓
 
 '''
---------------------------趋势判断  用ma---------------------------------
+--------------------------趋势判断  ma 上下---------------------------------
 '''
 
 #df['condition'] = np.where(df.c.shift(1)>df.ma.shift(1), 1, None) 
@@ -58,9 +58,21 @@ df = get_atr(df, 50)
 #df['开仓'] = np.where((df['低于前两天低点'] == 1) & (df['condition']==0), 'sk', df['开仓'] )
 
 '''
---------------------------趋势判断  DKX 或 ma ---------------------------------
+--------------------------趋势判断   ma  斜率---------------------------------
 '''
-#df['condition1'] = df.b.shift(1) / df.b.shift(2) 
+#df['condition1'] = df.b.shift(1) / df.b.shift(2) # 斜率
+#
+#df = df.dropna(axis=0)
+#df['高于前两天高点'] = np.where(df.h > df.nhh, 1, None)   # 看当天 
+#df['低于前两天低点'] = np.where(df.l < df.nll, 1, None)
+#                                                        
+#df['开仓'] = np.where(df['condition1']>1, 'bk', None)
+#df['开仓'] = np.where(df['condition1']<1, 'sk', df['开仓'] )
+
+'''
+--------------------------趋势判断   ma 上下  且 斜率---------------------------------
+'''
+#df['condition1'] = df.b.shift(1) / df.b.shift(2) # 斜率
 #
 #df['condition2'] = np.where(df.c.shift(1)>df.ma.shift(1), 1, None) 
 #df['condition2'] = np.where(df.c.shift(1)<df.ma.shift(1), 0, df['condition2'])

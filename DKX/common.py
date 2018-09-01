@@ -119,8 +119,8 @@ def result(df, params):
     # 显示曲线
     df.ret_index.plot()
     #df.ret_index_log.plot()
-    plt.title('收益倍数: '+title)
-    plt.show()
+    #plt.title('收益倍数: '+title)
+    #plt.show()
         
     #print(result_row)
     return result_row
