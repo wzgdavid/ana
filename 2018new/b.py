@@ -17,7 +17,7 @@ def foo():
     计算盈亏比，
     '''
  
-    pinzhong = 'y'
+    pinzhong = 'pp'
     plt.rcParams['font.sans-serif'] = ['SimHei']
     df = pd.read_csv(r'..\data\{}.csv'.format(pinzhong))
 
@@ -53,10 +53,10 @@ def foo():
     '''
     过滤  start
     '''
-    df = df.iloc[2500:3000,  :]  #选择部分
+    #df = df.iloc[2500:3000,  :]  #选择部分
 
-    df['condition'] = np.where(df.l.shift(1)>df.ma.shift(1), 1, None) #  df.c.shift(1)>df.ma.shift(1)  在ma上
-    df['condition1'] = np.where(df.ma.shift(1)>df.ma.shift(2), 1, None) # df.ma.shift(1)>df.ma.shift(2)  ma斜率向上
+    #df['condition'] = np.where(df.l.shift(1)>df.ma.shift(1), 1, None) #  df.c.shift(1)>df.ma.shift(1)  在ma上
+    #df['condition1'] = np.where(df.ma.shift(1)>df.ma.shift(2), 1, None) # df.ma.shift(1)>df.ma.shift(2)  ma斜率向上
     #df['condition2'] = np.where(df.c.shift(1) < df.o.shift(1),1, None)   # 前一根是阴线
     #df['condition2b'] = np.where((df.c.shift(1) < df.o.shift(1))  & (df.c.shift(2) < df.o.shift(2)),1, None) #前面连着两根阴线
     #df['condition2c'] = np.where( ( df.c.shift(1) < df.o.shift(1)) & (df.c.shift(2) < df.o.shift(2)) & (df.c.shift(3) < df.o.shift(3)),1, None)  #前面连着3根阴线
@@ -208,9 +208,9 @@ def foo2():
     print('交易次数',df.shape[0])
     return 盈亏比, df.shape[0]
     #print(df.describe()[['winloss','winloss_zs']])
-s1,s2 = foo2()
+#s1,s2 = foo2()
 
 #
-多空总体盈亏比 = (b1*b2 + s1*s2)/(b2+s2)
+#多空总体盈亏比 = (b1*b2 + s1*s2)/(b2+s2)
 
-print('多空总体盈亏比',多空总体盈亏比)
+#print('多空总体盈亏比',多空总体盈亏比)
