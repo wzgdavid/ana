@@ -17,7 +17,7 @@ def foo():
     计算盈亏比，
     '''
  
-    pinzhong = 'pp'
+    pinzhong = 'ma'
     plt.rcParams['font.sans-serif'] = ['SimHei']
     df = pd.read_csv(r'..\data\{}.csv'.format(pinzhong))
 
@@ -27,7 +27,7 @@ def foo():
     df['ma2'] = df.ma
     df = get_ma(df, 17)
     df['ma3'] = df.ma
-    df = get_ma(df, 17)
+    df = get_ma(df, 20)
     df['ma4'] = df.ma
 
     df = get_atr(df, 50)
@@ -39,7 +39,7 @@ def foo():
     df = get_nll2(df, 时长)  # 作为时长期内的止损
     df = get_nhh2(df, 时长)  # 作为时长期内的止盈
     df['平仓价'] = df['c'].shift(-时长)
-    费用 = 4 # 考虑有滑点和手续费 平均算4点     能看出用的周期越大（盈亏幅度大），费用的影响越小
+    费用 = 0 # 考虑有滑点和手续费 平均算4点     能看出用的周期越大（盈亏幅度大），费用的影响越小
     df['winloss'] = (df['平仓价'] - df['c'] - 费用)   # 不算止损止盈   盈亏
     n = 1 # atr止损倍数
     df['止损价'] = df.c - df.atr * n # 以多少倍的ATR作为止损
@@ -53,9 +53,9 @@ def foo():
     '''
     过滤  start
     '''
-    #df = df.iloc[2500:3000,  :]  #选择部分
+    df = df.iloc[-500:,  :]  #选择部分
 
-    #df['condition'] = np.where(df.l.shift(1)>df.ma.shift(1), 1, None) #  df.c.shift(1)>df.ma.shift(1)  在ma上
+    df['condition'] = np.where(df.c.shift(1)>df.ma.shift(1), 1, None) #  df.c.shift(1)>df.ma.shift(1)  在ma上
     #df['condition1'] = np.where(df.ma.shift(1)>df.ma.shift(2), 1, None) # df.ma.shift(1)>df.ma.shift(2)  ma斜率向上
     #df['condition2'] = np.where(df.c.shift(1) < df.o.shift(1),1, None)   # 前一根是阴线
     #df['condition2b'] = np.where((df.c.shift(1) < df.o.shift(1))  & (df.c.shift(2) < df.o.shift(2)),1, None) #前面连着两根阴线
