@@ -28,8 +28,8 @@ for pinzhong in pinzhong_lst:
     过滤  start
     '''
     df = df.iloc[-500:,  :]  #选择部分
-    df['condition'] = 1  # 不过滤
-    #df['condition'] = np.where(df.c.shift(1)>df.ma.shift(1), 1, 0) #  df.c.shift(1)>df.ma.shift(1)  在ma下
+    #df['condition'] = 1  # 不过滤
+    df['condition'] = np.where(df.c.shift(1)<df.ma.shift(1), 1, 0) #  df.c.shift(1)>df.ma.shift(1)  在ma下
     #df['condition'] = np.where(df.c.shift(1)<df.c.shift(2), 1, 0) #  df.c.shift(1)>df.ma.shift(1)  # 前一次浮盈
 
     
